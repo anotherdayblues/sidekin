@@ -1,6 +1,7 @@
 // One to-do in the 待办 page: the ⋮⋮ to drag it by, the round check, the
 // title and when, the tomatoes, and what can be done with it; and its
 // editor, in place.
+import { clearLook, watchCaret } from "../caretLook.ts";
 import { t, tn } from "../i18n.ts";
 import {
   carriedLabel,
@@ -256,6 +257,7 @@ export function edit(row: HTMLElement, todo: Todo, hooks: RowHooks) {
   title.value = todo.title;
   title.maxLength = 200;
   title.setAttribute("aria-label", t("todo.title"));
+  watchCaret(title);
   const when = whenFields(todo);
   const save = button("primary", t("common.save"));
   save.type = "submit";
@@ -266,6 +268,7 @@ export function edit(row: HTMLElement, todo: Todo, hooks: RowHooks) {
   row.dataset.state = "editing";
   title.focus();
   const close = () => {
+    clearLook();
     hooks.editing(false);
     hooks.refresh();
   };

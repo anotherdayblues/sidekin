@@ -1,5 +1,6 @@
 import { glyphs } from "./icons.ts";
 import { invoke } from "@tauri-apps/api/core";
+import { clearLook, watchCaret } from "./caretLook.ts";
 import { dateLocale, t, type Key } from "./i18n.ts";
 import "./styles/clipboard.css";
 
@@ -112,11 +113,13 @@ export function clipboardPanel(session: ClipboardView, call: Call = invoke) {
     if (alive) status.textContent = String(e);
   }
   const close = () => {
+    clearLook();
     if (!busy) void call("clip_close", { session: session.id }).catch(report);
   };
   label("[data-close]", "clip.close").onclick = close;
   input.placeholder = t("clip.search");
   input.setAttribute("aria-label", t("clip.search"));
+  watchCaret(input);
   list.setAttribute("aria-label", t("clip.title"));
   input.setAttribute("role", "combobox");
   input.setAttribute("aria-expanded", "true");

@@ -1,5 +1,6 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { watchCaret } from "./caretLook.ts";
 import { dateLocale, t, type Key } from "./i18n.ts";
 import { glyphs } from "./icons.ts";
 import {
@@ -45,6 +46,7 @@ export function mountClipboardMemory(
   options.textContent = t("clip.settings");
   input.placeholder = t("clip.search");
   input.setAttribute("aria-label", input.placeholder);
+  watchCaret(input);
   next.textContent = t("clip.next");
   selectDoneButton.textContent = t("clip.selectDone");
   let prefs = defaultClipPrefs,

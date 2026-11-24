@@ -6,6 +6,7 @@
 // repeat can also be picked by hand, and an 添加 key shows once there is
 // something to add (Super Productivity's add bar shows its send key the
 // same way): what was picked by hand wins over what was understood.
+import { watchCaret } from "../caretLook.ts";
 import { t } from "../i18n.ts";
 import { dayLabel, repeatLabel, REPEATS, today, type Fields } from "./api.ts";
 import { loadParser, parseQuick, type Quick } from "./parse.ts";
@@ -151,6 +152,7 @@ export function quickLine(
   input.spellcheck = false;
   input.placeholder = o.placeholder ?? t("todo.quickPlaceholder");
   input.setAttribute("aria-label", t("todo.new"));
+  watchCaret(input);
   field.append(mirror, input);
   const chip = el("div", "todo-quick-chip");
   chip.hidden = true;
