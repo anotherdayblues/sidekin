@@ -86,16 +86,18 @@
   accent-color: var(--accent);
   cursor: pointer;
 }
-.memory-clipboard .clip-memory-delete {
+.shell .block .memory-clipboard button.clip-memory-delete {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: none;
   width: 26px;
   height: 26px;
   padding: 0;
   border: 0;
   border-radius: 6px;
   background: transparent;
+  box-shadow: none;
   color: var(--ink-2);
   opacity: 0;
   transition:
@@ -103,13 +105,21 @@
     background 110ms ease,
     color 110ms ease;
 }
+.shell .block .memory-clipboard button.clip-memory-delete svg {
+  flex: none;
+  display: block;
+}
 .memory-clipboard .memory-entry:hover .clip-memory-delete,
 .memory-clipboard .memory-entry:focus-within .clip-memory-delete {
   opacity: 1;
 }
-.memory-clipboard .clip-memory-delete:hover {
+.shell .block .memory-clipboard button.clip-memory-delete:hover {
   color: var(--danger, #c43d32);
   background: color-mix(in srgb, var(--danger, #c43d32) 12%, transparent);
+}
+.shell .block .memory-clipboard button.clip-memory-delete:active {
+  box-shadow: none;
+  background: color-mix(in srgb, var(--danger, #c43d32) 18%, transparent);
 }
 .memory-clipboard [data-config] {
   margin-bottom: 14px;
