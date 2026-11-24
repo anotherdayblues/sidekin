@@ -66,7 +66,6 @@ fn main() {
                 .flag("-fobjc-arc")
                 .compile("file_transfer_pointer");
             println!("cargo:rerun-if-changed=native/clipboard.m");
-            println!("cargo:rerun-if-changed=native/copy-keys.m");
             println!("cargo:rerun-if-changed=native/selection.m");
             let mut selection = cc::Build::new();
             if std::env::var_os("CARGO_FEATURE_ACCEPTANCE").is_some() {
@@ -75,7 +74,6 @@ fn main() {
             selection
                 .file("native/selection.m")
                 .file("native/clipboard.m")
-                .file("native/copy-keys.m")
                 .flag("-fobjc-arc")
                 .compile("companion_selection");
             println!("cargo:rerun-if-changed=native/ocr.m");

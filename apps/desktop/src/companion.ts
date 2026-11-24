@@ -194,29 +194,6 @@ export function companionPage(app: HTMLElement) {
         : t("settings.noModel");
     showOnboard();
   }
-  const copyPermission = document.createElement("div");
-  copyPermission.hidden = true;
-  copyPermission.textContent = t("settings.copyKeyPermission");
-  const permissionButton = document.createElement("button");
-  permissionButton.type = "button";
-  permissionButton.textContent = t("settings.openSystemSettings");
-  permissionButton.onclick = () => void invoke("copy_key_preferences");
-  copyPermission.append(permissionButton);
-  function checkCopyPermission() {
-    if (
-      !native ||
-      !/Mac/.test(navigator.platform) ||
-      !saved.enabled ||
-      !saved.translation ||
-      !saved.copyTwice
-    ) {
-      copyPermission.hidden = true;
-      return;
-    }
-    void invoke<boolean>("copy_key_access").then((ok) => {
-      copyPermission.hidden = ok;
-    });
-  }
   let saves = Promise.resolve();
   let inputRevision = 0;
   form.addEventListener("input", (e) => {
@@ -250,7 +227,6 @@ export function companionPage(app: HTMLElement) {
             })
           : s;
         saved = next ?? s;
-        checkCopyPermission();
         if (!native) preview = saved;
         if (withOnline) online.fill(saved);
         if (!withOnline && revision === inputRevision) {
@@ -349,7 +325,6 @@ export function companionPage(app: HTMLElement) {
       }
     }
     fill(current);
-    checkCopyPermission();
     page.hidden = false;
     await Promise.all([
       refreshBooks(),
@@ -426,8 +401,6 @@ export function companionPage(app: HTMLElement) {
     reloadPersona: () => persona("load"),
   });
   app.addEventListener("pet-changed", () => void persona("load"));
-  field("copyTwice").closest(".switch-row")!.after(copyPermission);
-  if (native) window.addEventListener("focus", checkCopyPermission);
   refreshGuide = guide.refresh;
   showOnboard = guide.show;
   // Screenshot scripts open a step of the guide directly.

@@ -212,7 +212,7 @@ pub(crate) fn fixture_contents() -> Option<String> {
     // The acceptance build links clip_plain to its own named pasteboard.
     owned(unsafe { clip_plain() })
 }
-fn excluded(source: &str, prefs: &Preferences) -> bool {
+pub(crate) fn is_password_manager(source: &str) -> bool {
     let app = source.to_lowercase();
     [
         "1password",
@@ -226,6 +226,10 @@ fn excluded(source: &str, prefs: &Preferences) -> bool {
     ]
     .iter()
     .any(|s| app.contains(s))
+}
+fn excluded(source: &str, prefs: &Preferences) -> bool {
+    let app = source.to_lowercase();
+    is_password_manager(source)
         || prefs
             .excluded
             .lines()
