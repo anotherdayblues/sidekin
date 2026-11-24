@@ -1,0 +1,70 @@
+/* The small keys on a to-do under the pointer, the same on the 待办 page
+   and in the bubble (row.ts rowKeys): a pencil to edit it in place, a ⋯
+   for the rest of what it can do (the right-click menu), an × to delete it
+   with 撤销. */
+:root {
+  --todo-pencil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.8 2.7l2.5 2.5L5.6 12.9 2.5 13.5l.6-3.1z'/%3E%3Cpath d='M9.3 4.2l2.5 2.5'/%3E%3C/svg%3E");
+  --todo-cross: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' stroke='black' stroke-width='1.6' stroke-linecap='round'><path d='M2 2l6 6M8 2l-6 6'/></svg>");
+  --todo-more: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='black'><circle cx='3.5' cy='8' r='1.4'/><circle cx='8' cy='8' r='1.4'/><circle cx='12.5' cy='8' r='1.4'/></svg>");
+  --todo-key: 26px;
+}
+.shell
+  .block
+  .todo-page
+  button:is(.todo-edit-key, .todo-more-key, .todo-del-key),
+.bubble-card button:is(.todo-edit-key, .todo-more-key, .todo-del-key) {
+  flex: none;
+  width: var(--todo-key);
+  height: var(--todo-key);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink-3);
+}
+.shell
+  .block
+  .todo-page
+  button:is(.todo-edit-key, .todo-more-key, .todo-del-key):hover,
+.bubble-card button:is(.todo-edit-key, .todo-more-key, .todo-del-key):hover {
+  background: var(--well);
+  color: var(--ink-2);
+}
+:is(.todo-edit-key, .todo-more-key, .todo-del-key)::before {
+  content: "";
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin: auto;
+  background: currentColor;
+  -webkit-mask: var(--todo-pencil) center / contain no-repeat;
+  mask: var(--todo-pencil) center / contain no-repeat;
+}
+.todo-more-key::before {
+  -webkit-mask-image: var(--todo-more);
+  mask-image: var(--todo-more);
+}
+.todo-del-key::before {
+  width: 10px;
+  height: 10px;
+  -webkit-mask-image: var(--todo-cross);
+  mask-image: var(--todo-cross);
+}
+/* In the bubble they show on the row under the pointer, as on the page
+   (todo.css .todo-acts). */
+.todo-card-row .todo-acts {
+  display: inline-flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.todo-card-row:is(:hover, :focus-within) .todo-acts {
+  opacity: 1;
+}
+/* 帮我拆一下 in the bubble: its drafts take a row of the list. */
+.todo-card-list > li.todo-break-slot {
+  display: block;
+  padding-block: 6px;
+}

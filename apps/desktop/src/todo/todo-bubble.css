@@ -1,0 +1,428 @@
+/* 待办's cards in the bubble (plan/27), and 番茄钟's question beside them.
+   One thing to do per card, in the skin's primary colour; everything else a
+   quiet link. Wider and roomier than a chat line, so a list reads easily.
+   Colours from the bubble's tokens; each skin's own touch at the end. */
+.bubble-card :is([data-todo], [data-focus]) {
+  --todo-card-type: 15.5px;
+  --todo-card-row: 40px;
+  --todo-card-gap: 10px;
+}
+/* Roomy (plan/30): about 420 wide. */
+.bubble-shell:has(.bubble-card[data-state="todo"]),
+.bubble-shell:has(.bubble-card [data-todo]:not([hidden])) {
+  min-width: 428px;
+  max-width: 456px;
+}
+.bubble-shell:has(.bubble-card [data-focus-todo]:not([hidden])) {
+  min-width: 320px;
+}
+
+.bubble-card [data-todo] {
+  display: grid;
+  gap: var(--todo-card-gap);
+  padding-block-start: var(--bubble-gap);
+  border-block-start: var(--bubble-border) solid var(--bubble-line);
+  color: var(--bubble-ink);
+}
+.bubble-card[data-state="todo"] [data-todo] {
+  border: 0;
+  padding: 2px 2px 0;
+}
+.bubble-card[data-state="todo"] .bubble-text,
+.bubble-card [data-todo][hidden],
+.bubble-card [data-focus-todo][hidden],
+.bubble-card [data-todo] [hidden] {
+  display: none;
+}
+.bubble-card [data-todo] p {
+  margin: 0;
+}
+
+/* The head: what this card is, and the day. */
+.todo-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.todo-card-head strong {
+  font-size: var(--todo-card-type);
+}
+.todo-card-head small,
+.todo-card-note,
+.todo-card-empty {
+  color: var(--bubble-muted);
+  font-size: 12.5px;
+}
+.todo-card-say {
+  font-size: var(--todo-card-type);
+}
+
+/* A list: roomy rows, the title first, the time to the right. */
+.bubble-card .todo-card-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.todo-card-list > li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--todo-card-row);
+  border-block-end: 1px solid var(--bubble-line);
+}
+.todo-card-list > li:last-child {
+  border-block-end: 0;
+}
+.todo-card-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--todo-card-type);
+}
+.todo-card-list small {
+  flex: none;
+  color: var(--bubble-muted);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.todo-card-list small.todo-card-carried {
+  color: var(--bubble-muted);
+  opacity: 0.8;
+}
+.todo-card-due .todo-card-title {
+  white-space: normal;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Picking which one: each row is one wide key. */
+.bubble-shell:has([data-todo][data-kind="pick"]:not([hidden])) {
+  min-width: 376px;
+  max-width: 394px;
+}
+.todo-focus-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+}
+.todo-focus-clock {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+}
+.todo-focus-duration {
+  color: var(--bubble-ink);
+  font-size: 26px;
+  font-weight: 650;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.todo-focus-clock::before {
+  content: "";
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='8.7'/><path d='M12 6.7v5.5l3.8 2.1'/></svg>")
+    center / contain no-repeat;
+}
+.todo-focus-duration small {
+  margin-inline-start: 5px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.bubble-card [data-kind="pick"] button.todo-timer-only {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-start: auto;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+.todo-focus-tasks {
+  border-block-start: 1px solid var(--line);
+  padding-block-start: 9px;
+}
+.todo-focus-label {
+  margin-block-end: 3px;
+  color: var(--bubble-muted);
+  font-size: 12px;
+}
+.todo-focus-tasks .todo-card-list > li {
+  min-height: 36px;
+  border: 0;
+}
+.bubble-card button.todo-card-pick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: start;
+}
+.bubble-card [data-kind="pick"] button {
+  cursor: pointer;
+}
+.bubble-card [data-kind="pick"] button.todo-card-pick:is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--accent) 24%, var(--card));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 32%, transparent);
+}
+.bubble-card [data-kind="pick"] button.todo-card-pick:is(:hover, :focus-visible)::after {
+  opacity: 1;
+}
+.bubble-card [data-kind="pick"] button.todo-timer-only:is(:hover, :focus-visible) {
+  box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--accent);
+}
+.bubble-card [data-kind="pick"] button:active {
+  transform: translateY(1px);
+}
+.todo-card-pick::after,
+.todo-timer-only::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 9px;
+  background: currentColor;
+  clip-path: polygon(10% 0, 100% 50%, 10% 100%);
+}
+.todo-card-pick::after {
+  opacity: 0.45;
+}
+
+/* The foot: a hint and links; or the one key and its link. */
+.todo-card-foot,
+.todo-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 26px;
+}
+.todo-card-foot {
+  justify-content: space-between;
+}
+.todo-card-actions small {
+  color: var(--bubble-muted);
+  font-size: 12.5px;
+}
+.bubble-card button.todo-primary {
+  padding: 5px 16px;
+  border-radius: 8px;
+  font-size: 13.5px;
+}
+.bubble-card button.todo-primary {
+  background: var(--primary);
+  color: var(--primary-ink);
+  border-color: var(--primary);
+}
+.bubble-card button.todo-link,
+:root .bubble-card [data-focus] [data-focus-choices] button:not(:first-child) {
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--bubble-muted);
+  font-size: 13px;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 0.2em;
+}
+.bubble-card button.todo-link:hover {
+  color: var(--bubble-ink);
+}
+
+/* 番茄钟's question: the to-do it was on as a row to tick, then one key
+   (the suggested next step) and the rest as links. */
+.bubble-card [data-focus-todo] {
+  padding: 2px 0;
+}
+.bubble-card [data-focus-todo] .todo-card-list > li {
+  border: 0;
+}
+:root .bubble-card [data-focus] [data-focus-choices] button:first-child {
+  padding: 5px 16px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: var(--primary-ink);
+  border-color: var(--primary);
+  font-size: 13.5px;
+}
+
+/* Edited in place (row.ts edit), as on the page: the title on its own
+   line, then when, then 保存 and 取消. */
+.todo-card-row[data-state="editing"] {
+  padding-block: 8px;
+}
+.bubble-card .todo-edit {
+  gap: 6px;
+}
+.bubble-card .todo-edit .todo-when {
+  flex-wrap: wrap;
+}
+.bubble-card input.todo-edit-title {
+  flex: 1 1 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--well);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--todo-card-type);
+  outline: none;
+  box-shadow: inset 0 1px 3px rgba(var(--shadow), 0.1);
+}
+.bubble-card input.todo-edit-title:focus {
+  box-shadow:
+    inset 0 1px 3px rgba(var(--shadow), 0.1),
+    0 0 0 2px var(--accent);
+}
+.bubble-card .todo-edit button {
+  font-size: 12.5px;
+}
+
+/* ---------- skin touches ---------- */
+
+/* 系统原生: the system's own look; rows like a menu's. */
+:root[data-skin="native"] .bubble-card button.todo-card-pick {
+  border-radius: 6px;
+}
+:root[data-skin="native"] .todo-quick-field {
+  border-radius: 6px;
+}
+
+/* A card of its own: the list is not cut to a chat line's height, and the
+   chat's own keys stay away. */
+.bubble-card[data-state="todo"] .bubble-messages {
+  max-height: none;
+  overflow: visible;
+}
+.bubble-card[data-state="todo"] footer {
+  display: none;
+}
+/* The check under 番茄钟's question stays a check, not its first key. */
+:root .bubble-card [data-focus] [data-focus-todo] button.todo-check {
+  padding: 0;
+  border: 1.5px solid var(--ink-3);
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+}
+
+:root
+  .bubble-card
+  [data-focus]
+  [data-focus-todo]
+  .todo-card-row[data-state="leaving"]
+  button.todo-check {
+  border-color: var(--accent);
+}
+
+/* The pickers in one row with 添加, in the bubble's width. */
+.bubble-card .todo-quick-pickers {
+  flex-wrap: nowrap;
+}
+.bubble-card .todo-quick-pickers :is(select, input) {
+  min-width: 0;
+  max-width: 6.4em;
+}
+.bubble-card .todo-quick-pickers input[type="time"] {
+  max-width: 9.6em;
+}
+
+/* An alert's snoozes (plan/30): behind 稍后提醒, a short list like a
+   menu (Gmail, iOS 26.5): how long on the left, the time on the right,
+   hairlines between. */
+.bubble-card button.todo-later {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bubble-ink) 7%, transparent);
+  box-shadow: none;
+  color: var(--bubble-ink);
+  font-size: 14px;
+}
+.bubble-card button.todo-later::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-top: -3px;
+  border: solid currentColor;
+  border-width: 0 1.5px 1.5px 0;
+  opacity: 0.6;
+  transform: rotate(45deg);
+  transition: transform 0.15s;
+}
+.bubble-card button.todo-later[aria-expanded="true"]::after {
+  margin-top: 3px;
+  transform: rotate(-135deg);
+}
+.bubble-card ul.todo-snoozes {
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bubble-ink) 4%, transparent);
+}
+.todo-snoozes li + li {
+  border-top: 0.5px solid var(--bubble-line);
+}
+.bubble-card button.todo-snooze {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  box-shadow: none;
+  color: var(--bubble-ink);
+  font-size: 14px;
+  text-align: start;
+}
+.bubble-card button.todo-snooze:hover,
+.bubble-card button.todo-snooze:focus-visible {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.todo-snooze small {
+  color: var(--bubble-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.todo-card-later {
+  color: var(--bubble-muted);
+  font-size: 12.5px;
+}
+.bubble-card [data-kind="due"] button.todo-primary {
+  padding: 7px 22px;
+  font-size: 14.5px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bubble-card button.todo-later::after {
+    transition: none;
+  }
+}

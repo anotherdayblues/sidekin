@@ -1,0 +1,41 @@
+name: Release packages
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Check release version
+        shell: pwsh
+        run: |
+          $version = (Get-Content apps/desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          if ($env:GITHUB_REF_NAME -ne "v$version") { throw "Tag must match desktop version v$version" }
+      - run: npm ci
+      - run: npm run build
+      - name: Build Windows x64 installer
+        run: node scripts/tauri.mjs build --target x86_64-pc-windows-msvc --bundles nsis --no-sign
+      - name: Prepare installer
+        shell: pwsh
+        run: |
+          $installers = @(Get-ChildItem apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis -Filter '*.exe')
+          if ($installers.Count -ne 1) { throw "Expected one NSIS installer" }
+          New-Item -ItemType Directory -Path releases | Out-Null
+          Copy-Item $installers[0].FullName releases/Sidekin-Windows-x64.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Sidekin-Windows-x64
+          path: releases/Sidekin-Windows-x64.exe
+          if-no-files-found: error
+          retention-days: 7

@@ -1,0 +1,66 @@
+/* The pet's name can be renamed in place (studioRename.ts). Hovering shows
+   a soft field and a pencil beside it, so the double-click can be found;
+   the pencil hangs outside the name and never moves a centered title. */
+.title h1[data-renamable] {
+  --rename-pad: 6px;
+  --rename-radius: 8px;
+  --rename-hover: rgba(var(--shadow), 0.06);
+  --rename-pencil: 15px;
+  position: relative;
+  display: inline-block;
+  /* The negative margins make the title box exactly 2 × pad narrower than
+     the name when nothing else (no description line) widens it; a cap of
+     plain 100% then wrapped a short name one character per line. The name
+     stays on one line (12 characters at most, studioRename.ts), and nothing
+     is clipped, so the pencil beside it still shows. */
+  max-width: calc(100% + var(--rename-pad) * 2);
+  white-space: nowrap;
+  margin-inline: calc(var(--rename-pad) * -1);
+  padding-inline: var(--rename-pad);
+  border-radius: var(--rename-radius);
+  cursor: text;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+.title h1[data-renamable]::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 4px);
+  width: var(--rename-pencil);
+  height: var(--rename-pencil);
+  translate: -4px -50%;
+  background: var(--ink-3);
+  -webkit-mask: var(--glyph-pencil) center / contain no-repeat;
+  mask: var(--glyph-pencil) center / contain no-repeat;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 140ms ease,
+    translate 180ms ease;
+}
+.title h1[data-renamable]:hover {
+  background: var(--rename-hover);
+}
+.title h1[data-renamable]:hover::after {
+  opacity: 1;
+  translate: 0 -50%;
+}
+.title h1[data-editing] {
+  background: var(--well);
+  box-shadow: 0 0 0 2px var(--accent);
+  outline: none;
+  cursor: text;
+}
+.title h1[data-editing]::after {
+  opacity: 0;
+}
+:root {
+  --glyph-pencil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M11.3 1.9a1.6 1.6 0 0 1 2.3 0l.5.5a1.6 1.6 0 0 1 0 2.3L5.6 13.2l-3.4.9.9-3.4z' fill='none' stroke='black' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M9.8 3.4l2.8 2.8' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E");
+}
+@media (prefers-reduced-motion: reduce) {
+  .title h1[data-renamable]::after {
+    transition: none;
+  }
+}

@@ -1,0 +1,146 @@
+:root {
+  --model-space: 16px;
+  --model-radius: 12px;
+  --model-width: 620px;
+  --model-border: 1px solid var(--line-strong);
+}
+.model-setup {
+  width: min(var(--model-width), calc(100vw - 40px));
+  max-height: 85vh;
+  overflow: auto;
+  padding: var(--model-space);
+  border: var(--model-border);
+  border-radius: var(--model-radius);
+  color: var(--ink);
+  background: var(--panel);
+  box-shadow: 0 16px 48px rgba(var(--shadow), 0.28);
+}
+.model-setup::backdrop {
+  background: rgba(0, 0, 0, 0.32);
+}
+.model-setup header,
+.model-setup footer,
+.model-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.model-setup h2 {
+  margin: 0;
+  flex: 1;
+  font-size: 18px;
+}
+.model-setup button {
+  font: inherit;
+  color: inherit;
+  border: var(--model-border);
+  border-radius: 8px;
+  background: var(--key);
+  padding: 7px 12px;
+  cursor: pointer;
+}
+.model-setup button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.model-setup input:not([type="checkbox"]),
+.model-setup select {
+  font: inherit;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 11px;
+  border: var(--model-border);
+  border-radius: 8px;
+  background: var(--well);
+  color: var(--ink);
+}
+.model-setup input:focus-visible,
+.model-setup select:focus-visible,
+.model-setup button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.model-services {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: var(--model-space);
+}
+.model-services button {
+  text-align: left;
+}
+.model-services button[aria-pressed="true"],
+.model-setup [data-test] {
+  background: var(--primary);
+  color: var(--primary-ink);
+}
+.model-setup form {
+  display: grid;
+  gap: var(--model-space);
+  margin-top: var(--model-space);
+}
+.model-setup label {
+  display: grid;
+  gap: 6px;
+}
+
+.model-setup .model-key {
+  padding: var(--model-space);
+  border: var(--model-border);
+  border-radius: var(--model-radius);
+}
+.model-setup p,
+.model-setup small {
+  font-size: 13px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.model-setup [data-key-status] {
+  margin: 8px 0;
+}
+.model-setup [data-result] {
+  white-space: pre-wrap;
+  color: var(--ink);
+  font-size: 14px;
+}
+.model-setup details > label {
+  margin-top: 12px;
+}
+.model-setup [hidden] {
+  display: none !important;
+}
+.model-setup [data-confirm-clear] {
+  margin-top: 12px;
+}
+.model-current {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.model-setup {
+  --model-bg: var(--panel);
+}
+.model-setup[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.model-setup [data-services] {
+  overflow: auto;
+}
+.model-setup form {
+  overflow: auto;
+  min-height: 0;
+  padding-inline-end: 4px;
+}
+.model-setup footer {
+  position: sticky;
+  bottom: 0;
+  background: var(--model-bg);
+  padding: 10px 0 0;
+  border-top: var(--model-border);
+}

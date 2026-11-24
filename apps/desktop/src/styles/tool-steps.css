@@ -1,0 +1,59 @@
+.tool-fold,
+.tool-line {
+  --step-gap: var(--space-1, 4px);
+  --step-motion: 160ms;
+  color: var(--ink-2);
+  font-size: var(--text-small, 12px);
+  overflow-wrap: anywhere;
+}
+.tool-fold > button,
+.bubble-card .tool-line {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: var(--step-gap) 0;
+  text-align: start;
+  cursor: pointer;
+}
+.tool-fold > button::after {
+  content: " ›";
+  display: inline-block;
+  margin-inline-start: var(--step-gap);
+}
+.tool-fold[data-open="true"] > button::after {
+  transform: rotate(90deg);
+}
+.tool-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--step-motion) ease;
+}
+.tool-fold[data-open="true"] > .tool-panel {
+  grid-template-rows: 1fr;
+}
+.tool-panel > * {
+  min-height: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+.tool-panel ol {
+  list-style: none;
+}
+.tool-panel li {
+  padding-block: var(--step-gap);
+}
+.bubble-card .tool-line {
+  color: var(--ink-2);
+  font-size: var(--text-small, 12px);
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tool-panel {
+    transition: none;
+  }
+}

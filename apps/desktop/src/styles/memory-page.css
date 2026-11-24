@@ -1,0 +1,280 @@
+/* 记忆 (plan/29, memoryPage.ts): a column of three on the left — 关于你,
+   它记住的, 资料库 — and the chosen one in a card on the right, as the
+   memory pages of nanoMuse and Pi. Colors come from the skin's tokens;
+   skins dress the column and the card through the variables below. */
+.memory-layout {
+  --memory-radius: 16px;
+  --memory-nav-radius: 10px;
+  --memory-pane-pad: 22px 26px 24px;
+  display: grid;
+  grid-template-columns: 196px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  max-width: 1040px;
+  margin: 6px 0 24px;
+}
+.memory-nav {
+  position: sticky;
+  top: 0;
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border-radius: var(--memory-radius);
+  background: var(--panel);
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 1px 0 var(--panel-edge) inset;
+}
+.shell .block .memory-nav button[type] {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: var(--memory-nav-radius);
+  background: none;
+  box-shadow: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13.5px;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+.shell .block .memory-nav button[type]:hover {
+  color: var(--ink);
+}
+.shell .block .memory-nav button[type][aria-current="true"] {
+  background: var(--well);
+  color: var(--ink);
+  font-weight: 600;
+}
+.memory-pane > section {
+  min-height: clamp(420px, calc(100vh - 200px), 760px);
+  padding: var(--memory-pane-pad);
+  border-radius: var(--memory-radius);
+  background: var(--panel);
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 1px 0 var(--panel-edge) inset;
+}
+.memory-pane > section[hidden] {
+  display: none;
+}
+.memory-pane-head {
+  margin-bottom: 16px;
+}
+.memory-pane-head h3,
+.memory-about .profile-editor h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 650;
+}
+.memory-pane-head p {
+  margin: 4px 0 0;
+  max-width: 62ch;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* ---------- 关于你: one wide page to write on ---------- */
+.memory-about .profile-editor {
+  gap: 12px;
+  margin: 0;
+}
+.memory-about .profile-editor h3 {
+  flex-direction: column;
+  gap: 4px;
+}
+.memory-about .profile-editor h3 small {
+  font-size: 12.5px;
+}
+.shell .memory-about .profile-editor textarea {
+  min-height: clamp(240px, calc(100vh - 380px), 520px);
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--well);
+  box-shadow: inset 0 1px 3px rgba(var(--shadow), 0.1);
+  font-size: 14px;
+  line-height: 1.75;
+  resize: none;
+}
+.shell .memory-about .profile-editor textarea:focus {
+  outline: none;
+  box-shadow:
+    inset 0 1px 3px rgba(var(--shadow), 0.1),
+    0 0 0 2px var(--accent);
+}
+.memory-about .profile-actions {
+  justify-content: space-between;
+}
+
+/* ---------- 它记住的: one line each, the kind under it ---------- */
+.memory-chips {
+  display: inline-flex;
+  gap: 2px;
+  margin-bottom: 8px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--well);
+  box-shadow: inset 0 1px 3px rgba(var(--shadow), 0.12);
+}
+.shell .block button.memory-chip[type] {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  box-shadow: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.memory-chip span {
+  color: var(--ink-3);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.shell .block button.memory-chip[type][aria-pressed="true"] {
+  background: var(--key);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 1px 0 rgba(var(--shadow), 0.1);
+}
+.memory-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.memory-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.memory-entry-body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.memory-entry .memo-text {
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.memory-kind {
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+.memory-entry .memo-acts {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.memory-entry:hover .memo-acts,
+.memory-entry:focus-within .memo-acts,
+.memory-entry[data-editing] .memo-acts {
+  opacity: 1;
+}
+.shell .memory-entry textarea {
+  width: 100%;
+  min-height: 64px;
+}
+.memory-add {
+  margin-top: 14px;
+}
+.shell
+  .memory-add
+  input:not([type="checkbox"]):not([type="range"]):not([type="file"]) {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--well);
+  box-shadow: inset 0 1px 3px rgba(var(--shadow), 0.1);
+  font-size: 13.5px;
+}
+
+/* ---------- 资料库: a list of files, the way to add one at its foot ---------- */
+.memory-library .companion-library {
+  display: flex;
+  flex-direction: column;
+}
+.memory-library [data-files] {
+  order: 1;
+}
+.memory-library .doc-status {
+  order: 2;
+}
+.shell .memory-library .doc-drop {
+  order: 3;
+  gap: 3px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1.5px dashed var(--line-strong);
+  background: none;
+  box-shadow: none;
+}
+.memory-library .doc-drop b {
+  font-size: 13px;
+  font-weight: 600;
+}
+.memory-library .doc-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 14px;
+}
+.shell
+  .memory-library
+  input.doc-note:not([type="checkbox"]):not([type="range"]):not([type="file"]) {
+  width: 100%;
+}
+
+/* ---------- the brain is off: one quiet line by the title ---------- */
+.block-head .brain-off {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0 0 0 auto;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.block-head .brain-off[hidden] {
+  display: none;
+}
+.block-head .brain-off::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--led, #d98b2b);
+  align-self: center;
+}
+
+@media (max-width: 820px) {
+  .memory-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .memory-nav {
+    position: static;
+    display: flex;
+  }
+  .memory-library .doc-row {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+  }
+  .memory-library .doc-note {
+    grid-column: 2 / -1;
+  }
+}

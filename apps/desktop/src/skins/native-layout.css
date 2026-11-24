@@ -1,0 +1,829 @@
+/* 系统原生 · the window laid out like a system app: macOS 27 on a Mac,
+   Windows 11 Settings on Windows. Navigation and pets sit in a full-height
+   sidebar, one toolbar runs along the top of the content, content is flat
+   with an inspector column. CSS only: the shared studio structure
+   (studioTemplate.ts) is re-placed with display: contents, so the other
+   skins keep their own layout. Colors and materials live in native.css. */
+
+/* glyphs for the sidebar items: white strokes, tinted per item on a Mac,
+   used as a mask in the text color on Windows. The home cards
+   (home-widgets.css) wear the same ones. */
+:root[data-skin="native"] {
+  --nl-tint-pet: #ff9f0a;
+  --nl-glyph-pet: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><circle cx='6.5' cy='10' r='2'/><circle cx='10' cy='6' r='2'/><circle cx='14' cy='6' r='2'/><circle cx='17.5' cy='10' r='2'/><path d='M7.5 16.5c0-2.8 2-5 4.5-5s4.5 2.2 4.5 5c0 1.6-1.5 2.5-4.5 2.5s-4.5-.9-4.5-2.5z'/></svg>");
+  --nl-tint-chat: #0a84ff;
+  --nl-glyph-chat: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linejoin='round'><path d='M4.5 6h15v10H11l-4.5 3.5V16h-2z'/></svg>");
+  --nl-tint-memory: #bf5af2;
+  --nl-glyph-memory: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linejoin='round'><path d='M6 4.5h9.5A2.5 2.5 0 0 1 18 7v12.5H8.5A2.5 2.5 0 0 1 6 17z'/><path d='M6 17a2.5 2.5 0 0 1 2.5-2.5H18'/></svg>");
+  --nl-tint-library: #30b0c7;
+  --nl-glyph-library: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linejoin='round'><path d='M4 6.5h6l2 2h8v10H4z'/></svg>");
+  --nl-tint-reminders: #ff453a;
+  --nl-glyph-reminders: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'><circle cx='12' cy='12' r='8'/><path d='M8.5 12.2l2.4 2.4 4.6-5'/></svg>");
+  --nl-tint-focus: #30d158;
+  --nl-glyph-focus: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='14' r='6.5'/><path d='M9.5 3.5h5M12 3.5v4M17 8l1.5-1.5M12 10.5V14l2.5 1.5'/></svg>");
+  --nl-tint-settings: #8e8e93;
+  --nl-glyph-settings: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='3.2'/><path d='M12 3.5v2.5M12 18v2.5M3.5 12H6M18 12h2.5M6 6l1.8 1.8M16.2 16.2 18 18M6 18l1.8-1.8M16.2 7.8 18 6'/></svg>");
+}
+:root[data-skin="native"] .blocks [data-block="pet"] {
+  --tint: var(--nl-tint-pet);
+  --glyph: var(--nl-glyph-pet);
+}
+:root[data-skin="native"] .blocks [data-block="chat"] {
+  --tint: var(--nl-tint-chat);
+  --glyph: var(--nl-glyph-chat);
+}
+:root[data-skin="native"] .blocks [data-block="memory"] {
+  --tint: var(--nl-tint-memory);
+  --glyph: var(--nl-glyph-memory);
+}
+:root[data-skin="native"] .blocks [data-block="library"] {
+  --tint: var(--nl-tint-library);
+  --glyph: var(--nl-glyph-library);
+}
+:root[data-skin="native"] .blocks [data-block="reminders"] {
+  --tint: var(--nl-tint-reminders);
+  --glyph: var(--nl-glyph-reminders);
+}
+:root[data-skin="native"] .blocks [data-block="focus"] {
+  --tint: var(--nl-tint-focus);
+  --glyph: var(--nl-glyph-focus);
+}
+:root[data-skin="native"] .blocks [data-block="settings"] {
+  --tint: var(--nl-tint-settings);
+  --glyph: var(--nl-glyph-settings);
+}
+
+/* =====================================================================
+   The window grid
+   ===================================================================== */
+:root[data-skin="native"] {
+  --nl-sidebar: 232px;
+  --nl-bar: 52px;
+  --nl-side: 300px;
+  --nl-sidebar-bg: #e9e9ee;
+  --nl-content: #ffffff;
+  --nl-toolbar: rgba(255, 255, 255, 0.86);
+  --nl-group: #f4f4f6;
+  --nl-inspector: #fafafb;
+  --nl-title: 15px;
+  --nl-row: 30px;
+  --nl-row-radius: 8px;
+}
+:root[data-skin="native"][data-theme="night"] {
+  --nl-sidebar-bg: #2a2a2d;
+  --nl-content: #1e1e20;
+  --nl-toolbar: rgba(30, 30, 32, 0.86);
+  --nl-group: #2a2a2d;
+  --nl-inspector: #1b1b1d;
+}
+/* With the system material on, the sidebar is the glass itself and the
+   content keeps a nearly solid window background, as in macOS 27. */
+:root[data-skin="native"][data-material="on"] {
+  --nl-sidebar-bg: rgba(255, 255, 255, 0.12);
+  --nl-content: rgba(255, 255, 255, 0.94);
+}
+:root[data-skin="native"][data-material="on"][data-theme="night"] {
+  --nl-sidebar-bg: rgba(0, 0, 0, 0.12);
+  --nl-content: rgba(30, 30, 32, 0.94);
+}
+:root[data-skin="native"] .studio {
+  grid-template-columns: var(--nl-sidebar) minmax(0, 1fr);
+  grid-template-rows: var(--nl-bar) auto auto minmax(0, 1fr) auto;
+  gap: 0;
+  padding: 0;
+  background: linear-gradient(
+    to right,
+    var(--nl-sidebar-bg) 0 var(--nl-sidebar),
+    var(--line-strong) var(--nl-sidebar) calc(var(--nl-sidebar) + 1px),
+    var(--nl-content) calc(var(--nl-sidebar) + 1px)
+  );
+}
+:root[data-skin="native"] :is(.rail, .shell, .shell-head) {
+  display: contents;
+}
+/* The toolbar: one frosted band across the top of the content. The pet page
+   puts its own title and actions in it; other pages get their name. */
+:root[data-skin="native"] .studio::before {
+  display: flex;
+  align-items: center;
+  position: relative;
+  inset: auto;
+  grid-column: 2;
+  grid-row: 1;
+  z-index: 0;
+  padding: 0 20px;
+  opacity: 1;
+  mix-blend-mode: normal;
+  background: var(--nl-toolbar);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  backdrop-filter: blur(20px) saturate(1.8);
+  box-shadow: inset 0 -0.5px 0 var(--line-strong);
+  font-size: var(--nl-title);
+  font-weight: 600;
+  color: var(--ink);
+  pointer-events: none;
+}
+/* The band itself takes no clicks, so on a Mac an empty strip over it drags
+   the window (skin.ts marks [data-titlebar]). On the pet page it stops at
+   the right column, whose header drags on its own and holds 教动作. */
+:root[data-skin="native"]:not([data-platform="win"]) .titlebar {
+  display: block;
+  grid-column: 2;
+  grid-row: 1;
+  z-index: 2;
+}
+:root[data-skin="native"]
+  .studio:has([data-block="pet"][aria-selected="true"])
+  .titlebar {
+  margin-inline-end: var(--nl-side);
+}
+:root[data-skin="native"]
+  .studio:has([data-block="chat"][aria-selected="true"])::before {
+  content: attr(data-title);
+}
+:root[data-skin="native"]
+  .studio:has([data-block="memory"][aria-selected="true"])::before {
+  content: attr(data-title);
+}
+:root[data-skin="native"]
+  .studio:has([data-block="library"][aria-selected="true"])::before {
+  content: attr(data-title);
+}
+:root[data-skin="native"]
+  .studio:has([data-block="reminders"][aria-selected="true"])::before {
+  content: attr(data-title);
+}
+:root[data-skin="native"]
+  .studio:has([data-block="focus"][aria-selected="true"])::before {
+  content: attr(data-title);
+}
+:root[data-skin="native"]
+  .studio:has([data-block="settings"][aria-selected="true"])::before {
+  content: attr(data-title);
+}
+
+/* =====================================================================
+   Sidebar: title-bar row, navigation, pets, tools
+   ===================================================================== */
+:root[data-skin="native"] .brand {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  padding: 0 18px;
+  align-content: center;
+  justify-items: start;
+  border-radius: 0;
+}
+/* The traffic lights sit here on a Mac; the app name stays off. */
+:root[data-skin="native"]:not([data-platform="win"]) .brand-word {
+  visibility: hidden;
+}
+:root[data-skin="native"] .blocks {
+  grid-column: 1;
+  grid-row: 2;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  margin: 0;
+  padding: 0 10px;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+:root[data-skin="native"] .blocks-key {
+  display: none;
+}
+:root[data-skin="native"] .blocks [role="tab"] {
+  justify-content: flex-start;
+  gap: 10px;
+  height: var(--nl-row);
+  padding: 0 10px;
+  border-radius: var(--nl-row-radius);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink);
+}
+:root[data-skin="native"] .blocks [role="tab"]::before {
+  content: "";
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background:
+    var(--glyph) center / 14px no-repeat,
+    var(--tint);
+}
+:root[data-skin="native"] .blocks [aria-selected="true"] {
+  background: var(--native-sidebar-select);
+  font-weight: 600;
+}
+:root[data-skin="native"] .roster {
+  grid-column: 1;
+  grid-row: 3;
+  flex: none;
+  align-items: stretch;
+  gap: 2px;
+  padding: 16px 10px 0;
+  overflow: visible;
+}
+:root[data-skin="native"] .roster::before {
+  content: attr(data-heading);
+  padding: 0 10px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+:root[data-skin="native"] .pet-tile {
+  background: none;
+  box-shadow: none;
+  width: auto;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 10px;
+  border-radius: var(--nl-row-radius);
+}
+:root[data-skin="native"] .pet-tile[aria-pressed="true"] {
+  background: var(--native-sidebar-select);
+  box-shadow: none;
+}
+:root[data-skin="native"] .pet-tile[aria-pressed="true"]::before {
+  display: none;
+}
+:root[data-skin="native"] .pet-tile canvas {
+  width: 26px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--card);
+}
+:root[data-skin="native"] .pet-tile-name,
+:root[data-skin="native"] .pet-tile[aria-pressed="true"] .pet-tile-name {
+  display: block;
+  max-width: none;
+  font-size: 13px;
+  color: var(--ink);
+}
+:root[data-skin="native"] .pet-tile-badge {
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  box-shadow: none;
+}
+:root[data-skin="native"] .rail-foot {
+  grid-column: 1;
+  grid-row: 5;
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px 14px;
+}
+:root[data-skin="native"] .rail-key,
+:root[data-skin="native"] .appearance {
+  width: 28px;
+  height: 28px;
+}
+/* ? sits just left of the appearance key, which the grid puts at the end. */
+:root[data-skin="native"] .help-key {
+  --help-size: 13px;
+  margin: 0 34px 0 auto;
+}
+:root[data-skin="native"] .appearance {
+  grid-column: 1;
+  grid-row: 5;
+  justify-self: end;
+  align-self: center;
+  margin: 0 14px 4px 0;
+}
+
+/* =====================================================================
+   Content
+   ===================================================================== */
+:root[data-skin="native"] .block {
+  position: relative;
+  z-index: 1;
+  grid-column: 2;
+  grid-row: 2 / -1;
+  padding: 18px 24px;
+  overflow: auto;
+}
+:root[data-skin="native"] .block-pet {
+  grid-row: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) var(--nl-side);
+  gap: 0;
+  padding: 0;
+}
+:root[data-skin="native"] .deck,
+:root[data-skin="native"] .side {
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  mask-image: none;
+}
+:root[data-skin="native"] .deck {
+  gap: 14px;
+  padding: 0 20px 16px;
+}
+:root[data-skin="native"] .side {
+  padding: 0 16px 16px;
+  background: var(--nl-inspector);
+  box-shadow: inset 0.5px 0 0 var(--line-strong);
+}
+/* The page title and its actions ride in the toolbar band. */
+:root[data-skin="native"] :is(.deck-head, .side-head) {
+  flex: none;
+  height: var(--nl-bar);
+  align-items: center;
+}
+:root[data-skin="native"] .title h1 {
+  margin: 0;
+  font-size: var(--nl-title);
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+:root[data-skin="native"] .title p {
+  margin: 0;
+  font-size: 11px;
+}
+:root[data-skin="native"] .side-head {
+  margin: 0 -16px;
+  padding: 0 16px;
+  box-shadow: inset 0 -0.5px 0 var(--line-strong);
+}
+:root[data-skin="native"][data-platform="win"] .side-head {
+  box-shadow: none;
+}
+/* Drafts: a plain row with a page count, not the toy's card reader. */
+:root[data-skin="native"] .reader {
+  height: 24px;
+  padding: 0 2px;
+  background: none;
+  box-shadow: none;
+}
+:root[data-skin="native"] :is(.slit, .reader-led) {
+  display: none;
+}
+:root[data-skin="native"] .reader-screen {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--nl-group);
+  color: var(--ink-2);
+  font: 11px/1.4 var(--native-font);
+}
+:root[data-skin="native"][data-platform="win"] .reader-screen {
+  border-radius: 4px;
+}
+:root[data-skin="native"] .side-head h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+/* Controls as a grouped list: one row per setting. */
+:root[data-skin="native"] .controls {
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  border-radius: 10px;
+  background: var(--nl-group);
+}
+:root[data-skin="native"] .control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  height: 40px;
+  padding: 0 14px;
+  box-shadow: inset 0 -0.5px 0 var(--line);
+}
+:root[data-skin="native"] .control:last-child {
+  box-shadow: none;
+}
+:root[data-skin="native"] .control .silk {
+  font-size: 13px;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+:root[data-skin="native"] .knob {
+  display: none;
+}
+:root[data-skin="native"] .size-range {
+  display: block;
+  flex: 1;
+  margin: 0 0 0 24px;
+  accent-color: var(--accent);
+}
+:root[data-skin="native"] .knob-value {
+  color: var(--ink-2);
+  font-family: var(--native-font);
+}
+:root[data-skin="native"] .tape-tabs [role="tab"] {
+  font-size: 12.5px;
+}
+
+/* =====================================================================
+   Windows 11: the Settings app's arrangement. Mica everywhere, the app name
+   in the corner, monochrome icons, a short accent pill on the chosen item,
+   big page titles and content as cards.
+   ===================================================================== */
+:root[data-skin="native"][data-platform="win"] {
+  --nl-sidebar: 248px;
+  --nl-bar: 64px;
+  --nl-sidebar-bg: var(--body);
+  --nl-content: var(--body);
+  --nl-toolbar: transparent;
+  --nl-group: var(--surface);
+  --nl-inspector: transparent;
+  --nl-title: 24px;
+  --nl-row: 36px;
+  --nl-row-radius: 4px;
+}
+:root[data-skin="native"][data-platform="win"][data-material="on"] {
+  --nl-sidebar-bg: transparent;
+  --nl-content: transparent;
+}
+:root[data-skin="native"][data-platform="win"] .studio {
+  background: var(--nl-content);
+}
+:root[data-skin="native"][data-platform="win"] .studio::before {
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  padding: 0 28px;
+}
+:root[data-skin="native"][data-platform="win"] .brand-word {
+  font-size: 12px;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+:root[data-skin="native"][data-platform="win"] .blocks {
+  padding: 0 6px;
+}
+:root[data-skin="native"][data-platform="win"] .blocks [role="tab"] {
+  font-size: 14px;
+  gap: 14px;
+}
+:root[data-skin="native"][data-platform="win"] .blocks [role="tab"]::before {
+  width: 16px;
+  height: 16px;
+  border-radius: 0;
+  background: var(--ink);
+  -webkit-mask: var(--glyph) center / 16px no-repeat;
+  mask: var(--glyph) center / 16px no-repeat;
+}
+:root[data-skin="native"][data-platform="win"] .blocks [aria-selected="true"],
+:root[data-skin="native"][data-platform="win"] .pet-tile[aria-pressed="true"] {
+  background:
+    linear-gradient(var(--accent), var(--accent)) left center / 3px 16px
+      no-repeat,
+    var(--native-sidebar-select);
+  font-weight: 400;
+}
+:root[data-skin="native"][data-platform="win"]
+  .pet-tile[aria-pressed="true"]::before {
+  display: none;
+}
+:root[data-skin="native"][data-platform="win"] .title h1 {
+  font-size: var(--nl-title);
+  font-weight: 600;
+}
+:root[data-skin="native"][data-platform="win"] .side {
+  box-shadow: none;
+}
+:root[data-skin="native"][data-platform="win"] .controls {
+  border-radius: 8px;
+  box-shadow: var(--surface-edge);
+}
+:root[data-skin="native"][data-platform="win"] .deck {
+  padding: 0 28px 20px;
+}
+:root[data-skin="native"][data-platform="win"] .block {
+  padding: 8px 28px 20px;
+}
+:root[data-skin="native"][data-platform="win"] .block-pet {
+  padding: 0;
+}
+
+/* =====================================================================
+   Pages under the toolbar
+   ===================================================================== */
+/* The toolbar already names the page: keep only its one-line note. */
+:root[data-skin="native"] .block-head {
+  margin: 0 0 14px;
+}
+:root[data-skin="native"] .block-head h2 {
+  display: none;
+}
+:root[data-skin="native"] .block-head .silk {
+  font-size: 12px;
+  letter-spacing: 0;
+  color: var(--ink-2);
+}
+/* Settings read like System Settings: one scrolling column of groups,
+   without a second list of contents beside the sidebar. */
+:root[data-skin="native"] .block[data-for="settings"] .companion-page {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+:root[data-skin="native"] .block[data-for="settings"] .companion-page > * {
+  width: 100%;
+  max-width: 640px;
+}
+:root[data-skin="native"] .set-toc {
+  display: none;
+}
+:root[data-skin="native"] .set-group {
+  padding: 4px 16px 6px;
+  border-radius: 10px;
+  background: var(--nl-group);
+  box-shadow: none;
+}
+:root[data-skin="native"][data-platform="win"] .set-group {
+  border-radius: 8px;
+  box-shadow: var(--surface-edge);
+}
+:root[data-skin="native"] .set-title {
+  margin: 10px 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--ink-2);
+}
+/* The day dial is the toy's picture of the timers; a system app lists
+   them, and the 到点 list below already does. */
+
+/* =====================================================================
+   Pet stage: a preview stage, as in Quick Look or Photos. A seamless
+   neutral backdrop lit from above, a soft contact shadow, and the action
+   that is playing in a glass capsule floating over the picture. The light
+   follows the time of day: studioLighting.ts sets --sun-x (where the
+   sunlight lands: left in the morning, right in the evening) and
+   --sun-warm (0 at noon, 1 when the sun is low) on #window, and lights the
+   pet's edges from the sun's side (petLight.ts). The glow sits on that same
+   side and warms with a low sun. Night is a cool, still light.
+   Styles only: the floor line (--floor), the contact shadow (.pedestal) and the
+   action label (#playing, hidden while idle) come from studioStage.ts.
+   ===================================================================== */
+:root[data-skin="native"] {
+  --stage-top: #ffffff;
+  --stage-wall: #f1f1f4;
+  --stage-cast: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.1));
+  --stage-contact: rgba(0, 0, 0, 0.22);
+  --stage-radius: 14px;
+}
+:root[data-skin="native"][data-theme="night"] {
+  --stage-top: #2c2c2f;
+  --stage-wall: #222225;
+  --stage-cast: drop-shadow(var(--shadow-x, 0px) 6px 14px rgba(0, 0, 0, 0.55));
+  --stage-contact: rgba(0, 0, 0, 0.6);
+}
+:root[data-skin="native"][data-platform="win"] {
+  --stage-radius: 8px;
+}
+:root[data-skin="native"] .window {
+  /* Resolved here, where studioLighting.ts sets --sun-x and --sun-warm. */
+  /* Noon is white; a low sun turns the glow amber and the floor warm. */
+  --stage-glow: color-mix(
+    in srgb,
+    #ffcf8f calc(var(--sun-warm, 0) * 70%),
+    rgba(255, 255, 255, 0.95)
+  );
+  /* --sun-x is where the sunlight lands; the light comes from the other side. */
+  --stage-glow-x: calc(100% - var(--sun-x, 50%));
+  --stage-floor: color-mix(
+    in srgb,
+    #f0dcc4 calc(var(--sun-warm, 0) * 45%),
+    #e7e7ec
+  );
+  border-radius: var(--stage-radius);
+  background:
+    radial-gradient(
+      95% 70% at var(--stage-glow-x) -8%,
+      var(--stage-glow),
+      transparent 72%
+    ),
+    linear-gradient(
+      to bottom,
+      var(--stage-top) 0%,
+      var(--stage-wall) calc(var(--floor, 82%) - 12%),
+      var(--stage-floor) calc(var(--floor, 82%) + 4%),
+      var(--stage-wall) 100%
+    );
+  box-shadow: inset 0 0 0 0.5px var(--line);
+}
+:root[data-skin="native"][data-theme="night"] .window {
+  --stage-glow: rgba(150, 175, 255, 0.13);
+  --stage-glow-x: 50%;
+  --stage-floor: #1b1b1d;
+}
+:root[data-skin="native"] #stage,
+:root[data-skin="native"][data-theme="night"] #stage {
+  filter: var(--stage-cast);
+}
+:root[data-skin="native"] .pedestal,
+:root[data-skin="native"][data-theme="night"] .pedestal {
+  height: 14px;
+  opacity: 1;
+  background: radial-gradient(closest-side, var(--stage-contact), transparent);
+}
+/* The playing action: a glass capsule centered over the bottom of the
+   picture (Windows: an acrylic bar with small corners). */
+:root[data-skin="native"] .window-foot {
+  left: 50%;
+  right: auto;
+  bottom: 14px;
+  max-width: calc(100% - 28px);
+  width: max-content;
+  transform: translateX(-50%);
+}
+:root[data-skin="native"] #playing {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 14px 5px 11px;
+  border-radius: 999px;
+  background: var(--glass-sheen), var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow:
+    var(--glass-rim),
+    0 4px 14px rgba(0, 0, 0, 0.12);
+  font: 500 12px/1.3 var(--native-font);
+  letter-spacing: 0;
+  color: var(--ink);
+}
+:root[data-skin="native"] #playing::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 7px solid currentColor;
+  border-top: 4.5px solid transparent;
+  border-bottom: 4.5px solid transparent;
+}
+:root[data-skin="native"] #playing[hidden] {
+  display: none;
+}
+:root[data-skin="native"][data-platform="win"] #playing {
+  border-radius: 4px;
+  background: var(--glass-strong);
+  box-shadow:
+    inset 0 0 0 1px var(--line-strong),
+    0 8px 16px rgba(0, 0, 0, 0.14);
+}
+
+/* =====================================================================
+   The pet as the device: the stage and its name read like a system's own
+   page about the computer. Mac: About This Mac, the picture in the middle
+   and the name centered under it. Windows: the device card at the top of
+   Settings, the picture and the name together in one card. The toolbar
+   names the page, as on the other pages. Styles only: the name, the note
+   and the status are the page's existing header, placed under the stage.
+   ===================================================================== */
+:root[data-skin="native"]
+  .studio:has([data-block="pet"][aria-selected="true"])::before {
+  content: attr(data-title);
+}
+:root[data-skin="native"] .deck {
+  grid-template-rows: minmax(0, 1fr) auto auto auto;
+  padding-top: calc(var(--nl-bar) + 16px);
+}
+:root[data-skin="native"] .window {
+  grid-row: 1;
+}
+@media (max-height: 700px) {
+  :root[data-skin="native"] .window {
+    min-height: 150px;
+  }
+}
+:root[data-skin="native"] .deck-head {
+  grid-row: 2;
+  height: auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin-top: -4px;
+  text-align: center;
+}
+:root[data-skin="native"] .controls {
+  grid-row: 3;
+}
+:root[data-skin="native"] .tape {
+  grid-row: 4;
+}
+:root[data-skin="native"] .deck-head .title h1 {
+  font-size: 22px;
+}
+:root[data-skin="native"] .deck-head .title p {
+  margin: 2px auto 0;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+/* The status is one more quiet line, as the system version is there. */
+:root[data-skin="native"] .deck-head .lcd {
+  min-width: 0;
+  padding: 0;
+  background: none;
+  color: var(--ink-2);
+  font-size: 11px;
+}
+/* Windows: one card, the picture on top and the name in a row below it. */
+:root[data-skin="native"][data-platform="win"] .deck {
+  padding-top: var(--nl-bar);
+}
+:root[data-skin="native"][data-platform="win"] .window {
+  border-radius: 8px 8px 0 0;
+}
+:root[data-skin="native"][data-platform="win"] .deck-head {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: -14px;
+  padding: 12px 16px 14px;
+  border-radius: 0 0 8px 8px;
+  background: var(--surface);
+  box-shadow: var(--surface-edge);
+  text-align: left;
+}
+:root[data-skin="native"][data-platform="win"] .deck-head .title h1 {
+  font-size: 20px;
+}
+:root[data-skin="native"][data-platform="win"] .deck-head .title p {
+  margin: 2px 0 0;
+}
+:root[data-skin="native"][data-platform="win"] .deck-head .lcd {
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: var(--lcd);
+  color: var(--ink);
+  font-size: 12px;
+}
+
+/* =====================================================================
+   Light under the pointer. Mac: Liquid Glass lights up where you touch
+   it, a soft glow in the stage. Windows: Fluent's Reveal, the edge of the
+   card lights up near the pointer. studioStage.ts sets --pointer-x and
+   --pointer-y on #window; the light shows only while the pointer is over
+   the stage.
+   ===================================================================== */
+:root[data-skin="native"] {
+  --reveal-glow: rgba(255, 228, 190, 0.5);
+  --reveal-glow-size: 240px;
+  --reveal-edge: rgba(255, 255, 255, 1);
+  --reveal-edge-size: 140px;
+  --reveal-width: 1.5px;
+}
+:root[data-skin="native"][data-theme="night"] {
+  --reveal-glow: rgba(170, 190, 255, 0.22);
+  --reveal-edge: rgba(255, 255, 255, 0.65);
+}
+:root[data-skin="native"][data-platform="win"] {
+  --reveal-glow: rgba(255, 255, 255, 0.5);
+  --reveal-glow-size: 180px;
+  --reveal-edge: rgba(0, 0, 0, 0.5);
+  --reveal-edge-size: 100px;
+}
+:root[data-skin="native"][data-platform="win"][data-theme="night"] {
+  --reveal-glow: rgba(255, 255, 255, 0.08);
+  --reveal-edge: rgba(255, 255, 255, 0.75);
+}
+:root[data-skin="native"] .window::before,
+:root[data-skin="native"] .window::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+/* The glow sits behind the pet; the edge light over everything. */
+:root[data-skin="native"] .window::before {
+  background: radial-gradient(
+    var(--reveal-glow-size) circle at var(--pointer-x, 50%)
+      var(--pointer-y, 50%),
+    var(--reveal-glow),
+    transparent
+  );
+}
+:root[data-skin="native"] .window::after {
+  padding: var(--reveal-width);
+  background: radial-gradient(
+    var(--reveal-edge-size) circle at var(--pointer-x, 50%)
+      var(--pointer-y, 50%),
+    var(--reveal-edge),
+    transparent
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+:root[data-skin="native"] .window:hover::before,
+:root[data-skin="native"] .window:hover::after {
+  opacity: 1;
+}

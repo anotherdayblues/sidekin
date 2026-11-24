@@ -1,0 +1,236 @@
+.block[data-memory-view="clipboard"] .brain-off {
+  display: none;
+}
+.memory-clipboard .memory-pane-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.memory-clipboard .clip-memory-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+.memory-clipboard .clip-memory-search {
+  box-sizing: border-box;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.memory-clipboard .clip-memory-filters {
+  display: inline-flex;
+  gap: 4px;
+  flex: none;
+}
+.memory-clipboard .clip-memory-filters button {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-2);
+}
+.memory-clipboard .clip-memory-filters button[aria-selected="true"],
+.memory-clipboard .clip-select-toggle[aria-pressed="true"] {
+  background: var(--well);
+  color: var(--ink);
+  font-weight: 500;
+}
+.memory-clipboard .clip-select-toggle {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-2);
+  flex: none;
+}
+.memory-clipboard .clip-memory-batch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--memory-nav-radius);
+  background: var(--well);
+}
+.memory-clipboard .clip-memory-batch button {
+  font-size: 12.5px;
+  padding: 4px 10px;
+}
+.memory-clipboard .clip-memory-batch .clip-danger {
+  color: var(--danger, #c43d32);
+}
+.memory-clipboard .clip-memory-batch [data-select-done] {
+  margin-inline-start: auto;
+}
+.memory-clipboard[data-select-mode="true"] .memory-entry {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  padding-inline: 8px;
+  border-radius: var(--memory-nav-radius);
+}
+.memory-clipboard[data-select-mode="true"] .memory-entry[data-checked="true"] {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.memory-clipboard[data-select-mode="true"] .clip-memory-actions {
+  display: none;
+}
+.memory-clipboard .clip-check {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.memory-clipboard .clip-memory-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-2);
+  opacity: 0;
+  transition:
+    opacity 110ms ease,
+    background 110ms ease,
+    color 110ms ease;
+}
+.memory-clipboard .memory-entry:hover .clip-memory-delete,
+.memory-clipboard .memory-entry:focus-within .clip-memory-delete {
+  opacity: 1;
+}
+.memory-clipboard .clip-memory-delete:hover {
+  color: var(--danger, #c43d32);
+  background: color-mix(in srgb, var(--danger, #c43d32) 12%, transparent);
+}
+.memory-clipboard [data-config] {
+  margin-bottom: 14px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--memory-nav-radius);
+  background: var(--panel);
+}
+.memory-clipboard [hidden] {
+  display: none !important;
+}
+.shell .block .memory-clipboard button.clip-memory-preview {
+  display: block;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  text-align: start;
+  line-height: 1.5;
+  font-size: 14px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.shell .block .memory-clipboard button.clip-memory-preview-image {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.memory-clipboard .clip-memory-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 52px;
+  height: 36px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  background: repeating-conic-gradient(
+      rgba(128, 128, 128, 0.14) 0% 25%,
+      transparent 0% 50%
+    )
+    0 0 / 8px 8px;
+}
+.memory-clipboard .clip-memory-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.memory-clipboard .clip-memory-detail {
+  grid-column: 1/-1;
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--well);
+  border-radius: var(--memory-nav-radius);
+}
+.memory-clipboard .clip-memory-detail img {
+  max-width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+}
+.memory-clipboard .clip-memory-detail button {
+  justify-self: start;
+}
+.memory-clipboard .clip-memory-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  align-self: center;
+}
+.clip-memory-actions details {
+  position: relative;
+}
+.clip-memory-actions summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 3px 7px;
+  color: var(--ink-2);
+  border-radius: 6px;
+}
+.clip-memory-actions summary::-webkit-details-marker {
+  display: none;
+}
+.clip-memory-actions summary:hover {
+  background: var(--well);
+}
+.clip-memory-choices {
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  top: 100%;
+  display: grid;
+  gap: 3px;
+  min-width: max-content;
+  padding: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--memory-nav-radius);
+}
+.memory-clipboard pre {
+  grid-column: 1/-1;
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--well);
+  border-radius: var(--memory-nav-radius);
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.memory-clipboard output {
+  display: block;
+  color: var(--ink-2);
+  font-size: 12px;
+  margin-top: 7px;
+}

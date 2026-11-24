@@ -1,0 +1,280 @@
+/* ---------- side: teaching ---------- */
+.side {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 16px 30px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.side-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.side-head h2 {
+  font-size: 17px;
+  font-weight: 650;
+  margin-top: 2px;
+}
+/* The card reader: drafts slide out from behind the slit. */
+.slot {
+  position: relative;
+  margin: 14px 0 4px;
+}
+.side-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.slit {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: #050403;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.reader {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 26px;
+  padding: 0 12px 0 10px;
+  border-radius: 6px;
+  background: var(--recess);
+  box-shadow:
+    inset 0 1px 2px rgba(var(--shadow), 0.3),
+    0 1px 0 var(--panel-edge);
+}
+.reader-key {
+  width: 20px;
+  height: 20px;
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--key);
+  box-shadow: 0 0 0 1px var(--line-strong);
+  font-size: 14px;
+  line-height: 1;
+  color: var(--ink);
+}
+.reader-screen {
+  min-width: 52px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--lcd);
+  color: var(--lcd-ink);
+  font:
+    10px/1.4 ui-monospace,
+    "SF Mono",
+    Menlo,
+    "PingFang SC",
+    monospace;
+  text-align: center;
+}
+.reader-led {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  opacity: 0.5;
+}
+.slot.loaded .reader-screen {
+  min-width: 52px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--lcd);
+  color: var(--lcd-ink);
+  font:
+    10px/1.4 ui-monospace,
+    "SF Mono",
+    Menlo,
+    "PingFang SC",
+    monospace;
+  text-align: center;
+}
+.reader-led {
+  background: var(--led);
+  opacity: 1;
+}
+.reader-led.blink {
+  animation: blink 0.9s steps(2, jump-none) 3;
+}
+@keyframes blink {
+  50% {
+    opacity: 0.15;
+  }
+}
+.cards {
+  position: relative;
+  margin: -4px 12px 0;
+  overflow: hidden;
+  height: 0;
+}
+.card {
+  padding: 16px 14px 12px;
+  background: var(--card);
+  border-top: 1px dashed var(--line-strong);
+  border-radius: 0 0 4px 4px;
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 2px 0 rgba(var(--shadow), 0.06);
+  display: grid;
+  gap: 8px;
+}
+.card h3 {
+  text-wrap: pretty;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 650;
+}
+.card-actions {
+  display: flex;
+  gap: 6px;
+}
+.mini-tile {
+  border: 0;
+  padding: 3px 4px 4px;
+  border-radius: 8px;
+  background: var(--well);
+  display: grid;
+  justify-items: center;
+  font-size: 11px;
+  color: var(--ink-2);
+}
+.mini-tile canvas {
+  width: 42px;
+  height: 45px;
+}
+.card-note {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.card-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+/* 24-hour dial */
+
+#dial {
+  width: 172px;
+  height: 172px;
+  overflow: visible;
+}
+.dial-face {
+  fill: var(--well);
+  stroke: var(--line);
+}
+.dial-night {
+  fill: none;
+  stroke: var(--dial-night);
+  stroke-width: 18;
+}
+.tick {
+  stroke: var(--ink-3);
+  stroke-width: 1;
+  opacity: 0.6;
+}
+.tick.major {
+  stroke: var(--ink-2);
+  stroke-width: 1.5;
+}
+.dial-num {
+  font:
+    11px ui-monospace,
+    monospace;
+  fill: var(--ink-3);
+  text-anchor: middle;
+}
+.mark circle {
+  fill: var(--ink);
+  stroke: var(--well);
+  stroke-width: 2;
+}
+.mark.pending circle {
+  fill: var(--well);
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 3 2;
+}
+.hourly {
+  fill: none;
+  stroke: var(--ink-2);
+  stroke-width: 1.2;
+  stroke-dasharray: 2 4;
+}
+.hourly.pending {
+  stroke: var(--accent);
+}
+.hand {
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.dial-time {
+  font:
+    600 24px ui-monospace,
+    monospace;
+  fill: var(--ink);
+  text-anchor: middle;
+}
+.dial-caption {
+  font:
+    13px -apple-system,
+    "PingFang SC",
+    sans-serif;
+  fill: var(--ink-3);
+  text-anchor: middle;
+}
+
+/* rules */
+.rules {
+  display: grid;
+}
+
+.rule {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+.rule-text {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+.rule-text strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.rule-text span {
+  font-size: 12px;
+  color: var(--ink-2);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.rule-mark {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.versions {
+  margin-top: auto;
+  padding-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.versions .silk {
+  margin-right: auto;
+}

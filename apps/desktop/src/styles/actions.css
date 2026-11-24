@@ -1,0 +1,342 @@
+/* ---------- 动作: two kinds, and the settings of one (plan/29) ----------
+   The tape's head switches between the pet's own actions and the learned
+   ones; a small key on a tile opens its settings beside it. Skins dress
+   these through the variables below and a few lines in their own files. */
+.tape {
+  --act-tabs-bg: var(--well);
+  --act-tabs-radius: 9px;
+  --act-tab-radius: 7px;
+  --act-tab-on: var(--key);
+  --act-key-radius: 6px;
+}
+.tape-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 30px;
+  padding: 0 2px;
+}
+.teach-plus {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-2);
+  font: 500 21px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+.teach-plus:is(:hover, :focus-visible):enabled {
+  background: var(--well);
+  color: var(--ink);
+}
+.teach-plus:is(:hover, :focus-visible):enabled::after {
+  content: attr(aria-label);
+  position: absolute;
+  bottom: calc(100% + 5px);
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: var(--ink);
+  color: var(--panel);
+  font: 500 12px/1.4 system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.tape-tabs {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: var(--act-tabs-radius);
+  background: var(--act-tabs-bg);
+  box-shadow: inset 0 1px 3px rgba(var(--shadow), 0.12);
+}
+.tape-tabs [role="tab"] {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: var(--act-tab-radius);
+  background: none;
+  box-shadow: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.tape-tabs [role="tab"][aria-selected="true"] {
+  background: var(--act-tab-on);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 1px 0 rgba(var(--shadow), 0.1);
+}
+.tape-n {
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.tape-n:empty {
+  display: none;
+}
+.tape-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.tape-old {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font-size: 12px;
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+}
+.tape-old:hover {
+  color: var(--ink);
+}
+.tape-empty {
+  margin: 0;
+  padding: 30px 6px;
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+
+/* The settings key, quiet in the tile's corner. */
+.tape-set {
+  position: absolute;
+  z-index: 2;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--act-key-radius);
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.tape-set:hover,
+.tape-set:focus-visible {
+  background: var(--well);
+  color: var(--ink);
+}
+
+/* The panel beside it. */
+.pop[data-kind="action"] {
+  width: 292px;
+  gap: 0;
+  padding: 14px 16px 12px;
+}
+.pop[data-kind="action"] .pop-title {
+  font-size: 15px;
+}
+.act-lead {
+  margin: 2px 0 8px;
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.act-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 3px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  cursor: default;
+}
+.act-name {
+  color: var(--ink);
+}
+.act-hint {
+  grid-column: 1 / -1;
+  color: var(--ink-3);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+/* How often, under 随机出现: three choices in one piece, and the gap in
+   words under them. */
+.act-rates {
+  --act-rate-radius: 7px;
+  display: grid;
+  gap: 4px;
+  margin: -2px 0 10px;
+}
+.act-rates[hidden] {
+  display: none;
+}
+.act-rate-keys {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  padding: 3px;
+  border-radius: calc(var(--act-rate-radius) + 2px);
+  background: var(--well);
+  box-shadow: inset 0 1px 3px rgba(var(--shadow), 0.12);
+}
+.pop .act-rate {
+  padding: 4px 0;
+  border: 0;
+  border-radius: var(--act-rate-radius);
+  background: none;
+  box-shadow: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.pop .act-rate[aria-pressed="true"] {
+  background: var(--key);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 1px 0 rgba(var(--shadow), 0.1);
+}
+.act-rates .act-hint {
+  padding: 0 2px;
+}
+.act-when {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: -2px;
+  padding: 0 0 10px;
+}
+.act-when[hidden] {
+  display: none;
+}
+.pop .act-time,
+.pop .act-minutes {
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--well);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.pop .act-minutes {
+  width: 64px;
+}
+.act-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.act-unit {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.act-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+.act-old {
+  display: grid;
+  gap: 2px;
+  padding: 10px 0 6px;
+  border-top: 1px solid var(--line);
+}
+.act-old-head {
+  margin: 0 0 2px;
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+.act-old .rule {
+  padding: 6px 0;
+}
+.act-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.act-foot > :only-child {
+  margin-inline-start: auto;
+}
+.text-key.danger,
+.pop-item.danger {
+  color: var(--danger, #b2442f);
+}
+.text-key.danger {
+  text-decoration-color: currentColor;
+}
+
+
+/* ‹ › at the head of the tape, when it runs past the edge. */
+.tape-tools {
+  margin-inline-start: auto;
+}
+.tape-pager {
+  display: flex;
+  gap: 4px;
+}
+.tape-pager[hidden] {
+  display: none;
+}
+.tape-page {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--act-key-radius);
+  background: var(--act-tabs-bg);
+  box-shadow: none;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.tape-page::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-inline-start: -3px;
+  border-top: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+.tape-page[data-dir="-1"]::before {
+  margin-inline: 3px 0;
+  transform: rotate(-135deg);
+}
+.tape-page:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--key);
+  box-shadow: 0 0 0 1px var(--line-strong);
+}
+.tape-page:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+/* The fade at the right edge only while more lies past it. */
+.tape-scroll[data-more="false"] {
+  mask-image: none;
+}

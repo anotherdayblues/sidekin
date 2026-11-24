@@ -1,0 +1,92 @@
+{
+  "deepseek": {
+    "label": "DeepSeek",
+    "baseUrl": "https://api.deepseek.com",
+    "protocol": "openai-completions",
+    "keyRequired": true
+  },
+  "qwen-cn": {
+    "label": "通义千问 · 国内",
+    "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "protocol": "openai-completions",
+    "keyRequired": true
+  },
+  "qwen-intl": {
+    "label": "通义千问 · 国际",
+    "baseUrl": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+    "protocol": "openai-completions",
+    "keyRequired": true
+  },
+  "moonshotai-cn": {
+    "label": "Kimi · 国内",
+    "baseUrl": "https://api.moonshot.cn/v1",
+    "protocol": "openai-completions",
+    "keyRequired": true
+  },
+  "moonshotai": {
+    "label": "Kimi · 国际",
+    "baseUrl": "https://api.moonshot.ai/v1",
+    "protocol": "openai-completions",
+    "keyRequired": true
+  },
+  "glm": {
+    "label": "智谱 GLM",
+    "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
+    "protocol": "openai-completions",
+    "keyRequired": true
+  },
+  "minimax-cn": {
+    "label": "MiniMax · 国内",
+    "baseUrl": "https://api.minimaxi.com/anthropic",
+    "protocol": "anthropic-messages",
+    "keyRequired": true
+  },
+  "minimax": {
+    "label": "MiniMax · 国际",
+    "baseUrl": "https://api.minimax.io/anthropic",
+    "protocol": "anthropic-messages",
+    "keyRequired": true
+  },
+  "openai": {
+    "label": "OpenAI",
+    "baseUrl": "https://api.openai.com/v1",
+    "protocol": "openai-responses",
+    "keyRequired": true
+  },
+  "anthropic": {
+    "label": "Claude",
+    "baseUrl": "https://api.anthropic.com",
+    "protocol": "anthropic-messages",
+    "keyRequired": true
+  },
+  "google": {
+    "label": "Google Gemini",
+    "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+    "protocol": "google-generative-ai",
+    "keyRequired": true
+  },
+  "openrouter": {
+    "label": "OpenRouter",
+    "baseUrl": "https://openrouter.ai/api/v1",
+    "protocol": "openai-completions",
+    "keyRequired": true
+  },
+  "ollama": {
+    "label": "Ollama · 本机",
+    "baseUrl": "http://localhost:11434/v1",
+    "protocol": "openai-completions",
+    "keyRequired": false
+  },
+  "lmstudio": {
+    "label": "LM Studio · 本机",
+    "baseUrl": "http://localhost:1234/v1",
+    "protocol": "openai-completions",
+    "keyRequired": false
+  },
+  "custom": {
+    "label": "自定义服务",
+    "baseUrl": "",
+    "protocol": "openai-completions",
+    "keyRequired": false
+  }
+}

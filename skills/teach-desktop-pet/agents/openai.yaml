@@ -1,0 +1,4 @@
+interface:
+  display_name: "教宠物新本领"
+  short_description: "用一句话给随伴里的宠物加新动作，设置它什么时候做什么"
+  default_prompt: "使用 $teach-desktop-pet 教我的宠物一个新本领："

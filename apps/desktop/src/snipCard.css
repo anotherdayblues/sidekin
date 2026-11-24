@@ -1,0 +1,250 @@
+/* Screenshot card. "原生骨架，皮肤外衣" (plan/11-界面重做/06-皮肤与原生.md):
+   only the colour variables every skin defines are read here (--panel,
+   --card, --ink, --ink-2, --line, --line-strong, --accent, --accent-ink,
+   --shadow), so a new skin dresses this card with no extra rules. Optional
+   skin touches live in the last section and are not required. */
+html.snipcard-window,
+.snipcard-window body,
+.snipcard-window #app {
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  width: fit-content;
+  height: auto;
+}
+.snipcard-shell {
+  box-sizing: border-box;
+  padding: 8px;
+  min-width: 360px;
+}
+.snipcard {
+  display: grid;
+  /* Long topic titles must shrink inside the card sized to the screenshot. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px 12px 12px;
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 10px 30px rgba(var(--shadow), 0.28);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.snipcard [hidden] {
+  display: none !important;
+}
+.snipcard header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+  user-select: none;
+}
+.snipcard header strong {
+  font-size: 13px;
+}
+.snipcard header small {
+  margin-right: auto;
+  color: var(--ink-2);
+  font-size: 12px;
+}
+.snipcard header button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.snipcard header button:hover {
+  background: var(--line);
+  color: var(--ink);
+}
+
+/* The picture, and the invisible text laid exactly over it. */
+.snipcard-stage {
+  display: flex;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line);
+  overflow: hidden;
+}
+.snipcard-frame {
+  position: relative;
+}
+.snipcard-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+.snipcard-text {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  line-height: 1;
+  letter-spacing: normal;
+  word-spacing: normal;
+  font-family:
+    -apple-system, "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
+  -webkit-user-select: text;
+  user-select: text;
+  cursor: text;
+}
+.snipcard-text :is(span, br) {
+  position: absolute;
+  z-index: 1;
+  color: transparent;
+  white-space: pre;
+  transform-origin: 0 0;
+  cursor: text;
+}
+/* A faint wash on hover tells that the text there can be selected. */
+.snipcard-text span:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: 2px;
+}
+.snipcard-text ::selection {
+  background: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: transparent;
+}
+.snipcard-text br::selection {
+  background: transparent;
+}
+.text-layer-end {
+  position: absolute;
+  z-index: 0;
+  inset: 100% 0 0;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+.snipcard-text.selecting .text-layer-end {
+  top: 0;
+}
+
+/* Actions. */
+.snipcard-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.snipcard button {
+  font: inherit;
+}
+.snipcard-actions button,
+.snipcard-ask button {
+  padding: 6px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+}
+.snipcard-actions button:hover:not(:disabled),
+.snipcard-ask button:hover {
+  border-color: var(--accent);
+}
+.snipcard-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.snipcard-ask {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  margin: 0;
+}
+.snipcard-ask textarea {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  font: inherit;
+  padding: 7px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  outline: none;
+}
+.snipcard-ask textarea:focus {
+  border-color: var(--accent);
+}
+.snipcard-ask button {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.snipcard-hint {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 12px;
+}
+.snipcard-foot {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  column-gap: 12px;
+}
+.snipcard-plain {
+  grid-row: 1;
+  grid-column: 1 / -1;
+}
+.snipcard-plain summary {
+  display: inline-block;
+  color: var(--ink-2);
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.snipcard-note {
+  grid-row: 1;
+  grid-column: 2;
+  justify-self: end;
+  color: var(--ink-2);
+  opacity: 0.72;
+  font-size: 11px;
+  user-select: none;
+}
+.snipcard-plain-text {
+  margin-top: 6px;
+  max-height: 9lh;
+  overflow: auto;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* ===== Skin touches (optional) ===== */
+
+.snipcard-destination {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--ink-2);
+}
+.snipcard-destination select {
+  min-width: 0;
+  max-width: 80%;
+  padding: 4px 8px;
+  font: inherit;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+}

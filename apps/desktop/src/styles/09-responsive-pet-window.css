@@ -1,0 +1,91 @@
+/* ---------- smaller windows ---------- */
+@media (max-width: 980px) {
+  /* The side column now lives inside the pet block, not the studio grid. */
+  .studio {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px;
+  }
+  .block-pet {
+    grid-template-columns: minmax(0, 1fr) 286px;
+  }
+  .title h1 {
+    font-size: 24px;
+  }
+  .lcd {
+    max-width: 190px;
+  }
+  .controls {
+    gap: 18px;
+  }
+}
+@media (max-height: 720px) {
+  #dial {
+    width: 148px;
+    height: 148px;
+  }
+  .title p {
+    display: none;
+  }
+}
+
+/* ---------- desktop pet window ---------- */
+.pet-window,
+.pet-window body,
+.pet-window #app {
+  background: transparent !important;
+  overflow: hidden;
+  min-height: 0;
+  width: 100vw;
+  height: 100vh;
+}
+.pet-window canvas {
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+.pet-window canvas:active {
+  cursor: grabbing;
+}
+
+.is-empty .tape {
+  visibility: hidden;
+}
+
+/* A rule that just arrived from an accepted card: a mark that fades out,
+   like ink settling, so the eye finds where it landed. */
+.rule.landed {
+  animation: landed 1.6s ease-out;
+}
+@keyframes landed {
+  from {
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+.pop-title {
+  font-size: 15px;
+}
+.pop-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.danger {
+  color: #b2442f;
+}
+:root[data-theme="night"] .danger {
+  color: #e48a6d;
+}
+.key.danger-key {
+  background: #b2442f;
+  color: #fff;
+  box-shadow: 0 2px 0 rgba(var(--shadow), 0.25);
+  font-weight: 600;
+}

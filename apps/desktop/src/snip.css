@@ -1,0 +1,124 @@
+:root {
+  --snip-tint: rgba(0, 0, 0, 0.16);
+  --snip-line: 2px solid white;
+  --snip-label-space: 12px;
+}
+html.snip-window,
+.snip-window body,
+.snip-window #app {
+  background: transparent;
+  height: 100%;
+  margin: 0;
+}
+.snip-surface {
+  position: fixed;
+  inset: 0;
+  background: var(--snip-tint);
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+.snip-surface span {
+  position: absolute;
+  top: var(--snip-label-space);
+  left: var(--snip-label-space);
+  background: var(--panel);
+  color: var(--ink);
+  padding: var(--snip-label-space);
+}
+.snip-surface i {
+  position: absolute;
+  outline: var(--snip-line);
+  pointer-events: none;
+}
+
+/* Skin 1 · a camera viewfinder: the rest of the screen dims, four corner
+   marks, the size in small mono type (design/proto/1-studio.css). */
+.snip-surface[data-selecting] {
+  background: transparent;
+}
+.snip-surface span {
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 6px 20px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+}
+.snip-surface i {
+  outline: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 0 9999px rgba(10, 9, 8, 0.42);
+}
+.snip-surface .c {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 0 solid #fff;
+}
+.snip-surface .tl {
+  left: -4px;
+  top: -4px;
+  border-width: 3px 0 0 3px;
+}
+.snip-surface .tr {
+  right: -4px;
+  top: -4px;
+  border-width: 3px 3px 0 0;
+}
+.snip-surface .bl {
+  left: -4px;
+  bottom: -4px;
+  border-width: 0 0 3px 3px;
+}
+.snip-surface .br {
+  right: -4px;
+  bottom: -4px;
+  border-width: 0 3px 3px 0;
+}
+.snip-size {
+  position: absolute;
+  right: 0;
+  bottom: -30px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(20, 19, 17, 0.85);
+  color: #fff;
+  font:
+    600 11px/1 ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+  font-style: normal;
+  letter-spacing: 0.08em;
+}
+.snip-surface span {
+  z-index: 2;
+}
+/* The hint bar holds the 截取全屏 button. Only shared skin colors are used,
+   so every skin, present or future, dresses it without extra rules. */
+.snip-surface > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: default;
+}
+.snip-full {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+.snip-full:hover {
+  filter: brightness(1.06);
+}
+.snip-full:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

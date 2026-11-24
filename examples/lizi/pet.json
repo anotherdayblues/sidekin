@@ -1,0 +1,25 @@
+{
+  "id": "lizi",
+  "displayName": "栗子",
+  "description": "一只温暖的原创橘白小猫，安静陪伴，也会好奇地四处走走。",
+  "revision": "0.1.3",
+  "spriteVersionNumber": 2,
+  "spritesheetPath": "spritesheet.webp",
+  "behavior": {
+    "enabled": true,
+    "minSeconds": 45,
+    "maxSeconds": 120,
+    "weights": {
+      "waving": 4,
+      "jumping": 1,
+      "review": 3,
+      "waiting": 1,
+      "running": 1,
+      "failed": 0.25
+    },
+    "clickAction": "open-studio",
+    "doubleClickAction": null,
+    "gaze": true,
+    "interactionVersion": 2
+  }
+}

@@ -1,0 +1,801 @@
+/* Skin 4 · 系统原生. Looks like software that comes with the computer today:
+   macOS 26 Liquid Glass on a Mac, Windows 11 Mica and Fluent on Windows
+   ([data-platform], set in main.ts). With [data-material="on"] the window
+   itself wears the system material (window_material in Rust) and the page
+   lets it show; without it the same surfaces sit on a solid backdrop.
+   Structure is shared with every skin; this sheet sets materials, shapes and
+   controls only. */
+
+/* =====================================================================
+   macOS · Liquid Glass
+   ===================================================================== */
+:root[data-skin="native"] {
+  --body: #eceef2;
+  --panel: #f7f7f9;
+  --panel-edge: #ffffff;
+  --recess: #e6e7eb;
+  --well: rgba(118, 118, 128, 0.12);
+  --ink: #1d1d1f;
+  --ink-2: #5b5b60;
+  --ink-3: #78787e;
+  --line: rgba(0, 0, 0, 0.08);
+  --line-strong: rgba(0, 0, 0, 0.14);
+  --accent: #0a64d8;
+  --accent-ink: #ffffff;
+  --led: #0a84ff;
+  --key: #ffffff;
+  --key-down: #ebebef;
+  --primary: #0a64d8;
+  --primary-ink: #ffffff;
+  --card: #ffffff;
+  --lcd: rgba(118, 118, 128, 0.12);
+  --lcd-ink: #1d1d1f;
+  --shadow: 0, 0, 0;
+  --grain-opacity: 0;
+  --stage-light: rgba(255, 255, 255, 0);
+  --stage-light-edge: rgba(255, 255, 255, 0);
+  --pet-shadow: rgba(0, 0, 0, 0.16);
+  --dial-night: rgba(0, 0, 0, 0.05);
+  --native-font:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif;
+  /* Liquid Glass: a translucent fill, a bright rim that catches light at the
+     top and a softer one below, and a light lift off what is behind. */
+  --glass: rgba(255, 255, 255, 0.5);
+  --glass-strong: rgba(255, 255, 255, 0.78);
+  --glass-blur: blur(30px) saturate(1.9);
+  --glass-rim:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0.5px rgba(255, 255, 255, 0.35),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.55);
+  --glass-lift: 0 0 0 0.5px rgba(0, 0, 0, 0.06), 0 6px 24px rgba(0, 0, 0, 0.09);
+  --glass-sheen: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0) 42%
+  );
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-edge: 0 0 0 0.5px rgba(0, 0, 0, 0.07);
+  --native-radius: 22px;
+  --native-inner-radius: 14px;
+  --native-control-radius: 999px;
+  --native-sidebar-select: rgba(0, 0, 0, 0.07);
+  --native-theirs: #e9e9eb;
+  --native-theirs-ink: #1d1d1f;
+  --native-theirs-edge: none;
+  --switch-on: #34c759;
+  --switch-off: rgba(120, 120, 128, 0.2);
+  --switch-knob: #ffffff;
+  --switch-border: 0 solid transparent;
+  --switch-width: 44px;
+  --switch-height: 24px;
+  --switch-inset: 2px;
+}
+:root[data-skin="native"][data-theme="night"] {
+  --body: #1c1c1e;
+  --panel: #2a2a2d;
+  --panel-edge: #38383b;
+  --recess: #19191b;
+  --well: rgba(118, 118, 128, 0.24);
+  --ink: #f5f5f7;
+  --ink-2: #ababb0;
+  --ink-3: #8e8e93;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --accent: #0a84ff;
+  --accent-ink: #ffffff;
+  --key: #3a3a3c;
+  --key-down: #2c2c2e;
+  --primary: #0a84ff;
+  --primary-ink: #ffffff;
+  --card: #2c2c2e;
+  --lcd: rgba(118, 118, 128, 0.24);
+  --lcd-ink: #f5f5f7;
+  --pet-shadow: rgba(0, 0, 0, 0.45);
+  --glass: rgba(44, 44, 48, 0.5);
+  --glass-strong: rgba(64, 64, 68, 0.72);
+  --glass-rim:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0.5px rgba(255, 255, 255, 0.06),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+  --glass-lift: 0 0 0 0.5px rgba(0, 0, 0, 0.5), 0 8px 28px rgba(0, 0, 0, 0.35);
+  --glass-sheen: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0) 42%
+  );
+  --surface: rgba(40, 40, 43, 0.72);
+  --surface-edge: 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  --native-sidebar-select: rgba(255, 255, 255, 0.1);
+  --native-theirs: #3a3a3c;
+  --native-theirs-ink: #f5f5f7;
+  --switch-on: #30d158;
+  --switch-off: rgba(120, 120, 128, 0.36);
+}
+
+/* =====================================================================
+   Windows 11 · Mica and Fluent
+   ===================================================================== */
+:root[data-skin="native"][data-platform="win"] {
+  --body: #f3f3f3;
+  --panel: #fbfbfb;
+  --panel-edge: #ffffff;
+  --recess: #ebebeb;
+  --well: rgba(0, 0, 0, 0.04);
+  --ink: #1a1a1a;
+  --ink-2: #5d5d5d;
+  --ink-3: #707070;
+  --line: rgba(0, 0, 0, 0.06);
+  --line-strong: rgba(0, 0, 0, 0.12);
+  --accent: #005fb8;
+  --accent-ink: #ffffff;
+  --led: #005fb8;
+  --key: rgba(255, 255, 255, 0.7);
+  --key-down: rgba(249, 249, 249, 0.5);
+  --primary: #005fb8;
+  --primary-ink: #ffffff;
+  --card: #ffffff;
+  --lcd: rgba(0, 0, 0, 0.04);
+  --lcd-ink: #1a1a1a;
+  --native-font:
+    "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  /* Fluent: no rims or sheen. Layers sit on Mica as slightly white cards
+     with a hairline stroke; controls keep a darker bottom edge. */
+  --glass: rgba(255, 255, 255, 0.5);
+  --glass-strong: rgba(255, 255, 255, 0.7);
+  --glass-blur: none;
+  --glass-rim: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  --glass-lift: none;
+  --glass-sheen: none;
+  --surface: rgba(255, 255, 255, 0.7);
+  --surface-edge: 0 0 0 1px rgba(0, 0, 0, 0.06);
+  --native-radius: 8px;
+  --native-inner-radius: 6px;
+  --native-control-radius: 4px;
+  --native-sidebar-select: rgba(0, 0, 0, 0.04);
+  --native-control:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.14);
+  --native-theirs: rgba(255, 255, 255, 0.7);
+  --native-theirs-ink: #1a1a1a;
+  --native-theirs-edge: 0 0 0 1px rgba(0, 0, 0, 0.06);
+  --switch-on: var(--accent);
+  --switch-off: transparent;
+  --switch-knob: #ffffff;
+  --switch-border: 1px solid #5d5d5d;
+  --switch-width: 40px;
+  --switch-height: 20px;
+  --switch-inset: 3px;
+}
+:root[data-skin="native"][data-platform="win"][data-theme="night"] {
+  --body: #202020;
+  --panel: #2b2b2b;
+  --panel-edge: #2d2d2d;
+  --recess: #1c1c1c;
+  --well: rgba(255, 255, 255, 0.06);
+  --ink: #ffffff;
+  --ink-2: #c5c5c5;
+  --ink-3: #9d9d9d;
+  --line: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.12);
+  --accent: #60cdff;
+  --accent-ink: #000000;
+  --led: #60cdff;
+  --key: rgba(255, 255, 255, 0.06);
+  --key-down: rgba(255, 255, 255, 0.04);
+  --primary: #60cdff;
+  --primary-ink: #000000;
+  --card: #2b2b2b;
+  --lcd: rgba(255, 255, 255, 0.06);
+  --lcd-ink: #ffffff;
+  --glass: rgba(58, 58, 58, 0.3);
+  --glass-strong: rgba(255, 255, 255, 0.06);
+  --glass-rim: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-edge: 0 0 0 1px rgba(0, 0, 0, 0.2);
+  --native-sidebar-select: rgba(255, 255, 255, 0.06);
+  --native-control:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  --native-theirs: rgba(255, 255, 255, 0.06);
+  --native-theirs-ink: #ffffff;
+  --native-theirs-edge: 0 0 0 1px rgba(0, 0, 0, 0.2);
+  --switch-border: 1px solid #c5c5c5;
+}
+
+/* =====================================================================
+   Window and type
+   ===================================================================== */
+:root[data-skin="native"] body {
+  font-family: var(--native-font);
+  -webkit-font-smoothing: antialiased;
+}
+:root[data-skin="native"] .sun,
+:root[data-skin="native"] .lamp,
+:root[data-skin="native"] .light {
+  display: none;
+}
+:root[data-skin="native"] .title h1 {
+  font-weight: 700;
+  letter-spacing: -0.022em;
+}
+:root[data-skin="native"][data-platform="win"] .title h1 {
+  font-family: "Segoe UI Variable Display", var(--native-font);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* =====================================================================
+   Surfaces
+   ===================================================================== */
+/* Content areas: quieter, nearly solid surfaces under the glass. */
+:root[data-skin="native"] .skin-picker,
+:root[data-skin="native"] .set-group,
+:root[data-skin="native"] .block[data-for="settings"] .companion-page {
+  border: 0;
+  border-radius: var(--native-radius);
+  background: var(--surface);
+  box-shadow: var(--surface-edge);
+}
+:root[data-skin="native"] .card {
+  border-radius: var(--native-inner-radius);
+  background: var(--card);
+  box-shadow: var(--surface-edge);
+}
+:root[data-skin="native"] .lcd {
+  border-radius: var(--native-control-radius);
+  font-family: var(--native-font);
+  box-shadow: none;
+}
+
+/* =====================================================================
+   Controls
+   ===================================================================== */
+/* macOS buttons are glass capsules; Windows buttons are Fluent rectangles. */
+:root[data-skin="native"] .key:where(:not(.danger-key)),
+:root[data-skin="native"] .rail-key,
+:root[data-skin="native"] .play-key,
+:root[data-skin="native"] .appearance {
+  background: var(--glass-sheen), var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow:
+    var(--glass-rim),
+    0 1px 3px rgba(0, 0, 0, 0.08);
+}
+:root[data-skin="native"] .key {
+  padding: 6px 16px;
+  border-radius: var(--native-control-radius);
+  font-weight: 500;
+}
+:root[data-skin="native"] .key.small {
+  padding: 4px 12px;
+}
+:root[data-skin="native"] .key.primary {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0)),
+    var(--primary);
+  color: var(--primary-ink);
+  box-shadow:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.45),
+    0 2px 8px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+:root[data-skin="native"] .key:active {
+  filter: brightness(0.96);
+}
+:root[data-skin="native"][data-platform="win"] .key:where(:not(.danger-key)),
+:root[data-skin="native"][data-platform="win"] .rail-key,
+:root[data-skin="native"][data-platform="win"] .play-key,
+:root[data-skin="native"][data-platform="win"] .appearance {
+  background: var(--key);
+  box-shadow: var(--native-control);
+}
+:root[data-skin="native"][data-platform="win"] .key {
+  padding: 5px 12px;
+  font-weight: 400;
+}
+:root[data-skin="native"][data-platform="win"] .key.primary {
+  background: var(--primary);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+}
+/* The appearance key: a sun, a moon or a half-lit circle for 跟随系统, the
+   way system controls show it (not 精密玩具's two-tone disc). A new choice
+   turns in while the old one turns out; the window itself crossfades
+   (theme.ts). */
+:root[data-skin="native"] {
+  --ap-ms: 320ms;
+  --ap-ease: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --theme-fade-ms: 260ms;
+}
+:root[data-skin="native"] .appearance .brand-mark {
+  display: none;
+}
+:root[data-skin="native"] .appearance .ap-glyph {
+  display: block;
+  width: 16px;
+  height: 16px;
+  overflow: visible;
+  color: var(--ink-2);
+}
+:root[data-skin="native"] .appearance .ap-glyph > * {
+  display: inline;
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.4);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity var(--ap-ms) ease,
+    transform var(--ap-ms) var(--ap-ease);
+}
+:root[data-skin="native"] .appearance[data-mode="day"] .ap-sun,
+:root[data-skin="native"] .appearance[data-mode="night"] .ap-moon,
+:root[data-skin="native"] .appearance[data-mode="system"] .ap-auto {
+  opacity: 1;
+  transform: none;
+}
+:root[data-skin="native"]::view-transition-old(root),
+:root[data-skin="native"]::view-transition-new(root) {
+  animation-duration: var(--theme-fade-ms);
+  animation-timing-function: ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-skin="native"] .appearance .ap-glyph > * {
+    transition: none;
+  }
+}
+
+/* 下拉框: on a Mac a pop-up button (a glass capsule with ⌃⌄, like the
+   keys above); on Windows a Fluent combo box (a 4px rectangle with ⌄). The
+   to-do pickers (todo/quick.css) take the same arrow and corners through
+   --select-*. */
+:root[data-skin="native"] {
+  --select-arrow: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' fill='none' stroke='%238e8e93' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'><path d='M3 3.8L5 1.8l2 2M3 6.2l2 2 2-2'/></svg>");
+  --select-radius: 999px;
+  --select-edge: none;
+}
+:root[data-skin="native"][data-platform="win"] {
+  --select-arrow: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' fill='none' stroke='%23767676' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'><path d='M2 3.8l3 3 3-3'/></svg>");
+  --select-radius: 4px;
+  --select-edge: var(--native-control);
+}
+
+:root[data-skin="native"] .shell select {
+  padding-right: 28px;
+  border: 0;
+  border-radius: var(--select-radius);
+  background:
+    var(--select-arrow) right 10px center / 10px 10px no-repeat,
+    var(--glass-sheen),
+    var(--glass-strong);
+  box-shadow:
+    var(--glass-rim),
+    0 1px 3px rgba(0, 0, 0, 0.08);
+}
+:root[data-skin="native"][data-platform="win"] .shell select {
+  background:
+    var(--select-arrow) right 10px center / 10px 10px no-repeat,
+    var(--key);
+  box-shadow: var(--select-edge);
+}
+:root[data-skin="native"] .shell select:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+:root[data-skin="native"] .play-key {
+  border-radius: 50%;
+}
+:root[data-skin="native"] .tape-tile {
+  border-radius: var(--native-inner-radius);
+  background: var(--card);
+  box-shadow: var(--surface-edge);
+}
+:root[data-skin="native"] .knob-cap {
+  background: var(--glass-strong);
+  box-shadow:
+    var(--glass-rim),
+    0 2px 6px rgba(0, 0, 0, 0.16);
+}
+
+/* macOS 26 switch: a wider capsule knob. Windows: an outlined track whose
+   knob grows and turns white when on. */
+:root[data-skin="native"]:not([data-platform="win"]) input.slide-switch::after {
+  aspect-ratio: auto;
+  width: 26px;
+  border-radius: 999px;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.2),
+    0 0 0 0.5px rgba(0, 0, 0, 0.04);
+}
+:root[data-skin="native"]:not([data-platform="win"])
+  input.slide-switch:checked::after {
+  transform: translateX(
+    calc(var(--switch-width) - 26px - 2 * var(--switch-inset))
+  );
+}
+:root[data-skin="native"][data-platform="win"] input.slide-switch::after {
+  background: var(--ink-2);
+  box-shadow: none;
+  transform: scale(0.75);
+}
+:root[data-skin="native"][data-platform="win"] input.slide-switch:checked {
+  border-color: var(--accent);
+}
+:root[data-skin="native"][data-platform="win"]
+  input.slide-switch:checked::after {
+  background: var(--accent-ink);
+  transform: translateX(calc(var(--switch-width) - var(--switch-height)))
+    scale(0.8);
+}
+
+/* =====================================================================
+   Skin cards
+   ===================================================================== */
+:root[data-skin="native"] .skin-card {
+  border-radius: var(--native-inner-radius);
+}
+:root[data-skin="native"] .skin-card[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+/* =====================================================================
+   Chat window and chat page: the same message colors as the bubble
+   ===================================================================== */
+:root[data-skin="native"] :is(.chat-view, .chat-window) {
+  --chat-radius: 18px;
+  --chat-tail: 4px;
+  --chat-pad: 7px 12px;
+  --chat-mine: var(--accent);
+  --chat-mine-ink: var(--accent-ink);
+  --chat-theirs: var(--native-theirs);
+  --chat-theirs-ink: var(--native-theirs-ink);
+  --chat-theirs-edge: var(--native-theirs-edge);
+  --chat-field: var(--glass-strong);
+  --chat-field-edge: var(--glass-rim);
+  --chat-shell: var(--glass-sheen), var(--surface);
+  --chat-shell-radius: 16px;
+  --chat-shell-edge: var(--glass-rim);
+}
+:root[data-skin="native"][data-platform="win"] :is(.chat-view, .chat-window) {
+  --chat-radius: 8px;
+  --chat-shell: var(--panel);
+  --chat-shell-radius: 8px;
+  --chat-field: var(--key);
+  --chat-field-edge: var(--native-control);
+}
+/* The window wears the system material; let it through. */
+:root[data-skin="native"][data-material="on"] .chat-window {
+  --chat-shell: transparent;
+}
+:root[data-skin="native"] .chat-window header button {
+  border-radius: 999px;
+}
+:root[data-skin="native"][data-platform="win"] .chat-window header button {
+  border-radius: 4px;
+}
+:root[data-skin="native"] .chat-composer textarea {
+  border-radius: 18px;
+}
+:root[data-skin="native"][data-platform="win"] .chat-composer textarea {
+  border-radius: 4px;
+}
+:root[data-skin="native"] .chat-name {
+  font: 600 13px/1 var(--native-font);
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+/* =====================================================================
+   Speech bubble (the bubble window has no system material: glass via CSS)
+   ===================================================================== */
+:root[data-skin="native"] .bubble-shell {
+  --bubble-bg: var(--panel);
+  --bubble-radius: 18px;
+  --bubble-line: transparent;
+  --bubble-outer: 14px;
+}
+:root[data-skin="native"] .bubble-card {
+  box-shadow:
+    var(--glass-rim),
+    0 0 0 0.5px rgba(0, 0, 0, 0.08),
+    0 3px 10px rgba(0, 0, 0, 0.08);
+}
+:root[data-skin="native"][data-theme="night"] .bubble-card {
+  box-shadow:
+    var(--glass-rim),
+    0 0 0 0.5px rgba(255, 255, 255, 0.12),
+    0 4px 14px rgba(0, 0, 0, 0.28);
+}
+:root[data-skin="native"] .bubble-card button,
+:root[data-skin="native"] .bubble-card textarea {
+  border-radius: 999px;
+}
+:root[data-skin="native"][data-platform="win"] .bubble-shell {
+  --bubble-radius: 8px;
+  --bubble-line: rgba(0, 0, 0, 0.08);
+}
+:root[data-skin="native"][data-platform="win"] .bubble-card button,
+:root[data-skin="native"][data-platform="win"] .bubble-card textarea {
+  border-radius: 4px;
+}
+
+/* 功能演示: a system wallpaper behind the fake window. */
+:root[data-skin="native"] .demo {
+  --demo-wall: linear-gradient(155deg, #a9c8ee, #d9c9ef 60%, #f1d6c8);
+  --demo-radius: 10px;
+}
+:root[data-skin="native"][data-theme="night"] .demo {
+  --demo-wall: linear-gradient(155deg, #1c2a48, #33284a 60%, #3e2a2a);
+}
+
+/* 上手引导: the lit permission row uses the system's selection tint. */
+:root[data-skin="native"] .onboard {
+  --onboard-on: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+:root[data-skin="native"] .companion-page[data-guiding="true"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* A tip from the pet: the system's plain link for 不用教我了. */
+:root[data-skin="native"] .bubble-card [data-tip] [data-tip-off] {
+  background: none;
+  box-shadow: none;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* 它会的事: a system sheet with plain grouped rows. */
+:root[data-skin="native"] .skill-book {
+  border-radius: 12px;
+}
+:root[data-skin="native"] .skill-cards button {
+  border-radius: 8px;
+}
+
+/* 设置 · 上手引导 entries. */
+:root[data-skin="native"] .guide-entries button {
+  border-radius: 8px;
+}
+
+/* 番茄钟 clock: Liquid Glass on a Mac, Acrylic on Windows 11. In its own
+   window the window itself is the glass (window_material.rs, the clear
+   kind), resting as a thin bar and growing into the clock; elsewhere (the
+   专注 page, older systems) the fill and blur are drawn. Either way the
+   page adds what makes it read as a lens: a bright
+   edge that catches light at the top and again faintly at the bottom, a
+   gloss across the top, a caustic glow low inside, a light that runs round
+   the rim, and a thin tint so the digits stay readable on any wallpaper. */
+:root[data-skin="native"] .focus-clock {
+  --clock-bg: rgba(255, 255, 255, 0.26);
+  --clock-solid: #f5f5f7;
+  --clock-blur: blur(14px) saturate(2.2) brightness(1.08);
+  --clock-ink: rgba(0, 0, 0, 0.88);
+  --clock-accent: var(--accent, #0a84ff);
+  --clock-glow: transparent;
+  --clock-flow: rgba(255, 255, 255, 1);
+  --clock-rim: rgba(255, 255, 255, 0.18);
+  --clock-rim-width: 1.5px;
+  --clock-track: rgba(0, 0, 0, 0.12);
+  --clock-break-ink: #1f7a37;
+  --clock-shadow:
+    inset 0 calc(var(--k) * -1) calc(var(--k) * 1.6) calc(var(--k) * -1)
+      rgba(255, 255, 255, 0.55),
+    0 0 0 0.5px rgba(0, 0, 0, 0.1),
+    0 calc(var(--k) * 0.6) calc(var(--k) * 1.2) rgba(0, 0, 0, 0.1),
+    0 calc(var(--k) * 1.6) calc(var(--k) * 4) rgba(0, 0, 0, 0.16);
+  --clock-font: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  --clock-weight: 650;
+  --clock-flow-ms: 6s;
+  --glass-tint: rgba(255, 255, 255, 0.14);
+  --glass-edge-top: rgba(255, 255, 255, 0.95);
+  --glass-edge-bottom: rgba(255, 255, 255, 0.5);
+  --glass-gloss: rgba(255, 255, 255, 0.62);
+  --glass-caustic: rgba(255, 255, 255, 0.4);
+  --glass-ink-lift: 0 0.5px 0 rgba(255, 255, 255, 0.55);
+}
+:root[data-skin="native"][data-theme="night"] .focus-clock {
+  --clock-bg: rgba(30, 30, 34, 0.32);
+  --clock-solid: #2c2c2e;
+  --clock-ink: rgba(255, 255, 255, 0.95);
+  --clock-flow: rgba(255, 255, 255, 0.8);
+  --clock-rim: rgba(255, 255, 255, 0.1);
+  --clock-track: rgba(255, 255, 255, 0.18);
+  --clock-break-ink: #3ddc6a;
+  --clock-shadow:
+    inset 0 calc(var(--k) * -1) calc(var(--k) * 1.6) calc(var(--k) * -1)
+      rgba(255, 255, 255, 0.2),
+    0 0 0 0.5px rgba(0, 0, 0, 0.55),
+    0 calc(var(--k) * 1.6) calc(var(--k) * 4) rgba(0, 0, 0, 0.4);
+  --glass-tint: rgba(0, 0, 0, 0.22);
+  --glass-edge-top: rgba(255, 255, 255, 0.6);
+  --glass-edge-bottom: rgba(255, 255, 255, 0.22);
+  --glass-gloss: rgba(255, 255, 255, 0.22);
+  --glass-caustic: rgba(255, 255, 255, 0.16);
+  --glass-ink-lift: 0 0 calc(var(--k) * 0.8) rgba(0, 0, 0, 0.45);
+}
+/* A Mac's own accent color, where the system shares it. */
+@supports (color: AccentColor) {
+  :root[data-skin="native"][data-platform="mac"] .focus-clock {
+    --clock-accent: AccentColor;
+  }
+}
+/* In its own window without the system's glass nothing is behind the page
+   to blur, so the fill is more solid; the bar, thin as it is, gets a dark
+   and a light rim inside its edge so it shows on any wallpaper. */
+:root[data-skin="native"] .focus-clock[data-home="window"] {
+  --clock-bg: rgba(250, 250, 252, 0.86);
+  --clock-bar-bg: rgba(255, 255, 255, 0.78);
+  --clock-bar-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.9), 0 0 0 0.5px rgba(0, 0, 0, 0.22),
+    0 1px 4px rgba(0, 0, 0, 0.22);
+  --clock-orb-2: #b07cff;
+  --clock-orb-3: #5ad1ff;
+  --clock-orb-4: #ff8fc7;
+}
+:root[data-skin="native"][data-theme="night"] .focus-clock[data-home="window"] {
+  --clock-bg: rgba(36, 36, 40, 0.84);
+  --clock-bar-bg: rgba(28, 28, 32, 0.74);
+  --clock-bar-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.22), 0 0 0 0.5px rgba(0, 0, 0, 0.5),
+    0 1px 4px rgba(0, 0, 0, 0.35);
+  /* Lighter and whiter by night, so a blue light still shows on blue. */
+  --clock-glow-a: color-mix(
+    in srgb,
+    color-mix(
+        in srgb,
+        var(--clock-phase-accent, var(--clock-accent)) 60%,
+        #fff
+      )
+      40%,
+    transparent
+  );
+  --clock-glow-b: color-mix(
+    in srgb,
+    var(--clock-phase-accent, var(--clock-accent)) 50%,
+    #fff
+  );
+}
+:root[data-skin="native"] .clock-face {
+  border-radius: inherit;
+}
+:root[data-skin="native"] .clock-digits {
+  text-shadow: var(--glass-ink-lift);
+}
+/* The lens edge: bright on top, faint again at the bottom, cut to the rim. */
+:root[data-skin="native"] .clock-face::before,
+:root[data-skin="native"] .clock-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+:root[data-skin="native"] .clock-face::before {
+  padding: 1px;
+  background: linear-gradient(
+    180deg,
+    var(--glass-edge-top),
+    transparent 42%,
+    transparent 62%,
+    var(--glass-edge-bottom)
+  );
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+}
+/* The gloss across the top and the caustic low on the far side. */
+:root[data-skin="native"] .clock-face::after {
+  background:
+    radial-gradient(120% 85% at 28% -18%, var(--glass-gloss), transparent 52%),
+    radial-gradient(70% 55% at 76% 118%, var(--glass-caustic), transparent 62%);
+  mix-blend-mode: screen;
+}
+:root[data-skin="native"] .clock-read,
+:root[data-skin="native"] .clock-tools {
+  position: relative;
+  z-index: 1;
+}
+/* Windows 11: Fluent's 8px corners (the system rounds the window the same),
+   4px inside, Segoe digits. */
+:root[data-skin="native"][data-platform="win"] .focus-clock {
+  --clock-radius: 8px;
+  --clock-tool-radius: 4px;
+  --clock-font: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --clock-bg: rgba(252, 252, 252, 0.7);
+  --clock-rim: rgba(0, 0, 0, 0.06);
+  --clock-flow: color-mix(in srgb, var(--accent) 70%, transparent);
+  --clock-shadow: 0 calc(var(--k) * 0.8) calc(var(--k) * 2) rgba(0, 0, 0, 0.14);
+  --clock-blur: blur(24px) saturate(1.6);
+  --glass-tint: transparent;
+  --glass-edge-top: rgba(255, 255, 255, 0.5);
+  --glass-edge-bottom: transparent;
+  --glass-gloss: transparent;
+  --glass-caustic: transparent;
+  --glass-ink-lift: none;
+}
+:root[data-skin="native"][data-platform="win"][data-theme="night"]
+  .focus-clock {
+  --clock-bg: rgba(44, 44, 44, 0.72);
+  --clock-rim: rgba(255, 255, 255, 0.08);
+}
+/* Windows 11: Acrylic's more solid fill, Fluent's quicker, unbouncing
+   motion, and lights in the accent's own family. */
+:root[data-skin="native"][data-platform="win"]
+  .focus-clock[data-home="window"] {
+  --clock-bg: rgba(252, 252, 252, 0.9);
+  --clock-bar-bg: rgba(252, 252, 252, 0.85);
+  --clock-morph-ms: 260ms;
+  --clock-morph-ease: cubic-bezier(0.1, 0.9, 0.2, 1);
+  --clock-fade-ms: 120ms;
+  --clock-orb-2: #6bb8ff;
+  --clock-orb-3: #4fd6d0;
+  --clock-orb-4: #9fd4ff;
+}
+:root[data-skin="native"][data-platform="win"][data-theme="night"]
+  .focus-clock[data-home="window"] {
+  --clock-bg: rgba(44, 44, 44, 0.9);
+  --clock-bar-bg: rgba(40, 40, 40, 0.85);
+}
+/* The window is the glass: only a thin tint over it, a little more on the
+   bar so it holds its own on a busy wallpaper. */
+:root[data-skin="native"][data-material] .focus-clock[data-home="window"] {
+  --clock-bg: var(--glass-tint);
+  --clock-bar-bg: color-mix(
+    in srgb,
+    var(--glass-tint) 50%,
+    rgba(255, 255, 255, 0.3)
+  );
+  --clock-blur: none;
+  --clock-shadow: inset 0 calc(var(--k) * -1) calc(var(--k) * 1.6)
+    calc(var(--k) * -1) var(--glass-caustic);
+  --clock-bar-shadow: inset 0 0 0 0.5px var(--glass-edge-top);
+}
+:root[data-skin="native"][data-material][data-theme="night"]
+  .focus-clock[data-home="window"] {
+  --clock-bg: var(--glass-tint);
+  --clock-bar-bg: rgba(0, 0, 0, 0.26);
+}
+:root[data-skin="native"][data-material][data-platform="win"]
+  .focus-clock[data-home="window"] {
+  --clock-bg: transparent;
+  --clock-bar-bg: transparent;
+}
+
+/* The pet's own hue (petTint.ts), when it has one, for the clock's light. */
+:root[data-skin="native"][data-pet-tint] .focus-clock[data-home="window"] {
+  --clock-accent: var(--pet-tint);
+  --clock-orb-2: var(--pet-tint-2);
+  --clock-orb-3: var(--pet-tint-3);
+  --clock-orb-4: var(--pet-tint-4);
+}
+:root[data-skin="native"][data-pet-tint][data-theme="night"]
+  .focus-clock[data-home="window"] {
+  --clock-accent: var(--pet-tint-night);
+  --clock-orb-2: var(--pet-tint-2-night);
+  --clock-orb-3: var(--pet-tint-3-night);
+  --clock-orb-4: var(--pet-tint-4-night);
+}
+
+/* 番茄钟 light: soft daylight, warmer at night like Night Shift. */
+:root[data-skin="native"] .focus-light {
+  --light: 255, 240, 222;
+  --light-strength: 0.7;
+}
+:root[data-skin="native"][data-theme="night"] .focus-light {
+  --light: 255, 196, 140;
+}
+/* The sleeping z's: the system's secondary label grey, white at night. */
+:root[data-skin="native"] .pet-doze {
+  --doze-ink: rgba(60, 60, 67, 0.6);
+  --doze-edge: rgba(255, 255, 255, 0.9);
+}
+:root[data-skin="native"][data-theme="night"] .pet-doze {
+  --doze-ink: rgba(235, 235, 245, 0.75);
+  --doze-edge: rgba(0, 0, 0, 0.4);
+}
+/* 专注 records: the system's smaller corners. */
+:root[data-skin="native"] :is(.focus-card, .focus-tile) {
+  border-radius: 10px;
+}
+:root[data-skin="native"] .focus-bars i {
+  border-radius: 4px 4px 1px 1px;
+}

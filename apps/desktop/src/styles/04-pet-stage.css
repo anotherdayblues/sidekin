@@ -1,0 +1,312 @@
+/* ---------- deck ---------- */
+.deck {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: 10px;
+  padding: 16px 18px 14px;
+}
+.deck-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+.title {
+  min-width: 0;
+}
+.title h1 {
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin-top: 2px;
+}
+.title p {
+  color: var(--ink-2);
+  font-size: 13px;
+  margin-top: 2px;
+  max-width: 46ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* A small status display, like the segment screen on a gadget. */
+.lcd {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  min-width: 132px;
+  max-width: 236px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  background: var(--lcd);
+  color: var(--lcd-ink);
+  font:
+    12px/1.3 ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.25),
+    0 1px 0 var(--panel-edge);
+}
+.lcd-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.35;
+  flex-shrink: 0;
+}
+.lcd.lit .lcd-dot {
+  opacity: 1;
+  background: var(--led);
+}
+#lcd {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The display window the pet lives in: a recess in the body. */
+.window {
+  position: relative;
+  min-height: 220px;
+  border-radius: 8px;
+  background: var(--recess);
+  box-shadow:
+    inset 0 2px 8px rgba(var(--shadow), 0.18),
+    inset 0 0 0 1px rgba(var(--shadow), 0.06),
+    0 1px 0 var(--panel-edge);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+/* Day: a seamless paper sweep — the back wall catches more light than the
+   floor, with a soft bend where they meet. An unseen window throws a
+   patch of sun with a cross of mullions onto the wall and the floor; it
+   moves with the real time of day (see sun() in studio.ts). */
+:root:not([data-theme="night"]) .window {
+  background: linear-gradient(
+    to bottom,
+    #eee8dc 0%,
+    #e9e2d4 calc(var(--floor, 82%) - 16%),
+    #ddd5c4 calc(var(--floor, 82%) - 2%),
+    #e4ddcf calc(var(--floor, 82%) + 6%),
+    #ebe5d9 100%
+  );
+}
+.sun {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  filter: blur(2.5px);
+}
+:root[data-theme="night"] .sun {
+  display: none;
+}
+.sun::before,
+.sun i {
+  position: absolute;
+  background: rgb(
+    255,
+    calc(250 - 14 * var(--sun-warm, 0.5)),
+    calc(236 - 44 * var(--sun-warm, 0.5))
+  );
+  /* Four panes: the window frame and its cross block the light. */
+  -webkit-mask:
+    linear-gradient(
+      90deg,
+      #000 46%,
+      transparent 46%,
+      transparent 54%,
+      #000 54%
+    ),
+    linear-gradient(#000 46%, transparent 46%, transparent 54%, #000 54%);
+  -webkit-mask-composite: source-in;
+  mask:
+    linear-gradient(
+      90deg,
+      #000 46%,
+      transparent 46%,
+      transparent 54%,
+      #000 54%
+    ),
+    linear-gradient(#000 46%, transparent 46%, transparent 54%, #000 54%);
+  mask-composite: intersect;
+}
+/* On the wall: upright panes, sheared by the sun's angle. */
+.sun::before {
+  content: "";
+  left: var(--sun-x, 50%);
+  top: 10%;
+  width: 26%;
+  height: calc(var(--floor, 82%) - 26%);
+  transform: translateX(-50%) skewX(var(--sun-skew, 0deg));
+  opacity: 0.85;
+}
+/* On the floor: the same window, flattened and stretched toward the room. */
+.sun i {
+  left: calc(var(--sun-x, 50%) + (50% - var(--sun-x, 50%)) * 0.55);
+  top: calc(var(--floor, 82%) - 5%);
+  width: 44%;
+  height: 11%;
+  transform: translateX(-50%) skewX(calc(var(--sun-skew, 0deg) * -2.2));
+  opacity: 0.7;
+}
+/* Night only: a fresnel lamp at the top throws a cone that widens toward
+   the floor and pools around the pet. The parent blur softens the cone's
+   edges the way a real beam spreads. By day the room light is even. */
+.light {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: none;
+  filter: blur(10px);
+  opacity: var(--lamp, 1);
+}
+:root[data-theme="night"] .light {
+  display: block;
+}
+.light::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(
+    46% 0,
+    54% 0,
+    74% var(--floor, 82%),
+    26% var(--floor, 82%)
+  );
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 196, 120, 0.34),
+    rgba(255, 190, 110, 0.1) 70%,
+    rgba(255, 190, 110, 0.04)
+  );
+}
+.light::before {
+  content: "";
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  top: calc(var(--floor, 82%) - 6%);
+  height: 12%;
+  border-radius: 50%;
+  background: rgba(255, 186, 104, 0.32);
+}
+.lamp {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 46px;
+  height: 16px;
+  transform: translateX(-50%);
+  border-radius: 0 0 10px 10px;
+  background: #24221e;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+  display: none;
+}
+.lamp::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  bottom: -2px;
+  height: 4px;
+  border-radius: 0 0 6px 6px;
+  background: rgb(255, 214, 160);
+  opacity: var(--lamp, 1);
+}
+:root[data-theme="night"] .lamp {
+  display: block;
+}
+:root[data-theme="night"] .light {
+  opacity: var(--lamp, 1);
+}
+/* The pet stands on a fixed floor line; it never grows past about twice
+   its native cell height, where the sprite would turn soft. */
+#stage {
+  position: absolute;
+  left: 50%;
+  bottom: 9%;
+  height: min(82%, 360px);
+  aspect-ratio: 192 / 208;
+  transform: translateX(-50%) translateY(var(--drop, 0px));
+  cursor: pointer;
+  /* Cast shadow follows the pet's own silhouette. */
+  /* Cast shadow follows the pet's own silhouette, away from the light. */
+  filter: drop-shadow(var(--shadow-x, 0px) 4px 4px var(--pet-shadow));
+  touch-action: none;
+}
+:root[data-theme="night"] #stage {
+  filter: drop-shadow(var(--shadow-x, 0px) 5px 3px var(--pet-shadow))
+    brightness(calc(0.08 + 0.92 * var(--lamp, 1)));
+}
+/* Contact shadow: where the pet touches the floor the light is blocked. */
+.pedestal {
+  position: absolute;
+  height: 16px;
+  transform: translate(-50%, -55%);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(var(--shadow), 0.32),
+    rgba(var(--shadow), 0)
+  );
+  pointer-events: none;
+}
+:root[data-theme="night"] .pedestal {
+  height: 12px;
+  background: radial-gradient(
+    closest-side,
+    rgba(0, 0, 0, 0.9),
+    rgba(0, 0, 0, 0.55) 45%,
+    rgba(0, 0, 0, 0)
+  );
+  opacity: calc(0.4 + 0.6 * var(--lamp, 1));
+}
+.is-empty .pedestal {
+  left: 50% !important;
+  top: 72% !important;
+  width: 160px !important;
+  opacity: 0.6;
+}
+.window-foot {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  color: var(--ink-2);
+}
+.is-empty .window-foot {
+  display: none;
+}
+.empty {
+  position: relative;
+  max-width: 340px;
+  text-align: center;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+.empty h2 {
+  font-size: 22px;
+  font-weight: 650;
+}
+.empty p {
+  text-wrap: balance;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.empty code {
+  font-size: 12px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--well);
+}

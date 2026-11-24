@@ -1,0 +1,568 @@
+/* Skin and motion tokens for the single bubble structure. Theme colors inherit from style.css. */
+:root,
+:root[data-theme="day"],
+:root[data-theme="night"] {
+  --bubble-bg: var(--panel);
+  --bubble-ink: var(--ink);
+  --bubble-muted: var(--ink-2);
+  --bubble-line: var(--line-strong);
+  --bubble-key: var(--key);
+  --bubble-min: 240px;
+  --bubble-max: 340px;
+  --bubble-pad: 12px;
+  --bubble-gap: 7px;
+  --bubble-radius: 12px;
+  --bubble-border: 1px;
+  --bubble-type: 14px;
+  --bubble-leading: 1.45;
+  --bubble-lines: 8;
+  --bubble-shadow: 0 2px 7px rgba(var(--shadow), 0.1);
+  --bubble-inset: 4px;
+  --bubble-outer: 10px;
+  --bubble-scale-min: 0.94;
+  --bubble-scale-range: 0.06;
+  --brain-stiffness: 270;
+  --brain-damping: 25;
+  --brain-fade-ms: 120;
+  --brain-read-ms: 8000;
+  --brain-cps: 30;
+  --brain-cps-max: 60;
+  --brain-backlog: 24;
+  --brain-dot-ms: 800ms;
+}
+html.bubble-window,
+body.bubble-window,
+.bubble-window #app {
+  background: transparent;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  height: auto;
+  width: fit-content;
+}
+.bubble-shell {
+  display: block;
+  width: max-content;
+  min-width: var(--bubble-min);
+  max-width: var(--bubble-max);
+  padding: var(--bubble-outer);
+  box-sizing: border-box;
+}
+.bubble-card {
+  display: grid;
+  gap: var(--bubble-gap);
+  padding: var(--bubble-pad);
+  border: var(--bubble-border) solid var(--bubble-line);
+  border-radius: var(--bubble-radius);
+  color: var(--bubble-ink);
+  background: var(--bubble-bg);
+  box-shadow: var(--bubble-shadow);
+  font-size: var(--bubble-type);
+  line-height: var(--bubble-leading);
+  opacity: clamp(0, var(--progress, 1), 1);
+  transform: scale(
+    calc(
+      var(--bubble-scale-min) + var(--progress, 1) * var(--bubble-scale-range)
+    )
+  );
+  transform-origin: center bottom;
+}
+.bubble-card [hidden] {
+  display: none !important;
+}
+.bubble-card header,
+.bubble-card footer {
+  display: flex;
+  align-items: center;
+  gap: var(--bubble-gap);
+  flex-wrap: wrap;
+}
+.bubble-card header span {
+  margin-right: auto;
+  color: var(--bubble-muted);
+}
+.bubble-card button,
+.bubble-card textarea {
+  font: inherit;
+  color: inherit;
+  background: var(--bubble-key);
+  border: var(--bubble-border) solid var(--bubble-line);
+  border-radius: var(--bubble-gap);
+  padding: var(--bubble-inset) var(--bubble-gap);
+}
+.bubble-card button[aria-pressed="true"] {
+  border-color: var(--accent);
+}
+.bubble-card textarea {
+  resize: none;
+  width: 100%;
+  user-select: text;
+}
+.bubble-text {
+  overflow: auto;
+  overscroll-behavior: contain;
+  max-height: calc(var(--bubble-lines) * 1lh);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.bubble-text p,
+.bubble-text ul {
+  margin: 0;
+}
+.bubble-text ul {
+  padding-inline-start: var(--bubble-pad);
+}
+.bubble-text a {
+  color: inherit;
+  text-decoration: underline;
+}
+.bubble-dots {
+  display: flex;
+  gap: var(--bubble-inset);
+}
+.bubble-card:not([data-state="thinking"]) .bubble-dots {
+  display: none;
+}
+.bubble-dots i {
+  background: var(--bubble-muted);
+  width: var(--bubble-gap);
+  height: var(--bubble-gap);
+  border-radius: 50%;
+  animation: dot-pulse var(--brain-dot-ms) infinite alternate;
+}
+.bubble-dots i:nth-child(2) {
+  animation-delay: calc(var(--brain-dot-ms) / 5);
+}
+.bubble-dots i:nth-child(3) {
+  animation-delay: calc(var(--brain-dot-ms) / 2.5);
+}
+@keyframes dot-pulse {
+  to {
+    opacity: 0.3;
+    transform: translateY(calc(-1 * var(--bubble-inset)));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bubble-dots i {
+    animation: none;
+  }
+}
+
+.bubble-selection-tabs {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.bubble-card .bubble-selection-tabs button {
+  padding: 3px 9px;
+  font-size: 12px;
+  line-height: 1.3;
+  border-radius: 999px;
+  border: 1px solid var(--bubble-line);
+  background: var(--bubble-key);
+  color: var(--bubble-muted);
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+.bubble-card .bubble-selection-tabs button:hover {
+  color: var(--bubble-ink);
+}
+.bubble-card .bubble-selection-tabs button[aria-pressed="true"] {
+  background: var(--primary);
+  color: var(--primary-ink);
+  border-color: var(--primary);
+}
+
+.bubble-source {
+  color: var(--bubble-muted);
+  font-size: var(--bubble-type);
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.bubble-source div {
+  white-space: pre-wrap;
+  max-height: calc(var(--bubble-lines) * 1lh);
+  overflow: auto;
+}
+[data-notice] {
+  display: grid;
+  gap: var(--bubble-gap);
+  border-block-start: var(--bubble-border) solid var(--bubble-line);
+  padding-block-start: var(--bubble-gap);
+}
+.notice-text {
+  white-space: pre-wrap;
+  overflow: auto;
+  max-height: calc(var(--bubble-lines) * 1lh);
+}
+
+/* ===== Skin 1 · the bubble is a small display panel that pops out of the
+   machine: matte panel, mono label, a status lamp that lights while it
+   thinks or waits for you (design/proto/1-studio.css). ===== */
+.bubble-card {
+  border: 0;
+  padding: 10px 14px 12px;
+  box-shadow:
+    0 0 0 1px rgba(var(--shadow), 0.16),
+    0 1px 0 var(--panel-edge) inset,
+    0 10px 30px rgba(0, 0, 0, 0.22),
+    0 2px 6px rgba(0, 0, 0, 0.12);
+}
+.bubble-card header span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font:
+    600 10.5px/1 ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+}
+.bubble-card header span::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--well);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+.bubble-card:is(
+    [data-state="thinking"],
+    [data-state="tool"],
+    [data-state="authorization"],
+    [data-state="streaming"]
+  )
+  header
+  span::before {
+  background: var(--led);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--led) 25%, transparent);
+}
+.bubble-card header button {
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+.bubble-card header button:hover,
+.bubble-card header button[aria-pressed="true"] {
+  background: var(--well);
+  color: var(--ink);
+}
+.bubble-card footer button {
+  border: 0;
+  border-radius: 7px;
+  padding: 5px 11px;
+  background: var(--key);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 2px 0 rgba(var(--shadow), 0.1);
+}
+.bubble-card footer button:active {
+  transform: translateY(1px);
+  box-shadow: 0 0 0 1px var(--line-strong);
+}
+.bubble-card [data-choices] {
+  display: flex;
+  gap: 6px;
+}
+.bubble-card [data-choices] button:first-child {
+  background: var(--primary);
+  color: var(--primary-ink);
+}
+.bubble-card textarea {
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 11px;
+  background: var(--well);
+  box-shadow: inset 0 2px 4px rgba(var(--shadow), 0.14);
+  outline: none;
+}
+.bubble-card textarea:focus {
+  box-shadow:
+    inset 0 2px 4px rgba(var(--shadow), 0.14),
+    0 0 0 2px var(--accent);
+}
+.bubble-card [data-note] {
+  display: grid;
+  gap: 6px;
+  color: var(--ink-2);
+}
+.bubble-card[data-state="authorization"] [data-note] b {
+  color: var(--ink);
+  font-size: 14px;
+}
+.bubble-card [data-note] code {
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--well);
+  box-shadow: inset 0 2px 4px rgba(var(--shadow), 0.12);
+  font:
+    12px/1.5 ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 4.5lh;
+  overflow: auto;
+}
+.bubble-countdown {
+  font:
+    11px ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+  color: var(--ink-3);
+}
+.bubble-source summary {
+  font:
+    600 10.5px/1 ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+  cursor: pointer;
+  list-style: none;
+  margin-bottom: 4px;
+}
+
+/* The anchor comes from the actual pet and bubble windows. Reserve equal
+   space on either placement so a resize at the screen edge cannot oscillate. */
+.bubble-shell {
+  --tail-space: 11px;
+  --tail-safe: 18px;
+  --tail-edge: rgba(0, 0, 0, 0.09);
+  padding-bottom: calc(var(--bubble-outer) + var(--tail-space));
+}
+:root[data-theme="night"] .bubble-shell {
+  --tail-edge: rgba(255, 240, 220, 0.1);
+}
+.bubble-shell[data-side="below"] {
+  padding-top: calc(var(--bubble-outer) + var(--tail-space));
+  padding-bottom: var(--bubble-outer);
+}
+.bubble-card {
+  position: relative;
+}
+.bubble-tail {
+  position: absolute;
+  left: clamp(
+    var(--tail-safe),
+    calc(var(--pet-x, calc(50% + var(--bubble-outer))) - var(--bubble-outer)),
+    calc(100% - var(--tail-safe))
+  );
+  bottom: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.bubble-shell[data-side="below"] .bubble-tail {
+  top: 0;
+  bottom: auto;
+  transform: scaleY(-1);
+}
+.bubble-tail::before {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  left: -7px;
+  top: -7px;
+  transform: rotate(45deg);
+  border-radius: 0 0 3px 0;
+  background: var(--bubble-bg);
+  box-shadow: 1px 1px 0 var(--tail-edge);
+}
+
+.bubble-card [data-remembered] {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bubble-gap);
+  color: var(--bubble-muted);
+  font-size: var(--bubble-type);
+}
+.bubble-card [data-remembered] button {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.bubble-card [data-remembered] button::before {
+  content: "·";
+  display: inline-block;
+  margin-inline-end: var(--bubble-gap);
+}
+
+/* Each skin's entrance, driven by the same --progress spring (plan/11 M8):
+   skin 1 pops from the tail (base rule above), skin 2 settles like a paper
+   note, skin 3 unfolds from a line like an old dialog box. */
+
+/* The input: one field the width of the card that grows with the text,
+   with a round send arrow inside at its lower right, like a quick-ask bar.
+   The arrow is dim until there is something to send. */
+.bubble-compose {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 4px 4px 4px 12px;
+  border-radius: 18px;
+  background: var(--well);
+  box-shadow: inset 0 2px 4px rgba(var(--shadow), 0.14);
+  transition: box-shadow 120ms ease;
+}
+.bubble-compose:focus-within {
+  box-shadow:
+    inset 0 2px 4px rgba(var(--shadow), 0.14),
+    0 0 0 2px var(--accent);
+}
+.bubble-card .bubble-compose textarea,
+.bubble-card .bubble-compose textarea:focus {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  min-height: 22px;
+  margin: 4px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  line-height: 22px;
+}
+.bubble-card .bubble-compose [data-send] {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-ink);
+  box-shadow: none;
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+.bubble-card .bubble-compose [data-send]:active {
+  transform: scale(0.92);
+}
+.bubble-compose:has(textarea:placeholder-shown) [data-send] {
+  opacity: 0.3;
+  pointer-events: none;
+}
+/* The button row shows only when it has something in it. */
+.bubble-card footer:not(:has(> :not([hidden]))) {
+  display: none;
+}
+.bubble-card footer [data-stop] {
+  margin-left: auto;
+}
+/* Header keys stay quiet until you reach for them. */
+.bubble-card header button {
+  opacity: 0.55;
+  transition: opacity 120ms ease;
+}
+.bubble-card:hover header button,
+.bubble-card header button:focus-visible,
+.bubble-card header button[aria-pressed="true"] {
+  opacity: 1;
+}
+
+/* Asking: a wider card, so the field has room. */
+.bubble-shell:has(.bubble-card[data-state="input"]) {
+  min-width: 320px;
+}
+
+.bubble-shell[data-closing] {
+  opacity: 0;
+  transition: opacity calc(var(--brain-fade-ms) * 1ms) ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bubble-shell[data-closing] {
+    transition: none;
+  }
+}
+
+/* A tip from the pet (plan/17 3.6): a line under the answer, or the whole
+   bubble when it opened just to say it. */
+.bubble-card :is([data-tip], [data-focus]) {
+  display: grid;
+  gap: var(--bubble-gap);
+  padding-block-start: var(--bubble-gap);
+  border-block-start: var(--bubble-border) solid var(--bubble-line);
+  color: var(--bubble-muted);
+  font-size: calc(var(--bubble-type) - 1px);
+}
+.bubble-card :is([data-tip], [data-focus]) p {
+  margin: 0;
+  white-space: pre-line;
+}
+.bubble-card[data-state="tip"] [data-tip][data-tip-id="hello"] p {
+  line-height: 1.65;
+}
+.bubble-card[data-state="tip"] [data-tip][data-tip-id="hello"] span {
+  padding-block-start: 4px;
+}
+.bubble-card :is([data-tip], [data-focus]) span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bubble-inset);
+}
+.bubble-card :is([data-tip], [data-focus]) button {
+  font-size: 12px;
+  padding: 2px 9px;
+}
+.bubble-card [data-tip] [data-tip-off] {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  padding-inline: 2px;
+  color: var(--bubble-muted);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.bubble-card[data-state="tip"] [data-tip],
+.bubble-card[data-state="focus"] [data-focus] {
+  border: 0;
+  padding: 0;
+  color: var(--bubble-ink);
+  font-size: var(--bubble-type);
+}
+.bubble-card:is([data-state="tip"], [data-state="focus"]) .bubble-text {
+  display: none;
+}
+.bubble-card[data-state="tip"] :is([data-tip-show], [data-tip-setup]) {
+  background: var(--primary);
+  color: var(--primary-ink);
+  border-color: var(--primary);
+}
+
+/* 番茄钟: the first choice is the suggested one. While waiting for a
+   confirming click, hide the close button so the choice is never ambiguous. */
+.bubble-card[data-state="focus"][data-focus-waiting] [data-close] {
+  display: none;
+}
+.bubble-card[data-state="focus"] [data-focus] button:first-child {
+  background: var(--primary);
+  color: var(--primary-ink);
+  border-color: var(--primary);
+}

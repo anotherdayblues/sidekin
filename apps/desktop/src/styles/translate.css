@@ -1,0 +1,143 @@
+/* Translation (plan/41): the bar with 对方语言 and 语气, used in the bubble
+   and on the 翻译 page; the bubble's 译成… label and 替换为译文; the 翻译
+   page's box to type in and its search. Colors come from the skin's tokens,
+   so 精密玩具 and 系统原生 each look like themselves. */
+:root {
+  --tb-gap: 6px;
+  --tb-height: 24px;
+  --tb-radius: 7px;
+  --tb-font: 12px;
+  --tb-pad: 9px;
+  --tb-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238a8a8e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --tb-partner-fill: color-mix(in srgb, var(--accent) 30%, transparent);
+  --tb-partner-ink: var(--ink);
+  --tr-compose-radius: 12px;
+}
+:root[data-skin="native"] {
+  --tb-height: 26px;
+  --tb-radius: 999px;
+  --tb-partner-fill: color-mix(in srgb, var(--accent) 14%, transparent);
+  --tb-partner-ink: var(--accent);
+  --tr-compose-radius: 14px;
+}
+
+.translate-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--tb-gap);
+  font-size: var(--tb-font);
+}
+.translate-bar[hidden] {
+  display: none;
+}
+.tb-mine {
+  display: inline-flex;
+  align-items: center;
+  height: var(--tb-height);
+  padding: 0 var(--tb-pad);
+  border-radius: var(--tb-radius);
+  background: var(--well);
+  color: var(--ink-2);
+}
+.tb-both {
+  color: var(--ink-3);
+}
+.translate-bar select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: var(--tb-height);
+  padding: 0 calc(var(--tb-pad) + 12px) 0 var(--tb-pad);
+  border: 1px solid var(--line);
+  border-radius: var(--tb-radius);
+  background: var(--key) var(--tb-chevron) no-repeat right 8px center / 8px 5px;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.translate-bar select.tb-partner {
+  border-color: transparent;
+  background-color: var(--tb-partner-fill);
+  color: var(--tb-partner-ink);
+  font-weight: 600;
+}
+.tb-tone {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  color: var(--ink-3);
+}
+
+/* ---------- in the bubble ---------- */
+.bubble-card [data-into] {
+  color: var(--bubble-muted);
+  font-size: 11.5px;
+}
+.bubble-card footer [data-replace] {
+  background: var(--primary);
+  color: var(--primary-ink);
+  box-shadow: none;
+}
+
+/* ---------- the 翻译 page in the side panel ---------- */
+.tr-compose {
+  display: grid;
+  gap: 8px;
+  margin: 12px 18px 0;
+  padding: 10px 12px;
+  border-radius: var(--tr-compose-radius);
+  background: var(--key);
+  box-shadow: 0 0 0 1px var(--line);
+}
+.tr-compose textarea {
+  min-height: 2.8lh;
+  padding: 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.tr-compose-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tr-compose-foot output {
+  flex: 1;
+  color: var(--chat-muted, var(--ink-3));
+  font-size: 12px;
+}
+.tr-compose-foot button {
+  width: auto;
+  padding: 4px 14px;
+  border: 0;
+  border-radius: var(--tb-radius);
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.tr-search {
+  margin: 10px 18px 0;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--well);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+}
+/* A click on a record puts its original back in the box above. */
+.tr-item {
+  cursor: pointer;
+}
+.tr-item .tr-text,
+.tr-item .tr-source div {
+  cursor: text;
+}

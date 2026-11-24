@@ -1,0 +1,33 @@
+node_modules/
+dist/
+target/
+__pycache__/
+*.pyc
+.DS_Store
+.env*
+!.env.example
+runs/
+/apps/desktop/1/ui-vite/
+exports/
+.venv/
+test-results/
+.ruff_cache/
+apps/desktop/src-tauri/gen/
+captures/
+apps/desktop/src-tauri/binaries/
+
+# Local credentials, application data, and installers never belong in Git.
+*.env
+*.sqlite*
+*.db
+*.log
+*.app/
+*.dmg
+*.msi
+*.exe
+.claude/
+.codex/
+.ryugi/
+
+# Standalone build output.
+releases/

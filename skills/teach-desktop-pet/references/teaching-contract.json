@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "cellWidth": 192,
+  "cellHeight": 208,
+  "limits": {
+    "maxFrames": 16,
+    "minFrameMs": 40,
+    "maxFrameMs": 2000,
+    "maxActions": 40,
+    "maxRules": 40,
+    "maxSteps": 12,
+    "maxRepeat": 10,
+    "maxWaitMs": 60000,
+    "maxImageBytes": 4194304,
+    "maxLabel": 40,
+    "maxSummary": 200,
+    "maxMinutes": 10080
+  },
+  "idPattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+  "events": {
+    "click": "单击宠物（设置后单击不再打开主窗口，主窗口从右键菜单或托盘打开）",
+    "double-click": "双击宠物",
+    "hover": "鼠标移到宠物身上（替代默认的悬停跳跃）",
+    "drag": "拖动宠物的整个过程，循环播放第一个动作（替代左右跑）",
+    "drop": "拖动后放下",
+    "appear": "宠物出现在桌面上（启动或重新显示）",
+    "focus-start": "开始一个番茄钟（替代默认的继续待机，之后接着播专心工作）",
+    "focus-done": "专注完成时（替代默认的跳跃）",
+    "break-start": "番茄钟开始休息（替代默认的挥手）"
+  },
+  "triggers": {
+    "clock": "到点触发。at 为 HH:MM；HH 写 * 表示每小时的这一分钟。days 可选，0 为周日。windowMinutes 内电脑没开或宠物正忙时会补上，默认 30。",
+    "every": "每隔 minutes 分钟触发一次，从宠物出现时开始计。",
+    "random": "加入随机动作池，weight 与基础动作的权重同一比例，使用同一组随机间隔。",
+    "event": "互动触发，event 取 events 中的一项。",
+    "pet-idle": "连续 minutes 分钟没有直接操作宠物。键鼠在别处活动或悬停不重置。持续动作只在点宠物后收尾。",
+    "idle": "电脑 minutes 分钟没有键盘和鼠标操作后触发一次。",
+    "active": "连续使用电脑 minutes 分钟后触发一次。中间离开 5 分钟以上会重新计时。"
+  },
+  "activityBreakMinutes": 5,
+  "baseActions": {
+    "idle": {
+      "label": "待机",
+      "row": 0,
+      "frames": 6
+    },
+    "running-right": {
+      "label": "向右跑",
+      "row": 1,
+      "frames": 8
+    },
+    "running-left": {
+      "label": "向左跑",
+      "row": 2,
+      "frames": 8
+    },
+    "waving": {
+      "label": "打招呼",
+      "row": 3,
+      "frames": 4
+    },
+    "jumping": {
+      "label": "跳跃",
+      "row": 4,
+      "frames": 5
+    },
+    "failed": {
+      "label": "失落",
+      "row": 5,
+      "frames": 8
+    },
+    "waiting": {
+      "label": "等待",
+      "row": 6,
+      "frames": 6
+    },
+    "running": {
+      "label": "专心工作",
+      "row": 7,
+      "frames": 6
+    },
+    "review": {
+      "label": "观察",
+      "row": 8,
+      "frames": 6
+    }
+  },
+  "replaceableBaseActions": [
+    "waving",
+    "jumping",
+    "failed",
+    "waiting",
+    "running",
+    "review"
+  ],
+  "redrawableBaseActions": []
+}

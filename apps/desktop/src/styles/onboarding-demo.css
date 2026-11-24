@@ -1,0 +1,61 @@
+/* 上手引导 with demos (plan/17 3.1): the demo under each step, which
+   permission's demo is showing, and the row in 通用 that reopens the guide. */
+.onboard {
+  --onboard-on: color-mix(in srgb, var(--accent) 16%, transparent);
+  --onboard-done: var(--ink);
+}
+.onboard-demo {
+  display: grid;
+  justify-items: center;
+  margin: 14px 0 6px;
+}
+.onboard-demo:empty {
+  min-height: 280px;
+}
+.onboard-row[data-on="true"] {
+  border-radius: 10px;
+  background: var(--onboard-on);
+}
+.onboard-row button.link,
+.onboard button.link {
+  background: none;
+  border: 0;
+  padding: 4px 6px;
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+.onboard-row button.link {
+  margin-left: auto;
+}
+.onboard-connection[data-talked="true"] {
+  color: var(--onboard-done);
+  font-weight: 600;
+}
+/* 设置 · 上手引导: two large entries, then the teaching switch. */
+.guide-entries {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.guide-entries button {
+  display: grid;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 11px;
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  background: var(--well);
+  cursor: pointer;
+}
+.guide-entries small {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.onboard-body .onboard-row {
+  padding-inline: 10px;
+}

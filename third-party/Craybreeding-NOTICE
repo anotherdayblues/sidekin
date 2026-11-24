@@ -1,0 +1,29 @@
+Hatch Pet
+
+This project includes and modifies portions of OpenAI's curated hatch-pet
+skill from https://github.com/openai/skills/tree/main/skills/.curated/hatch-pet,
+using upstream commit c25113bf4c64c8dba6bfe61acf06051d79aa43f6 as the baseline.
+The upstream work was made available under the Apache License, Version 2.0.
+
+The upstream workflow predates this Build Week project. This repository's
+Build Week contribution extends that baseline with a real-pet photo identity
+contract, personality-aware motion guidance, Codex v2 8x11 packaging,
+sixteen look directions, targeted repair workflows, stricter visual QA,
+package verification, safe installation, tests, and a reference pet.
+
+The following upstream-derived files were modified in this project:
+
+- skill/hatch-pet/SKILL.md
+- skill/hatch-pet/agents/openai.yaml
+- skill/hatch-pet/references/animation-rows.md
+- skill/hatch-pet/references/codex-pet-contract.md
+- skill/hatch-pet/references/qa-rubric.md
+- skill/hatch-pet/scripts/derive_running_left_from_running_right.py
+- skill/hatch-pet/scripts/extract_strip_frames.py
+- skill/hatch-pet/scripts/inspect_frames.py
+- skill/hatch-pet/scripts/make_contact_sheet.py
+- skill/hatch-pet/scripts/prepare_pet_run.py
+- skill/hatch-pet/scripts/validate_atlas.py
+
+The unmodified upstream-derived files remain covered by the same Apache-2.0
+license included at skill/hatch-pet/LICENSE.txt.

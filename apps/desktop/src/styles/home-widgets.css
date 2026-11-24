@@ -1,0 +1,583 @@
+/* The pet page's side column as cards (plan/35, homeWidgets.ts). Each card
+   is drawn like the settings group on the left: its title and one number
+   above, then rows in one group, then at most one key to go on, drawn like
+   性格 ›. One size for each. 卡片 at the top opens a short list to order
+   and show them. Both skins: the plain rules are 精密玩具's; 系统原生
+   follows at the end. */
+:root {
+  --hc-gap: 14px;
+  --hc-top: 12px;
+  --hc-group-bg: var(--panel);
+  --hc-group-radius: 8px;
+  --hc-group-edge: 0 0 0 1px var(--line);
+  --hc-row-min: 38px;
+  --hc-pad-x: 12px;
+  --hc-rule: var(--line);
+  --hc-label: var(--ink-3);
+  --hc-key-radius: 6px;
+  --hc-bar: #ff9f0a;
+  --hc-bar-soft: color-mix(in srgb, var(--hc-bar) 40%, transparent);
+  --hc-chevron: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M3.5 1.5L7 5 3.5 8.5'/></svg>");
+  --hc-grip: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14' fill='black'><circle cx='3' cy='3' r='1.2'/><circle cx='7' cy='3' r='1.2'/><circle cx='3' cy='7' r='1.2'/><circle cx='7' cy='7' r='1.2'/><circle cx='3' cy='11' r='1.2'/><circle cx='7' cy='11' r='1.2'/></svg>");
+  --hc-plus: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' stroke='black' stroke-width='1.6' stroke-linecap='round'><path d='M5 1v8M1 5h8'/></svg>");
+  --hc-pop-bg: var(--panel);
+  --hc-pop-edge:
+    0 12px 36px rgba(0, 0, 0, 0.18), 0 0 0 0.5px var(--line-strong);
+  --hc-switch-on: var(--accent);
+  --hc-switch-off: var(--well);
+}
+
+/* ---------- 卡片, at the head of the column ---------- */
+.side-head .cards-key {
+  margin-inline-start: auto;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: var(--hc-key-radius);
+  background: var(--well);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.side-head .cards-key[aria-expanded="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* ---------- the column ---------- */
+.widgets {
+  display: grid;
+  gap: var(--hc-gap);
+  padding: var(--hc-top) 0 var(--hc-gap);
+}
+.hc-label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 4px 6px;
+}
+.hc-title {
+  margin: 0;
+  color: var(--hc-label);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.hc-meta {
+  margin-inline-start: auto;
+  color: var(--hc-label);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.hc-group {
+  overflow: hidden;
+  border-radius: var(--hc-group-radius);
+  background: var(--hc-group-bg);
+  box-shadow: var(--hc-group-edge);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+/* A row, and the key at the foot drawn like 性格 › on the left. */
+.hc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--hc-row-min);
+  margin: 0;
+  padding: 8px var(--hc-pad-x);
+  box-sizing: border-box;
+  box-shadow: inset 0 -0.5px 0 var(--hc-rule);
+  line-height: 1.45;
+}
+.hc-act {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: var(--hc-row-min);
+  padding: 0 var(--hc-pad-x);
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  text-align: start;
+  cursor: pointer;
+}
+.hc-act::after {
+  content: "";
+  flex: none;
+  width: 10px;
+  height: 10px;
+  background: var(--ink-3);
+  -webkit-mask: var(--hc-chevron) center / contain no-repeat;
+  mask: var(--hc-chevron) center / contain no-repeat;
+}
+.hc-act:hover {
+  background: var(--well);
+}
+.hc-act:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.hc-text {
+  min-width: 0;
+}
+.hc-empty {
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+.hc-sub {
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+
+/* The one key in a title row: 写一条待办, a plus. */
+.hc-tool {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-inline-end: -4px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+.hc-add::before {
+  content: "";
+  display: block;
+  width: 11px;
+  height: 11px;
+  margin: auto;
+  background: var(--accent);
+  -webkit-mask: var(--hc-plus) center / contain no-repeat;
+  mask: var(--hc-plus) center / contain no-repeat;
+}
+.hc-tool:hover {
+  background: var(--well);
+}
+.hc-tool:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+/* ---------- 专注 ---------- */
+.hc-focus-row,
+.hc-clock-row {
+  min-height: 60px;
+}
+.hc-num {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+.hc-big {
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.hc-num small {
+  margin-inline-start: 2px;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.hc-line-big {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.hc-bars {
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  gap: 4px;
+  width: 70px;
+  height: 26px;
+}
+.hc-bars i {
+  flex: 1;
+  height: calc(var(--h) * 100%);
+  min-height: 3px;
+  border-radius: 2px;
+  background: var(--hc-bar-soft);
+}
+.hc-bars i[data-today] {
+  background: var(--hc-bar);
+}
+.hc-bars[data-flat] i {
+  background: var(--well);
+}
+.hc-clock {
+  font-size: 24px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.hc-clock-row .hc-sub {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.hc-btn {
+  flex: none;
+  height: 26px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--hc-key-radius);
+  background: var(--well);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.hc-progress {
+  height: 3px;
+  background: var(--well);
+}
+.hc-progress i {
+  display: block;
+  width: calc(var(--p, 0) * 100%);
+  height: 100%;
+  background: var(--hc-bar);
+}
+
+/* Choosing what a focus is for: a question, then the to-dos as rows. */
+.hc-ask {
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+.hc-ask .hc-text {
+  flex: 1;
+}
+.hc-pick {
+  justify-content: space-between;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: start;
+  cursor: pointer;
+}
+.hc-pick:hover {
+  background: var(--well);
+}
+.hc-pick:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* ---------- 聊天 ---------- */
+.hc-chat {
+  align-items: flex-start;
+}
+.hc-face {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--well);
+  object-fit: cover;
+}
+
+/* ---------- the 卡片 list ---------- */
+.side {
+  position: relative;
+}
+.cards-pop {
+  position: absolute;
+  z-index: 6;
+  top: calc(var(--nl-bar, 44px) + 4px);
+  right: 12px;
+  width: 244px;
+  padding: 6px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: var(--hc-pop-bg);
+  box-shadow: var(--hc-pop-edge);
+  color: var(--ink);
+  font-size: 13px;
+}
+.cards-pop-head {
+  margin: 4px 8px 6px;
+  color: var(--ink-3);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.cards-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cards-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 34px;
+  border-radius: 7px;
+  transition: transform 0.12s ease;
+}
+.cards-row[data-dragging] {
+  z-index: 1;
+  position: relative;
+  background: var(--panel);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  transition: none;
+}
+.cards-row[data-off] .cards-name > span {
+  color: var(--ink-3);
+}
+.cards-grip {
+  flex: none;
+  width: 22px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  box-shadow: none;
+  cursor: grab;
+  touch-action: none;
+}
+.cards-grip::before {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 12px;
+  margin: auto;
+  background: var(--ink-3);
+  -webkit-mask: var(--hc-grip) center / contain no-repeat;
+  mask: var(--hc-grip) center / contain no-repeat;
+}
+.cards-row[data-dragging] .cards-grip {
+  cursor: grabbing;
+}
+.cards-grip:focus-visible {
+  outline: 2px solid var(--accent);
+}
+.cards-name {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-inline-end: 6px;
+  cursor: pointer;
+}
+/* The switch: a small pill with a knob. */
+.cards-switch {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 30px;
+  height: 18px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--hc-switch-off);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cards-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: left 0.15s;
+}
+.cards-switch:checked {
+  background: var(--hc-switch-on);
+}
+.cards-switch:checked::after {
+  left: 14px;
+}
+.cards-switch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.cards-pop-hint {
+  margin: 6px 8px 4px;
+  color: var(--ink-3);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+/* ---------- 精密玩具: each card a warm panel like the stage's plate, its
+   title inside after a small lamp, its number on a little screen ---------- */
+:root[data-skin="studio"] .widgets {
+  gap: 12px;
+  padding-top: 10px;
+}
+:root[data-skin="studio"] .widget {
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow:
+    inset 0 1px 0 var(--panel-edge),
+    0 0 0 1px var(--line),
+    0 2px 8px rgba(var(--shadow), 0.06);
+}
+:root[data-skin="studio"] .hc-label {
+  align-items: center;
+  padding: 12px 14px 8px;
+}
+:root[data-skin="studio"] .hc-label::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--led);
+  box-shadow: 0 0 6px var(--led);
+}
+:root[data-skin="studio"] .hc-title {
+  color: var(--ink);
+  font-size: 13px;
+}
+:root[data-skin="studio"] .hc-meta {
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--lcd);
+  color: var(--lcd-ink);
+  font:
+    11px/1.3 ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+}
+:root[data-skin="studio"] .hc-meta:empty {
+  display: none;
+}
+:root[data-skin="studio"] .hc-group {
+  --hc-pad-x: 14px;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+:root[data-skin="studio"]
+  :is(.hc-row, .today-note-line, .today-note-empty, .hc-act) {
+  box-shadow: inset 0 1px 0 var(--hc-rule);
+}
+:root[data-skin="studio"] .hc-act {
+  min-height: 36px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+:root[data-skin="studio"] :is(.hc-big, .hc-clock) {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+:root[data-skin="studio"] .side-head .cards-key {
+  background: var(--key);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 1px 0 var(--panel-edge);
+}
+
+/* ---------- 系统原生: each card one group like the settings on the left,
+   its title inside after the sidebar's own glyph for that page ---------- */
+:root[data-skin="native"] {
+  --hc-top: 16px;
+  --hc-group-bg: var(--nl-group);
+  --hc-group-radius: 10px;
+  --hc-group-edge: none;
+  --hc-key-radius: 999px;
+  --hc-pop-bg: var(--glass-strong);
+  --hc-pop-edge: var(--glass-rim), var(--glass-lift);
+  --hc-switch-on: var(--switch-on);
+  --hc-switch-off: var(--switch-off);
+}
+:root[data-skin="native"] .widgets {
+  gap: 12px;
+}
+:root[data-skin="native"] .widget {
+  overflow: hidden;
+  border-radius: var(--hc-group-radius);
+  background: var(--hc-group-bg);
+  box-shadow: var(--hc-group-edge);
+}
+:root[data-skin="native"] .hc-label {
+  align-items: center;
+  min-height: 40px;
+  padding: 10px var(--hc-pad-x) 2px;
+  box-sizing: border-box;
+}
+:root[data-skin="native"] .hc-title {
+  color: var(--ink);
+  font-size: 13px;
+}
+:root[data-skin="native"] .hc-meta {
+  font-size: 12px;
+}
+:root[data-skin="native"] .hc-group {
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+/* The glyph: a tinted square on a Mac, the glyph alone on Windows, as the
+   sidebar draws it (native-layout.css). */
+:root[data-skin="native"] .hc-label::before {
+  content: "";
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background:
+    var(--glyph) center / 14px no-repeat,
+    var(--tint);
+}
+:root[data-skin="native"] .widget[data-widget="today"] {
+  --tint: var(--nl-tint-reminders);
+  --glyph: var(--nl-glyph-reminders);
+}
+:root[data-skin="native"] .widget[data-widget="focus"] {
+  --tint: var(--nl-tint-focus);
+  --glyph: var(--nl-glyph-focus);
+}
+:root[data-skin="native"] .widget[data-widget="memory"] {
+  --tint: var(--nl-tint-memory);
+  --glyph: var(--nl-glyph-memory);
+}
+:root[data-skin="native"] .widget[data-widget="chats"] {
+  --tint: var(--nl-tint-chat);
+  --glyph: var(--nl-glyph-chat);
+}
+:root[data-skin="native"] .cards-pop {
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+:root[data-skin="native"] .cards-row[data-dragging] {
+  background: var(--card);
+}
+:root[data-skin="native"][data-platform="win"] {
+  --hc-group-radius: 8px;
+  --hc-group-edge: var(--surface-edge);
+  --hc-key-radius: 4px;
+}
+:root[data-skin="native"][data-platform="win"] .hc-label::before {
+  width: 16px;
+  height: 16px;
+  border-radius: 0;
+  background: var(--ink);
+  -webkit-mask: var(--glyph) center / 16px no-repeat;
+  mask: var(--glyph) center / 16px no-repeat;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cards-row,
+  .cards-switch,
+  .cards-switch::after {
+    transition: none;
+  }
+}

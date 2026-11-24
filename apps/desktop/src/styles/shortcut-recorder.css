@@ -1,0 +1,58 @@
+/* Keycap-style shortcut button with explicit recording and invalid states. */
+:root
+  .shell
+  input[data-shortcut]:not([type="checkbox"]):not([type="range"]):not(
+    [type="file"]
+  ) {
+  cursor: pointer;
+  user-select: none;
+  caret-color: transparent;
+  width: auto;
+  min-width: 168px;
+  max-width: 260px;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: var(--key);
+  color: var(--ink);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 2px 0 rgba(var(--shadow), 0.1);
+  transition:
+    box-shadow 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+:root
+  .shell
+  input[data-shortcut]:not([type="checkbox"]):not([type="range"]):not(
+    [type="file"]
+  ):hover:not([data-recording]) {
+  box-shadow:
+    0 0 0 1.5px var(--accent),
+    0 2px 0 rgba(var(--shadow), 0.1);
+}
+
+:root
+  .shell
+  input[data-shortcut][data-recording]:not([type="checkbox"]):not(
+    [type="range"]
+  ):not([type="file"]) {
+  min-width: 224px;
+  font-weight: 500;
+  letter-spacing: 0;
+  background: color-mix(in srgb, var(--accent) 12%, var(--well));
+  color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+:root
+  .shell
+  input[data-shortcut][data-recording][data-invalid]:not([type="checkbox"]):not(
+    [type="range"]
+  ):not([type="file"]) {
+  background: color-mix(in srgb, var(--danger, #d9483b) 12%, var(--well));
+  color: var(--danger, #d9483b);
+  box-shadow: 0 0 0 2px var(--danger, #d9483b);
+}

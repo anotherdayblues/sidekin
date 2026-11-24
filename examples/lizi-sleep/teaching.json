@@ -1,0 +1,54 @@
+{
+  "kind": "pet-teaching",
+  "schemaVersion": 1,
+  "petId": "lizi",
+  "summary": "十分钟没碰栗子就睡觉，持续呼吸，点栗子后起身",
+  "actions": {
+    "sleep": {
+      "label": "睡觉",
+      "image": "actions/sleep.png",
+      "durations": [
+        160,
+        220,
+        300,
+        180,
+        175,
+        175,
+        175,
+        175,
+        175,
+        175,
+        175,
+        175,
+        140,
+        320,
+        290,
+        220
+      ],
+      "loopFrames": [
+        5,
+        12
+      ]
+    }
+  },
+  "rules": [
+    {
+      "id": "idle-sleep",
+      "label": "十分钟没碰栗子就睡觉",
+      "when": {
+        "type": "pet-idle",
+        "minutes": 10
+      },
+      "do": [
+        {
+          "play": "sleep"
+        }
+      ],
+      "cooldownMinutes": 10
+    }
+  ],
+  "remove": {
+    "actions": [],
+    "rules": []
+  }
+}

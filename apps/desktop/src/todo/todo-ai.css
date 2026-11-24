@@ -1,0 +1,261 @@
+/* 伙伴大脑 in 待办 (plan/31): kept quiet. The pet's face marks what it
+   does; its drafts are a plain list to tick; a row's right-click menu. */
+.todo-pet-mark {
+  flex: none;
+  width: 16px;
+  height: 17px;
+  object-fit: contain;
+}
+
+/* ---------- 整理成几条: in the corner of the field, for a paragraph ---------- */
+.todo-quick-field {
+  position: relative;
+}
+.todo-quick[data-tidy] .todo-quick-input {
+  padding-inline-end: 132px;
+}
+:is(.shell .block, .bubble-card) button.todo-quick-tidy[type] {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 6px;
+  margin: auto 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 9px 0 6px;
+  border: 0;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  box-shadow: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+:is(.shell .block, .bubble-card) button.todo-quick-tidy[type]:hover {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--ink);
+}
+.todo-quick-tidy[hidden] {
+  display: none;
+}
+.todo-quick-tidy .todo-pet-mark {
+  width: 15px;
+  height: 16px;
+}
+
+/* ---------- drafts: tick, then one key ---------- */
+.todo-drafts-slot[hidden] {
+  display: none;
+}
+.todo-drafts-slot {
+  margin: 8px 0 14px;
+}
+.todo-break-slot {
+  margin-inline-start: 46px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow:
+    0 0 0 0.5px var(--line-strong),
+    0 6px 18px rgba(var(--shadow), 0.08);
+}
+.todo-drafts {
+  display: grid;
+  gap: 10px;
+}
+.todo-drafts-thinking,
+.todo-drafts-lead,
+.todo-drafts-none {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+.todo-drafts-thinking {
+  animation: todo-think 1.4s ease-in-out infinite;
+}
+@keyframes todo-think {
+  50% {
+    opacity: 0.55;
+  }
+}
+.todo-drafts-list {
+  margin: 0;
+  padding: 2px 4px;
+  list-style: none;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+.todo-drafts-list li + li {
+  border-top: 0.5px solid var(--line);
+}
+:is(.shell .block, .bubble-card) .todo-drafts-list label {
+  justify-items: start;
+  text-align: start;
+  margin: 0;
+  color: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 6px;
+  cursor: pointer;
+}
+:is(.shell .block, .bubble-card) .todo-drafts-list input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.todo-drafts-title {
+  display: grid;
+  justify-self: stretch;
+  overflow-wrap: anywhere;
+}
+.todo-drafts-title small,
+.todo-drafts-when {
+  color: var(--ink-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.todo-drafts-when[data-remind]::before {
+  content: "";
+  display: inline-block;
+  width: 0.95em;
+  height: 0.95em;
+  margin-inline-end: 3px;
+  vertical-align: -0.12em;
+  background: currentColor;
+  -webkit-mask: var(--todo-bell) center / contain no-repeat;
+  mask: var(--todo-bell) center / contain no-repeat;
+}
+li[data-off] .todo-drafts-title {
+  color: var(--ink-3);
+  text-decoration: line-through;
+}
+.todo-drafts-keys {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+:is(.shell .block, .bubble-card) button.todo-drafts-go[type] {
+  padding: 6px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--primary);
+  color: var(--primary-ink);
+  box-shadow: none;
+  font: inherit;
+  font-size: 13.5px;
+}
+:is(.shell .block, .bubble-card) button.todo-drafts-go[type]:disabled {
+  opacity: 0.45;
+}
+:is(.shell .block, .bubble-card) button.todo-drafts-cancel[type] {
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+}
+.todo-drafts-note {
+  margin-inline-start: auto;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+/* In the bubble: its own colours. */
+.bubble-card
+  .todo-drafts
+  :is(
+    .todo-drafts-thinking,
+    .todo-drafts-lead,
+    .todo-drafts-none,
+    .todo-drafts-cancel,
+    .todo-drafts-when,
+    .todo-drafts-title small
+  ) {
+  color: var(--bubble-muted);
+}
+.bubble-card .todo-drafts-list {
+  background: color-mix(in srgb, var(--bubble-ink) 4%, transparent);
+}
+.bubble-card .todo-drafts-list li + li {
+  border-top-color: var(--bubble-line);
+}
+
+/* ---------- a row's right-click menu ---------- */
+.todo-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 180px;
+  padding: 5px;
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow:
+    0 0 0 0.5px var(--line-strong),
+    0 12px 32px rgba(var(--shadow), 0.2);
+  color: var(--ink);
+}
+.todo-menu hr {
+  margin: 4px 6px;
+  border: 0;
+  border-top: 0.5px solid var(--line);
+}
+.todo-menu button[type] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 12px 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  font-size: 13.5px;
+  text-align: start;
+}
+.todo-menu button[type]:hover,
+.todo-menu button[type]:focus-visible:not(:hover) {
+  outline: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.todo-menu button[data-act="delete"] {
+  color: #d0342c;
+}
+.todo-menu-mark {
+  flex: none;
+  width: 16px;
+  height: 17px;
+}
+.todo-menu-mark .todo-pet-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .todo-drafts-thinking {
+    animation: none;
+  }
+}
+
+.todo-quick-hint {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.todo-quick-hint[hidden] {
+  display: none;
+}

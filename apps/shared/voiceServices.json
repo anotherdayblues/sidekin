@@ -1,0 +1,32 @@
+{
+  "openai": {
+    "label": "OpenAI 兼容",
+    "baseUrl": "https://api.openai.com/v1",
+    "model": "gpt-4o-mini-tts",
+    "note": "OpenAI、Groq、硅基流动和本地语音服务器都走这个接口，改地址和模型即可。"
+  },
+  "aliyun": {
+    "label": "阿里百炼",
+    "baseUrl": "wss://dashscope.aliyuncs.com/api-ws/v1/inference",
+    "model": "cosyvoice-v3-flash",
+    "note": "百炼建议改用带工作空间编号的地址，可在“更多”里填写。"
+  },
+  "volcengine": {
+    "label": "火山引擎（豆包语音）",
+    "baseUrl": "wss://openspeech.bytedance.com/api/v3/tts/bidirection",
+    "model": "",
+    "note": "新版控制台只填 API Key；旧版控制台还要在“更多”里填 App ID，Key 填 Access Key。音色要和资源 ID 对应。"
+  },
+  "minimax": {
+    "label": "MiniMax",
+    "baseUrl": "wss://api.minimax.cn/ws/v1/t2a_v2_bidi",
+    "model": "speech-2.8-turbo",
+    "note": ""
+  },
+  "elevenlabs": {
+    "label": "ElevenLabs",
+    "baseUrl": "wss://api.elevenlabs.io/v1",
+    "model": "eleven_flash_v2_5",
+    "note": ""
+  }
+}

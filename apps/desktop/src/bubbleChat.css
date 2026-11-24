@@ -1,0 +1,151 @@
+/* D1 · the bubble as a short chat: earlier turns, what you just said, the
+   reply. Plus the glass pane. Messages use the same colors as the chat
+   window (--chat-* in styles/chat.css), so opening 展开 continues the same
+   conversation in the same look. Colors come only from shared skin tokens,
+   so a new skin works without extra rules; the skin blocks at the end are
+   optional touches matching each skin's chat window. */
+:root {
+  --msg-mine-bg: var(--accent);
+  --msg-mine-ink: var(--accent-ink);
+  --msg-theirs-bg: var(--key);
+  --msg-theirs-ink: var(--ink);
+  --msg-radius: 16px;
+  --msg-pad: 6px 11px;
+  --msg-border: 0 solid transparent;
+  --msg-shadow: 0 0 0 1px var(--line);
+  --msg-gap: 6px;
+  --msg-width: 84%;
+  --msg-earlier: 1;
+  --msg-thread-lines: 9;
+  /* Glass: the pane lets a little of the desktop through, with a light top
+     edge. The bubble window is transparent, so there is no blur behind it. */
+  --bubble-opacity: 90%;
+  --bubble-sheen: linear-gradient(
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0) 40%
+  );
+  --bubble-highlight: inset 0 0.5px 0 rgba(255, 255, 255, 0.55);
+}
+:root[data-theme="night"] {
+  --bubble-sheen: linear-gradient(
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0) 40%
+  );
+  --bubble-highlight: inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+}
+
+.bubble-card {
+  background:
+    var(--bubble-sheen),
+    color-mix(in srgb, var(--bubble-bg) var(--bubble-opacity), transparent);
+  box-shadow: var(--bubble-highlight), var(--bubble-shadow);
+}
+.bubble-tail::before {
+  background: color-mix(
+    in srgb,
+    var(--bubble-bg) var(--bubble-opacity),
+    transparent
+  );
+}
+
+/* ---------- messages ---------- */
+.bubble-thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--msg-gap);
+}
+.bubble-msg,
+.bubble-mine,
+.bubble-card[data-mode="chat"] .bubble-text:not(:empty) {
+  margin: 0;
+  max-width: var(--msg-width);
+  padding: var(--msg-pad);
+  border: var(--msg-border);
+  border-radius: var(--msg-radius);
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.bubble-msg[data-who="mine"],
+.bubble-mine {
+  align-self: flex-end;
+  justify-self: end;
+  background: var(--msg-mine-bg);
+  color: var(--msg-mine-ink);
+  box-shadow: none;
+}
+.bubble-msg[data-who="theirs"],
+.bubble-card[data-mode="chat"] .bubble-text:not(:empty) {
+  align-self: flex-start;
+  justify-self: start;
+  background: var(--msg-theirs-bg);
+  color: var(--msg-theirs-ink);
+  box-shadow: var(--msg-shadow);
+}
+/* Replies and translations are rendered markup: keep line breaks inside
+   their paragraphs, not the newlines between their blocks. */
+.bubble-text:not(:empty) {
+  white-space: normal;
+}
+.bubble-text :is(p, li, pre) {
+  white-space: pre-wrap;
+}
+/* Plain-text messages keep their line breaks. */
+.bubble-msg,
+.bubble-mine {
+  white-space: pre-wrap;
+}
+/* Earlier turns keep their full text in the shared scrolling area. */
+.bubble-msg {
+  opacity: var(--msg-earlier);
+  flex: none;
+}
+/* Only chat is a conversation: translation, vision and reminders keep the
+   plain card. */
+.bubble-card:not([data-mode="chat"]) :is(.bubble-thread, .bubble-mine),
+.bubble-card[data-state="reminder"] :is(.bubble-thread, .bubble-mine) {
+  display: none !important;
+}
+
+/* ---------- optional skin touches (as in each skin's chat window) ---------- */
+
+:root[data-skin="native"] {
+  --msg-theirs-bg: var(--native-theirs);
+  --msg-theirs-ink: var(--native-theirs-ink);
+  --msg-shadow: var(--native-theirs-edge);
+  --msg-radius: 18px;
+}
+:root[data-skin="native"][data-platform="win"] {
+  --msg-radius: 8px;
+}
+
+.bubble-shell {
+  display: flex;
+  flex-direction: column;
+  max-height: var(--bubble-available, 650px);
+}
+.bubble-card {
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+.bubble-messages {
+  display: grid;
+  gap: var(--bubble-gap);
+  min-height: 0;
+  max-height: calc(var(--msg-thread-lines) * 1lh);
+  overflow: auto;
+  overscroll-behavior: contain;
+  align-content: start;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: max-content;
+}
+.bubble-messages .bubble-text {
+  max-height: none;
+  overflow: visible;
+}
+
+.bubble-messages {
+  overflow-anchor: none;
+}
+.bubble-thread > button {
+  align-self: center;
+}

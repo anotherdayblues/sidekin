@@ -1,0 +1,517 @@
+/* The 番茄钟 clock (plan/19 §9). --k is a tenth of the clock's height: the
+   window's height in its own window, a share of the pet's width (--u, 1%)
+   on the 专注 page. --p is the time passed, --head and --middle the pet's
+   head on the page. Skins change the tokens in skins/*.css. */
+.focus-clock {
+  --u: 1.6px;
+  --k: clamp(3px, calc(var(--u) * 2), 4.6px);
+  --head: 0.3;
+  --middle: 0.5;
+  --p: 0;
+  --clock-bg: var(--lcd, #23221f);
+  --clock-ink: var(--lcd-ink, #f1e6c8);
+  --clock-soft-ink: color-mix(in srgb, var(--clock-ink) 60%, transparent);
+  --clock-break-ink: #8fe0b0;
+  --clock-accent: var(--clock-ink);
+  --clock-glow: rgba(255, 196, 110, 0.5);
+  --clock-flow: rgba(255, 214, 140, 0.95);
+  --clock-rim: rgba(255, 255, 255, 0.12);
+  --clock-rim-width: 1px;
+  --clock-track: rgba(255, 255, 255, 0.14);
+  --clock-shadow: 0 0 calc(var(--k) * 1.6) var(--clock-glow);
+  --clock-blur: none;
+  --clock-radius: 999px;
+  --clock-tool-radius: 999px;
+  --clock-font:
+    ui-monospace, "SF Mono", Menlo, Consolas, "Cascadia Mono", monospace;
+  --clock-weight: 600;
+  --clock-flow-ms: 7s;
+  --clock-in-ms: 320ms;
+  /* The resting bar in the clock's window, and how its inside changes as
+     the window opens (focus_clock.rs times the window the same). */
+  --clock-bar-bg: var(--clock-bg);
+  --clock-bar-shadow: var(--clock-shadow);
+  --clock-morph-ms: 520ms;
+  --clock-morph-ease: cubic-bezier(0.32, 1.22, 0.42, 1);
+  --clock-fade-ms: 180ms;
+  /* The bar's light: a soft fill and, at its head, a small turning glow. */
+  --clock-glow-a: color-mix(
+    in srgb,
+    var(--clock-phase-accent, var(--clock-accent)) 50%,
+    transparent
+  );
+  --clock-glow-b: color-mix(
+    in srgb,
+    var(--clock-phase-accent, var(--clock-accent)) 90%,
+    transparent
+  );
+  --clock-orb-2: color-mix(in srgb, var(--clock-accent) 70%, #fff);
+  --clock-orb-3: var(--clock-flow);
+  --clock-orb-4: color-mix(in srgb, var(--clock-accent) 45%, #fff);
+  --clock-orb-ms: 8s;
+  position: relative;
+  box-sizing: border-box;
+  height: calc(var(--k) * 10);
+  aspect-ratio: 3.4;
+  border-radius: var(--clock-radius);
+  background: var(--clock-bg);
+  backdrop-filter: var(--clock-blur);
+  -webkit-backdrop-filter: var(--clock-blur);
+  box-shadow: var(--clock-shadow);
+  /* A break's color wins over the skin's: skins set --clock-ink, phases
+     set --clock-phase-ink. */
+  color: var(--clock-phase-ink, var(--clock-ink));
+  opacity: 0;
+  transform: translateY(calc(var(--k) * 1.5)) scale(0.92);
+  transition:
+    opacity var(--clock-in-ms) ease,
+    transform var(--clock-in-ms) cubic-bezier(0.3, 1.3, 0.5, 1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.focus-clock:not([data-phase="idle"]) {
+  opacity: 1;
+  transform: none;
+}
+
+/* In its own window: the whole window, which is the bar at rest and the
+   clock when open (focus_clock.rs changes the window's size). --k comes
+   from the open clock's height, so nothing inside scales as it opens. */
+.clock-window,
+.clock-window body,
+.clock-window #app {
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: transparent !important;
+}
+.focus-clock[data-home="window"] {
+  --k: var(--clock-k, 10vh);
+  position: fixed;
+  inset: 0;
+  height: auto;
+  aspect-ratio: auto;
+  overflow: hidden;
+  background: var(--clock-bar-bg);
+  box-shadow: var(--clock-bar-shadow);
+  cursor: default;
+  transition:
+    opacity var(--clock-in-ms) ease,
+    transform var(--clock-in-ms) cubic-bezier(0.3, 1.3, 0.5, 1),
+    background-color var(--clock-morph-ms) ease,
+    box-shadow var(--clock-morph-ms) ease;
+}
+.focus-clock[data-home="window"][data-peek] {
+  background: var(--clock-bg);
+  box-shadow: var(--clock-shadow);
+}
+/* Resting, the digits and the rim light are away and the rim stops. */
+.focus-clock[data-home="window"] .clock-face {
+  opacity: 0;
+  scale: 0.94;
+  transition:
+    opacity var(--clock-fade-ms) ease,
+    scale var(--clock-fade-ms) ease;
+}
+.focus-clock[data-home="window"][data-peek] .clock-face {
+  opacity: 1;
+  scale: 1;
+  transition-delay: calc(var(--clock-morph-ms) * 0.32);
+  transition-duration: calc(var(--clock-fade-ms) * 1.6);
+}
+.focus-clock[data-home="window"]:not([data-peek]) .clock-flow {
+  opacity: 0;
+}
+.focus-clock[data-home="window"]:not([data-peek]) .clock-flow::before {
+  animation: none;
+  will-change: auto;
+}
+/* The bar's light becomes the line under the digits, so the clock's own
+   line keeps only its place. */
+.focus-clock[data-home="window"] .clock-progress {
+  visibility: hidden;
+}
+/* On the page: just above the pet's head. */
+.focus-clock[data-home="page"] {
+  position: absolute;
+  left: calc(var(--middle) * 100%);
+  top: max(1%, calc(var(--head) * 100% - var(--k) * 11));
+  translate: -50% 0;
+  pointer-events: none;
+}
+
+/* The light running round the rim: a gradient turned as a whole (the GPU
+   turns it without painting it again), cut down to the rim so it follows
+   any shape, round or square. */
+.clock-flow {
+  position: absolute;
+  inset: 0;
+  padding: var(--clock-rim-width);
+  border-radius: inherit;
+  overflow: hidden;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+/* A square twice the clock's width covers it at any turn. */
+.clock-flow::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 200%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: conic-gradient(
+    var(--clock-rim) 0 66%,
+    var(--clock-flow) 80%,
+    var(--clock-rim) 94%
+  );
+  animation: clock-flow var(--clock-flow-ms) linear infinite;
+  will-change: transform;
+}
+@keyframes clock-flow {
+  to {
+    transform: rotate(1turn);
+  }
+}
+/* The last minute: the rim light a little brighter and quicker. */
+.focus-clock[data-last] .clock-flow::before {
+  --clock-flow-ms: 3.5s;
+}
+/* Not running: nothing turns. */
+.focus-clock[data-phase="idle"] .clock-flow::before {
+  animation: none;
+}
+
+.clock-face {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--k) * 0.8);
+  height: 100%;
+  padding-inline: calc(var(--k) * 2);
+}
+.clock-read {
+  position: relative;
+  display: grid;
+  justify-items: center;
+}
+.clock-line {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--k) * 0.7);
+}
+.clock-tag {
+  display: none;
+  font-style: normal;
+  font-size: calc(var(--k) * 2.2);
+  font-weight: 600;
+  line-height: 1;
+  padding: calc(var(--k) * 0.35) calc(var(--k) * 0.7);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--clock-phase-ink, var(--clock-ink)) 18%, transparent);
+}
+.focus-clock:is([data-phase="break"], [data-phase="rested"]) .clock-tag {
+  display: inline-flex;
+  align-items: center;
+}
+.focus-clock[data-home="window"]:is([data-open], [data-tools]) .clock-tag {
+  display: none;
+}
+.clock-digits {
+  font: var(--clock-weight) calc(var(--k) * 4.8) / 1 var(--clock-font);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  text-shadow: 0 0 calc(var(--k) * 1.2) var(--clock-glow);
+}
+/* How far along: a hairline under the digits. */
+.clock-progress {
+  position: relative;
+  width: 100%;
+  height: max(1px, calc(var(--k) * 0.3));
+  margin-top: calc(var(--k) * 0.9);
+  border-radius: 1px;
+  background: var(--clock-track);
+  overflow: hidden;
+}
+.clock-progress::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--clock-phase-ink, var(--clock-accent));
+  transform: scaleX(var(--p));
+  transform-origin: left;
+  transition: transform 500ms linear;
+}
+/* Which round of the set, as dots, shown with the buttons in place of the
+   line: the finished ones full, the running one half. */
+.clock-round {
+  display: none;
+  gap: calc(var(--k) * 0.5);
+  margin-top: calc(var(--k) * 0.6);
+}
+.clock-round i {
+  width: calc(var(--k) * 0.8);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--clock-soft-ink);
+  opacity: 0.35;
+}
+.clock-round i[data-now] {
+  opacity: 0.7;
+}
+.clock-round i[data-done] {
+  background: var(--clock-phase-ink, var(--clock-ink));
+  opacity: 1;
+}
+
+/* The buttons, with the pointer over the open clock or after a click. */
+.clock-tools {
+  display: none;
+  gap: calc(var(--k) * 0.6);
+}
+.focus-clock[data-home="window"]:is([data-open], [data-tools]) .clock-tools {
+  display: flex;
+}
+.focus-clock[data-home="window"]:is([data-open], [data-tools]) .clock-progress {
+  display: none;
+}
+.focus-clock[data-home="window"]:is([data-open], [data-tools]) .clock-round {
+  display: flex;
+}
+.focus-clock[data-home="window"]:is([data-open], [data-tools]) .clock-digits {
+  font-size: calc(var(--k) * 4);
+}
+.clock-tool {
+  position: relative;
+  width: calc(var(--k) * 6);
+  height: calc(var(--k) * 6);
+  padding: 0;
+  border: 0;
+  border-radius: var(--clock-tool-radius);
+  background: color-mix(in srgb, var(--clock-ink) 12%, transparent);
+  color: var(--clock-ink);
+  cursor: pointer;
+}
+.clock-tool:hover {
+  background: color-mix(in srgb, var(--clock-ink) 22%, transparent);
+}
+.clock-tool:active {
+  transform: scale(0.92);
+}
+/* The glyphs are drawn: two bars, a triangle, a square. */
+.clock-tool::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  background: currentColor;
+}
+.clock-tool[data-focus-act="pause"]::before {
+  width: 36%;
+  height: 40%;
+  background: linear-gradient(
+    90deg,
+    currentColor 0 36%,
+    transparent 36% 64%,
+    currentColor 64%
+  );
+  border-radius: 1px;
+}
+.clock-tool[data-focus-act="resume"]::before,
+.clock-tool[data-focus-act="start"]::before {
+  width: 34%;
+  height: 40%;
+  translate: 8% 0;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+.clock-tool[data-focus-act="rest"]::before {
+  width: 40%;
+  height: 40%;
+  background: transparent;
+  border-radius: 50%;
+  box-shadow: inset calc(var(--k) * -0.75) calc(var(--k) * -0.5) 0 0 currentColor;
+}
+.clock-tool[data-focus-act="stop"]::before {
+  width: 32%;
+  height: 32%;
+  border-radius: 2px;
+}
+
+/* The bar's light (in the clock's window only). Resting it fills the bar;
+   open it shrinks to the line under the digits. Only transform, rotate,
+   scale and opacity move, so nothing is painted again while it runs. */
+.clock-glow {
+  display: none;
+}
+.focus-clock[data-home="window"] .clock-glow {
+  --p: 0;
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+  transition:
+    inset var(--clock-morph-ms) var(--clock-morph-ease),
+    opacity var(--clock-fade-ms) ease;
+}
+.focus-clock[data-home="window"][data-peek] .clock-glow {
+  inset: calc(100% - var(--k) * 1.6) 28% calc(var(--k) * 1.2) 28%;
+}
+.focus-clock[data-home="window"][data-peek] .glow-fill {
+  background: var(--clock-track);
+}
+.focus-clock[data-home="window"]:is([data-open], [data-tools]) .clock-glow {
+  opacity: 0;
+}
+.glow-fill {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+.glow-fill::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--clock-glow-a), var(--clock-glow-b));
+  mask: linear-gradient(90deg, rgba(0, 0, 0, 0.55), #000 28%);
+  transform: translateX(calc((var(--p) - 1) * 100%));
+  transition: transform 600ms ease;
+}
+/* The head of the light, at how far along; it breathes. */
+.glow-lane {
+  position: absolute;
+  inset: 0;
+  transform: translateX(calc(var(--p) * 100%));
+  transition: transform 600ms ease;
+  animation: glow-breathe 3.4s ease-in-out infinite;
+}
+.glow-orb {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: calc(var(--k) * 6.4);
+  height: calc(var(--k) * 6.4);
+  margin: calc(var(--k) * -3.2) 0 0 calc(var(--k) * -3.2);
+  scale: 0.95;
+  opacity: 0.95;
+  transition:
+    scale var(--clock-morph-ms) var(--clock-morph-ease),
+    opacity var(--clock-morph-ms) ease;
+}
+/* Open, the light swells into a soft glow behind the digits. */
+.focus-clock[data-peek] .glow-orb {
+  scale: 2.6;
+  opacity: 0.5;
+}
+/* Soft by a fixed mask, not a blur filter; it turns, so its colors move. */
+.glow-orb::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--clock-phase-accent, var(--clock-accent)),
+    var(--clock-phase-orb-2, var(--clock-orb-2)),
+    var(--clock-phase-orb-3, var(--clock-orb-3)),
+    var(--clock-phase-orb-4, var(--clock-orb-4)),
+    var(--clock-phase-accent, var(--clock-accent))
+  );
+  mask: radial-gradient(closest-side, #000 30%, transparent);
+  animation: glow-turn var(--clock-orb-ms) linear infinite;
+}
+@keyframes glow-turn {
+  to {
+    rotate: 1turn;
+  }
+}
+@keyframes glow-breathe {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+/* Paused holds the light still; idle detaches the animations completely. */
+.focus-clock[data-paused] .glow-lane,
+.focus-clock[data-paused] .glow-orb::before {
+  animation-play-state: paused;
+}
+.focus-clock[data-phase="idle"] .glow-lane,
+.focus-clock[data-phase="idle"] .glow-orb::before {
+  animation: none;
+}
+
+/* A break: green (uses --clock-phase-* tokens so skins never shadow it). */
+.focus-clock:is([data-phase="break"], [data-phase="rested"]) {
+  --clock-phase-ink: var(--clock-break-ink);
+  --clock-phase-accent: var(--clock-break-ink);
+  --clock-glow: rgba(110, 220, 160, 0.4);
+  --clock-flow: rgba(150, 240, 190, 0.9);
+  --clock-phase-orb-2: #5eead4;
+  --clock-phase-orb-3: #34d399;
+  --clock-phase-orb-4: #a7f3d0;
+}
+.focus-clock[data-paused] .clock-digits {
+  animation: clock-paused 1.6s ease-in-out infinite;
+}
+.focus-clock[data-paused] .clock-flow::before {
+  animation-play-state: paused;
+}
+@keyframes clock-paused {
+  50% {
+    opacity: 0.35;
+  }
+}
+.focus-clock[data-cheer] {
+  animation: clock-cheer 800ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+@keyframes clock-cheer {
+  40% {
+    transform: scale(1.08);
+    filter: brightness(1.3);
+  }
+}
+
+/* The system's settings for motion, contrast and transparency. */
+@media (prefers-reduced-motion: reduce) {
+  .focus-clock,
+  .clock-progress::after,
+  .clock-face,
+  .clock-glow,
+  .glow-fill::before,
+  .glow-lane,
+  .glow-orb {
+    transition: none;
+  }
+  .clock-flow::before,
+  .glow-lane,
+  .glow-orb::before,
+  .focus-clock[data-paused] .clock-digits,
+  .focus-clock[data-cheer] {
+    animation: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .focus-clock {
+    --clock-rim: color-mix(in srgb, var(--clock-ink) 60%, transparent);
+    --clock-rim-width: 1.5px;
+    --clock-glow: transparent;
+    --clock-soft-ink: var(--clock-ink);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .focus-clock {
+    --clock-blur: none;
+    --clock-bg: var(--clock-solid, #23221f);
+  }
+}

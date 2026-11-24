@@ -1,0 +1,37 @@
+/* Range sliders (focus volume). */
+/* Slider: a groove in the panel and a plastic cap riding in it. */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  background: none;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--recess);
+  box-shadow: inset 0 1px 2px rgba(var(--shadow), 0.3);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--key);
+  border: 3px solid var(--accent);
+  box-shadow: 0 1px 3px rgba(var(--shadow), 0.35);
+}
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--recess);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--key);
+  border: 3px solid var(--accent);
+}

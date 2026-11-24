@@ -1,0 +1,34 @@
+/* ---------- 下拉框: a raised key with a chevron ---------- */
+/* Drawn selects elsewhere (the to-do pickers, todo/quick.css) take their
+   arrow, corners and edge from these; 系统原生 sets them per platform
+   (skins/native.css). */
+:root {
+  --select-arrow: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' fill='none' stroke='%238e8e93' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M2.5 4l2.5 2.5L7.5 4'/></svg>");
+  --select-radius: 7px;
+  --select-edge: none;
+}
+.shell select,
+.shell .companion-page select {
+  appearance: none;
+  -webkit-appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--ink-3) 50%) right 16px
+      center / 5px 5px no-repeat,
+    linear-gradient(-45deg, transparent 50%, var(--ink-3) 50%) right 11px
+      center / 5px 5px no-repeat,
+    var(--key);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 2px 0 rgba(var(--shadow), 0.1);
+  padding-right: 30px;
+  cursor: pointer;
+}
+
+.shell .companion-entry > span {
+  flex: none;
+}
+.shell .companion-entry > .memo-text,
+.shell .companion-entry > .reminder-text,
+.shell .companion-entry > .doc-name {
+  flex: 1;
+}

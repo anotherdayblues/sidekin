@@ -1,0 +1,4 @@
+interface:
+  display_name: "制作独立桌宠"
+  short_description: "按官方 Hatch Pet 流程，把照片、角色图或一句描述做成能在随伴桌面上独立生活的动画宠物"
+  default_prompt: "使用 $make-desktop-pet 根据我的想法制作宠物，先确认形象，再生成动作并导出独立桌宠包。"

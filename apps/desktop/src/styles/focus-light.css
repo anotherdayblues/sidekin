@@ -1,0 +1,157 @@
+/* The 番茄钟 light (plan/19 §9.5): a pool of lamp light at the pet's feet
+   and a faint glow behind it while a timer runs. It clicks on at a start,
+   breathes very slowly, turns mint for a break, goes out on a pause, sends
+   a ring outward on a finish and fades slowly at the end. Behind the pet,
+   never on it. Skins change the tokens in skins/*.css. */
+:has(> .focus-light) {
+  position: relative;
+}
+.focus-light ~ canvas {
+  position: relative;
+}
+.focus-light {
+  --light: 255, 196, 120;
+  --light-break: 140, 230, 190;
+  --light-strength: 0.62;
+  --light-breath-ms: 8s;
+  --light-out-ms: 1.6s;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--light-out-ms) ease;
+}
+:root[data-theme="night"] .focus-light {
+  --light: 255, 178, 92;
+  --light-strength: 0.75;
+}
+.focus-light:is([data-phase="focus"], [data-phase="break"]):not([data-paused]) {
+  opacity: 1;
+  transition-duration: 400ms;
+}
+.focus-light:is([data-phase="break"], [data-phase="rested"]) {
+  --light-phase: var(--light-break);
+  --light-phase-strength: 0.42;
+}
+/* The pool at the feet, and the faint glow behind the body. */
+.focus-pool,
+.focus-light::before {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  border-radius: 50%;
+}
+.focus-pool {
+  bottom: 1%;
+  width: 92%;
+  height: 20%;
+  background: radial-gradient(
+    closest-side,
+    rgba(
+      var(--light-phase, var(--light)),
+      var(--light-phase-strength, var(--light-strength))
+    ),
+    rgba(
+        var(--light-phase, var(--light)),
+        calc(var(--light-phase-strength, var(--light-strength)) * 0.35)
+      )
+      55%,
+    transparent
+  );
+}
+.focus-light::before {
+  content: "";
+  top: 22%;
+  width: 96%;
+  height: 72%;
+  background: radial-gradient(
+    closest-side,
+    rgba(
+      var(--light-phase, var(--light)),
+      calc(var(--light-phase-strength, var(--light-strength)) * 0.32)
+    ),
+    transparent
+  );
+}
+.focus-light[data-phase="focus"]:not([data-paused]) .focus-pool,
+.focus-light[data-phase="focus"]:not([data-paused])::before {
+  animation: light-breath var(--light-breath-ms) ease-in-out infinite alternate;
+}
+@keyframes light-breath {
+  from {
+    opacity: 0.72;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* "嗒": the lamp catching, a flicker and then steady. */
+.focus-light[data-lit] {
+  animation: light-click 520ms steps(1, end) both;
+}
+@keyframes light-click {
+  0% {
+    filter: brightness(0.3);
+  }
+  20% {
+    filter: brightness(1.25);
+  }
+  34% {
+    filter: brightness(0.6);
+  }
+  48% {
+    filter: brightness(1);
+  }
+}
+/* A finish: a ring of light runs out across the floor. */
+.focus-ring {
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  width: 40%;
+  height: 9%;
+  translate: -50% 0;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px rgba(var(--light-phase, var(--light)), 0.9),
+    0 0 12px 2px rgba(var(--light-phase, var(--light)), 0.6);
+  opacity: 0;
+}
+.focus-light[data-cheer] {
+  opacity: 1;
+}
+.focus-light[data-cheer] .focus-ring {
+  animation: light-ring 1.2s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+@keyframes light-ring {
+  0% {
+    opacity: 1;
+    scale: 0.4;
+  }
+  100% {
+    opacity: 0;
+    scale: 2.4;
+  }
+}
+
+.focus-confetti {
+  --confetti-1: #f3c518;
+  --confetti-2: #e2563f;
+  --confetti-3: #4a9be8;
+  --confetti-4: #46b47a;
+  --confetti-5: #c46ad8;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-light,
+  .focus-light *,
+  .focus-light::before {
+    animation: none !important;
+    transition: none;
+  }
+}

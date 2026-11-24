@@ -1,0 +1,245 @@
+/* 它会的事 (plan/17 3.3): the ? key at the foot of the left column and the
+   book itself, a dialog of cards that light up once tried. */
+/* The ? key at the foot of the left column; a dot while a card is unread. */
+.help-key {
+  position: relative;
+  font: 600 var(--help-size, 15px) / 1 inherit;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.help-key[data-new]::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--led);
+  box-shadow: 0 0 0 1.5px var(--panel);
+}
+.help-key[data-guide-highlight] {
+  color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 5px color-mix(in srgb, var(--accent) 20%, transparent);
+  animation: help-key-pulse 1.8s ease-in-out infinite;
+}
+@keyframes help-key-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 2px var(--accent), 0 0 0 8px color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .help-key[data-guide-highlight] {
+    animation: none;
+  }
+}
+
+.skill-book {
+  width: min(560px, calc(100vw - 48px));
+  max-height: calc(100vh - 64px);
+  padding: 20px 22px 22px;
+  border: 0;
+  border-radius: 16px;
+  color: var(--ink);
+  background: var(--panel);
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 24px 60px -16px rgba(0, 0, 0, 0.4);
+}
+.skill-book::backdrop {
+  background: rgba(0, 0, 0, 0.28);
+}
+.skill-book header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.skill-book h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.skill-book header small {
+  color: var(--ink-3);
+}
+.skill-book [data-close],
+.skill-book [data-back] {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--well);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.skill-book [data-close] {
+  margin-left: auto;
+}
+.skill-book [data-close]::before {
+  content: "×";
+  font-size: 18px;
+  line-height: 28px;
+}
+.skill-book [data-back]::before {
+  content: "‹";
+  font-size: 20px;
+  line-height: 26px;
+}
+.skill-note {
+  margin: 6px 0 14px;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.skill-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.skill-cards button {
+  display: grid;
+  gap: 4px;
+  align-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 96px;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 11px;
+  font: inherit;
+  text-align: center;
+  color: var(--ink-3);
+  background: var(--well);
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+.skill-cards button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px var(--line-strong);
+}
+.skill-cards b {
+  font-size: 14px;
+}
+.skill-cards span {
+  font-size: 12px;
+  line-height: 1.4;
+}
+.skill-cards small {
+  align-self: end;
+  margin-top: 4px;
+  font-size: 11px;
+}
+/* Tried: the card lights up. */
+.skill-cards button[data-learned="true"] {
+  color: var(--ink);
+  background: var(--card);
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 2px 6px rgba(var(--shadow), 0.08);
+}
+/* Turned off in settings: dimmed, with a way to turn it on. */
+.skill-cards button[data-off="true"] {
+  opacity: 0.6;
+}
+.skill-off {
+  margin: -6px 0 12px;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.skill-demo {
+  display: grid;
+  justify-items: center;
+  min-height: 300px;
+}
+.skill-book [data-go] {
+  margin-top: 10px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skill-cards button {
+    transition: none;
+  }
+}
+
+/* Groups (plan/32): tabs on top, one group's cards under them. */
+.skill-book[open] {
+  overflow: auto;
+}
+.skill-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 12px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--well);
+}
+.skill-tabs button {
+  position: relative;
+  flex: 1 1 auto;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.skill-tabs button[aria-selected="true"] {
+  background: var(--panel);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(var(--shadow), 0.14);
+}
+/* A group with a card not yet read. */
+.skill-tabs button[data-new]::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+/* 小技巧 under a card's how: the small gestures that go with it. */
+.skill-tips {
+  display: grid;
+  gap: 3px;
+  margin: -4px 0 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--well);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.skill-tips b {
+  color: var(--ink);
+  font-size: 12px;
+}
+.skill-tips ul {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding-inline-start: 1.1em;
+}
+/* The way to where a feature is set up. */
+.skill-book button.primary {
+  padding: 7px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--primary);
+  color: var(--primary-ink);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}

@@ -1,0 +1,100 @@
+/* 精密玩具 (plan/36): what this skin lays over the base stylesheet. Every
+   rule is kept to :root[data-skin="studio"], so 系统原生 never sees it.
+     - Day: warmer and lighter than the base, a honey accent beside the
+       orange pets, a cleaner paper sweep on the stage.
+     - The pet page: the status screen beside the name; the controls on a
+       plate joined to the stage's lower edge, like the base of a display
+       case; the side column's first card level with the stage. */
+
+/* ---------- day ---------- */
+:root[data-skin="studio"]:not([data-theme="night"]) {
+  --body: #ebe6dc;
+  --panel: #fbf9f5;
+  --panel-edge: #ffffff;
+  --recess: #e8e2d6;
+  --well: #e7e1d5;
+  --ink: #2a251d;
+  --ink-2: #6e6555;
+  --ink-3: #9d9385;
+  --line: rgba(70, 52, 24, 0.1);
+  --line-strong: rgba(70, 52, 24, 0.18);
+  --accent: #f2b632;
+  --accent-ink: #382805;
+  --led: #f0a623;
+  --key: #fdfbf7;
+  --key-down: #efeae0;
+  --card: #fffdf9;
+  --lcd: #2b2620;
+  --lcd-ink: #f6e3b4;
+  --shadow: 70, 52, 24;
+  --grain-opacity: 0.22;
+  --pet-shadow: rgba(110, 72, 24, 0.2);
+  --studio-sweep-top: #f7f2e8;
+  --studio-sweep-wall: #f2ebde;
+  --studio-sweep-fold: #e6dccb;
+  --studio-sweep-floor: #ede5d7;
+  --studio-sweep-front: #f4eee3;
+}
+:root[data-skin="studio"]:not([data-theme="night"]) .window {
+  background: linear-gradient(
+    to bottom,
+    var(--studio-sweep-top) 0%,
+    var(--studio-sweep-wall) calc(var(--floor, 82%) - 16%),
+    var(--studio-sweep-fold) calc(var(--floor, 82%) - 2%),
+    var(--studio-sweep-floor) calc(var(--floor, 82%) + 6%),
+    var(--studio-sweep-front) 100%
+  );
+}
+
+/* ---------- the pet page ---------- */
+:root[data-skin="studio"] {
+  --studio-plate-pad: 10px 6px;
+  --studio-cell-pad: 0 22px;
+  --studio-short-head: 34px;
+}
+/* The status screen sits beside the name. */
+:root[data-skin="studio"] .deck-head {
+  justify-content: flex-start;
+  align-items: center;
+  gap: 18px;
+}
+:root[data-skin="studio"] .deck-head .lcd {
+  min-width: 0;
+  margin-top: 4px;
+}
+/* The controls: a plate joined to the stage's lower edge. */
+:root[data-skin="studio"] .window {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+:root[data-skin="studio"] .controls {
+  gap: 0;
+  margin-top: -10px;
+  padding: var(--studio-plate-pad);
+  border-radius: 0 0 10px 10px;
+  background: var(--panel);
+  box-shadow:
+    inset 0 1px 0 var(--line),
+    0 0 0 1px var(--line),
+    0 2px 8px rgba(var(--shadow), 0.06);
+}
+:root[data-skin="studio"] .control {
+  padding: var(--studio-cell-pad);
+}
+:root[data-skin="studio"] .control + .control {
+  box-shadow: inset 1px 0 0 var(--line);
+}
+/* The side column: its head as tall as the name's, so the first card
+   starts level with the stage. */
+:root[data-skin="studio"] .side-head {
+  flex: none;
+  min-height: 58px;
+  align-items: center;
+}
+/* Short windows hide the line under the name (09-responsive-pet-window.css):
+   the side head shrinks with it. */
+@media (max-height: 720px) {
+  :root[data-skin="studio"] .side-head {
+    min-height: var(--studio-short-head);
+  }
+}

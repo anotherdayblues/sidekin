@@ -1,0 +1,112 @@
+/* The sleeping pet's z's (petDoze.ts): three small letters drawn as shapes,
+   not text, rising a little and fading in turn. The box stands on the top
+   of the sleeping pose (--doze-x, --doze-y from the pose's own outline), so
+   the z's stay above the pet and never cover it. Only transform and
+   opacity move; nothing runs while the pet is awake. Skins change the
+   tokens in skins/*.css. */
+.pet-doze {
+  --doze-x: 0.5;
+  --doze-y: 0.3;
+  --doze-ink: #5b6472;
+  --doze-edge: rgba(255, 255, 255, 0.85);
+  --doze-size: 26%;
+  --doze-ms: 4.5s;
+  position: absolute;
+  left: calc(var(--doze-x) * 100%);
+  top: max(0%, calc(var(--doze-y) * 100% - 19%));
+  width: 22%;
+  height: 18%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 800ms ease;
+}
+:root[data-theme="night"] .pet-doze {
+  --doze-ink: #dfe6f2;
+  --doze-edge: rgba(0, 0, 0, 0.45);
+}
+.pet-doze[data-on] {
+  opacity: 1;
+}
+.pet-doze i {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  /* A share of the pet, but never too small to read on a tiny pet. */
+  width: max(var(--doze-size), 7px);
+  aspect-ratio: 1;
+  background: var(--doze-ink);
+  /* A Z: top bar, the diagonal, bottom bar. */
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 22%,
+    34% 78%,
+    100% 78%,
+    100% 100%,
+    0 100%,
+    0 78%,
+    66% 22%,
+    0 22%
+  );
+  filter: drop-shadow(0 0 1px var(--doze-edge));
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.pet-doze[data-on] i {
+  animation: doze-rise var(--doze-ms) ease-in-out infinite;
+}
+.pet-doze i:nth-child(2) {
+  animation-delay: calc(var(--doze-ms) / 3);
+}
+.pet-doze i:nth-child(3) {
+  animation-delay: calc(var(--doze-ms) / 1.5);
+}
+/* A small drift up and to the side, a slight sway, then gone. */
+@keyframes doze-rise {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.8) rotate(-6deg);
+  }
+  25% {
+    opacity: 0.9;
+  }
+  75% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(150%, -230%) scale(1.1) rotate(6deg);
+  }
+}
+/* Near the window's right edge: the same, mirrored. */
+.pet-doze[data-left] {
+  left: calc(var(--doze-x) * 100% - 22%);
+}
+.pet-doze[data-left] i {
+  left: auto;
+  right: 0;
+}
+.pet-doze[data-left][data-on] i {
+  animation-name: doze-rise-left;
+}
+@keyframes doze-rise-left {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.8) rotate(6deg);
+  }
+  25% {
+    opacity: 0.9;
+  }
+  75% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-150%, -230%) scale(1.1) rotate(-6deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pet-doze {
+    display: none;
+  }
+}

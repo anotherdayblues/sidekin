@@ -1,0 +1,66 @@
+.rich-reply {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+}
+.rich-reply > div {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+}
+.rich-reply > div + div {
+  margin-top: 0.5em;
+}
+.rich-reply :is(h1, h2, h3, h4, h5, h6, p, blockquote, ol, ul, pre, figure) {
+  margin-block: 0;
+}
+.rich-reply :is(h1, h2, h3, h4, h5, h6) {
+  font-size: 1.1em;
+}
+.rich-reply :is(ol, ul) {
+  padding-inline-start: 1.5em;
+}
+.rich-reply blockquote {
+  margin-inline: 0;
+  padding-inline-start: 0.7em;
+  border-inline-start: 3px solid currentColor;
+}
+.rich-reply table {
+  border-collapse: collapse;
+  min-width: 100%;
+  font-size: 0.95em;
+}
+.rich-reply :is(th, td) {
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  padding: 0.3em 0.6em;
+  min-width: 4em;
+}
+.rich-reply th {
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+.rich-reply pre {
+  white-space: pre;
+  overflow: auto;
+  position: relative;
+}
+.rich-reply .displayMath {
+  display: block;
+  overflow-x: auto;
+}
+.rich-reply figure svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.rich-reply .hljs-keyword,
+.rich-reply .hljs-literal {
+  color: light-dark(#713f97, #d6aaff);
+}
+.rich-reply .hljs-string,
+.rich-reply .hljs-number {
+  color: light-dark(#28694a, #9edbb9);
+}
+.chat-row .chat-msg {
+  max-width: 100%;
+  box-sizing: border-box;
+}

@@ -1,0 +1,42 @@
+/* 在说 (plan/10 §9.1): three small bars after the name while the pet's
+   voice plays, in the bubble and the chat window. Colors come from shared
+   skin tokens, so every skin gets it; a skin can restyle --speaking-*. */
+:root {
+  --speaking-color: var(--accent);
+  --speaking-gap: 6px;
+}
+:is(
+  .bubble-card[data-speaking] header > span:first-child,
+  .chat-window[data-speaking] .chat-name
+)::after {
+  content: "";
+  display: inline-block;
+  width: 11px;
+  height: 9px;
+  margin-left: var(--speaking-gap);
+  vertical-align: middle;
+  background:
+    linear-gradient(var(--speaking-color), var(--speaking-color)) 0 100% / 3px
+      50% no-repeat,
+    linear-gradient(var(--speaking-color), var(--speaking-color)) 4px 100% / 3px
+      100% no-repeat,
+    linear-gradient(var(--speaking-color), var(--speaking-color)) 8px 100% / 3px
+      70% no-repeat;
+  animation: speaking 0.9s ease-in-out infinite alternate;
+}
+@keyframes speaking {
+  to {
+    background-size:
+      3px 100%,
+      3px 40%,
+      3px 90%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(
+    .bubble-card[data-speaking] header > span:first-child,
+    .chat-window[data-speaking] .chat-name
+  )::after {
+    animation: none;
+  }
+}

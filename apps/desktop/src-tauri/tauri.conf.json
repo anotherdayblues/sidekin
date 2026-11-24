@@ -1,0 +1,69 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Sidekin",
+  "version": "1.0.0",
+  "identifier": "app.sidekin.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev -- --port 1449 --strictPort",
+    "devUrl": "http://127.0.0.1:1449",
+    "beforeBuildCommand": "",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "label": "studio",
+        "create": false,
+        "title": "随伴 · Sidekin",
+        "width": 1080,
+        "height": 840,
+        "minWidth": 860,
+        "minHeight": 650,
+        "visible": false,
+        "focus": false,
+        "transparent": true,
+        "hiddenTitle": true
+      },
+      {
+        "label": "pet",
+        "acceptFirstMouse": true,
+        "title": "随伴",
+        "url": "index.html?pet",
+        "width": 192,
+        "height": 208,
+        "decorations": false,
+        "transparent": true,
+        "shadow": false,
+        "resizable": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "focus": false,
+        "backgroundThrottling": "disabled"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "resources": {
+      "../../../skills/": "skills/"
+    },
+    "targets": [
+      "app"
+    ],
+    "icon": [
+      "icons/icon.png",
+      "icons/icon.ico",
+      "icons/icon.icns"
+    ],
+    "category": "Entertainment",
+    "shortDescription": "住在桌面角落的伙伴 · A quiet companion in your desktop's corner",
+    "externalBin": [
+      "binaries/companion-brain"
+    ]
+  }
+}

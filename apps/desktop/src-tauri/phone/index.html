@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="__LANG__">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#16161a" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="avatar.png" />
+    <link rel="stylesheet" href="app.css" />
+    <title>随伴</title>
+    <script id="config" type="application/json">__CONFIG__</script>
+  </head>
+  <body>
+    <main class="app" data-view="home">
+      <header class="bar">
+        <div class="avatar"><img alt="" src="avatar.png" data-part="avatar" /></div>
+        <div class="who">
+          <h1 data-part="title"></h1>
+          <p class="status" data-part="status"></p>
+        </div>
+      </header>
+
+      <section class="actions">
+        <button type="button" class="tile tile-photos" data-pick="photos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m4 17 5-5 4 4 2.5-2.5L20 17"/></svg>
+          <span data-t="photos"></span>
+        </button>
+        <button type="button" class="tile tile-files" data-pick="files">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h5"/></svg>
+          <span data-t="files"></span>
+        </button>
+        <button type="button" class="tile tile-text" data-pick="text">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/></svg>
+          <span data-t="text"></span>
+        </button>
+        <input type="file" accept="image/*,video/*" multiple hidden data-input="photos" />
+        <input type="file" multiple hidden data-input="files" />
+      </section>
+
+      <section class="desk">
+        <div class="desk-head"><h2 data-part="desk-title"></h2><button type="button" data-act="all" data-t="downloadAll" hidden></button></div>
+        <div class="desk-groups" data-part="desk"></div>
+        <div class="desk-empty" data-part="desk-empty"><img alt="" src="avatar.png" /><p data-part="desk-empty-text"></p></div>
+      </section>
+    </main>
+
+    <!-- The tray: what was picked, then how sending goes. -->
+    <div class="scrim" data-part="scrim"></div>
+    <section class="sheet" data-part="sheet" data-step="pick" aria-modal="true" role="dialog">
+      <i class="grip"></i>
+      <div class="sheet-pick">
+        <ul class="picked" data-part="picked"></ul>
+        <textarea class="note" data-part="note" rows="5"></textarea>
+        <div class="sheet-bar">
+          <button type="button" class="ghost" data-act="cancel" data-t="cancel"></button>
+          <button type="button" class="primary" data-act="send"></button>
+        </div>
+      </div>
+      <div class="sheet-wait">
+        <div class="wait-pet"><img alt="" src="avatar.png" /></div>
+        <p class="wait-title" data-part="wait-title"></p>
+        <p class="wait-hint" data-t="waitingHint"></p>
+      </div>
+      <div class="sheet-send">
+        <p class="send-title" data-part="send-title"></p>
+        <div class="meter"><i></i></div>
+        <ul class="sending" data-part="sending"></ul>
+      </div>
+      <div class="sheet-done">
+        <div class="done-mark"><svg viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="24"/><path d="m15 27 7 7 15-16"/></svg></div>
+        <p class="done-title" data-part="done-title"></p>
+        <div class="sheet-bar">
+          <button type="button" class="ghost" data-act="close" data-t="close"></button>
+          <button type="button" class="primary" data-act="again" data-t="again"></button>
+        </div>
+      </div>
+      <div class="sheet-got">
+        <p class="got-title" data-part="got-title"></p>
+        <div class="desk-groups got-list" data-part="got"></div>
+        <p class="got-hint" data-part="got-hint"></p>
+        <div class="sheet-bar">
+          <button type="button" class="ghost" data-act="all" data-t="downloadAll" hidden></button>
+          <button type="button" class="primary" data-act="close" data-t="close"></button>
+        </div>
+      </div>
+      <div class="sheet-no">
+        <p class="no-title" data-part="no-title"></p>
+        <div class="sheet-bar">
+          <button type="button" class="primary" data-act="close" data-t="close"></button>
+        </div>
+      </div>
+    </section>
+
+    <div class="viewer" data-part="viewer" hidden>
+      <img alt="" data-part="viewer-img" />
+      <p data-t="saveHint"></p>
+      <a class="pill" data-part="viewer-get" download data-t="download"></a>
+    </div>
+    <output class="toast" data-part="toast" aria-live="polite"></output>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,251 @@
+/* 宠物 · 性格 (plan/33, personaSheet.ts): a row among the pet's own
+   settings, and a panel from the right with room for the whole text.
+   Both skins: the plain rules are 精密玩具's; 系统原生 follows. */
+:root {
+  --persona-sheet-w: 560px;
+  --persona-gap: 12px;
+  --persona-radius: 16px;
+  --persona-dim: rgba(0, 0, 0, 0.18);
+  --persona-open-ms: 200ms;
+}
+
+/* ---------- the row ---------- */
+.persona-row {
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+/* 精密玩具: the label above, a small key with › below, like its neighbours. */
+.persona-chev {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--key);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 2px 0 rgba(var(--shadow), 0.12);
+}
+.persona-chev::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-left: -3px;
+  border: solid var(--ink-2);
+  border-width: 2px 2px 0 0;
+  transform: rotate(45deg);
+}
+:root[data-skin="native"] .persona-row {
+  width: 100%;
+}
+:root[data-skin="native"] .persona-chev {
+  width: 14px;
+  height: 14px;
+  background: none;
+  box-shadow: none;
+}
+:root[data-skin="native"] .persona-chev::before {
+  width: 6px;
+  height: 6px;
+  border-color: var(--ink-3);
+  border-width: 1.5px 1.5px 0 0;
+}
+:root[data-skin="native"] .persona-row:hover {
+  background: var(--native-sidebar-select, var(--well));
+}
+
+/* ---------- the panel ---------- */
+.persona-sheet {
+  position: fixed;
+  inset: var(--persona-gap) var(--persona-gap) var(--persona-gap) auto;
+  width: min(var(--persona-sheet-w), calc(100vw - 2 * var(--persona-gap)));
+  height: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--persona-radius);
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.28),
+    0 0 0 0.5px var(--line-strong);
+}
+.persona-sheet[open] {
+  display: flex;
+  flex-direction: column;
+  animation: persona-in var(--persona-open-ms) ease-out;
+}
+.persona-sheet::backdrop {
+  background: var(--persona-dim);
+}
+@keyframes persona-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+.persona-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px 12px;
+  border-bottom: 0.5px solid var(--line);
+}
+.persona-face {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--well);
+  object-fit: cover;
+}
+.persona-face[hidden] {
+  display: none;
+}
+.persona-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.persona-sub {
+  margin: 2px 0 0;
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+.persona-close {
+  position: relative;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  margin-inline-start: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--well);
+  cursor: pointer;
+}
+.persona-close::before,
+.persona-close::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 7px;
+  width: 12px;
+  height: 1.6px;
+  border-radius: 1px;
+  background: var(--ink-2);
+  transform: rotate(45deg);
+}
+.persona-close::after {
+  transform: rotate(-45deg);
+}
+.persona-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 14px 20px;
+}
+.persona-tip {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.persona-body label {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.persona-body textarea {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--well);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.7;
+  resize: none;
+  box-shadow: inset 0 2px 4px rgba(var(--shadow), 0.08);
+}
+.persona-body .persona-try {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.persona-body .persona-try:empty {
+  display: none;
+}
+.persona-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px 16px;
+  border-top: 0.5px solid var(--line);
+}
+.persona-count {
+  margin-inline-end: auto;
+  color: var(--ink-3);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.persona-count[data-over] {
+  color: #c0573f;
+}
+.persona-foot .companion-buttons {
+  display: flex;
+  gap: 8px;
+}
+.persona-foot .companion-buttons button {
+  height: 28px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--well);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.persona-foot .companion-buttons .persona-save {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 500;
+}
+
+/* 精密玩具: its keys are squarer. */
+:root[data-skin="studio"] .persona-foot .companion-buttons button {
+  border-radius: 6px;
+}
+/* 系统原生: the card colour; Windows draws Fluent's corners. */
+:root[data-skin="native"] .persona-sheet {
+  background: var(--card);
+}
+:root[data-skin="native"][data-platform="win"] {
+  --persona-radius: 8px;
+}
+:root[data-skin="native"][data-platform="win"]
+  .persona-foot
+  .companion-buttons
+  button {
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .persona-sheet[open] {
+    animation: none;
+  }
+}

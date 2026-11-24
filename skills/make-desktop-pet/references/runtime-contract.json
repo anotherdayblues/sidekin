@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "spriteVersionNumber": 2,
+  "width": 1536,
+  "height": 2288,
+  "cellWidth": 192,
+  "cellHeight": 208,
+  "animations": {
+    "idle": {
+      "label": "待机",
+      "row": 0,
+      "durations": [
+        280,
+        110,
+        110,
+        140,
+        140,
+        320
+      ]
+    },
+    "running-right": {
+      "label": "向右跑",
+      "row": 1,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        220
+      ]
+    },
+    "running-left": {
+      "label": "向左跑",
+      "row": 2,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        220
+      ]
+    },
+    "waving": {
+      "label": "打招呼",
+      "row": 3,
+      "durations": [
+        140,
+        140,
+        140,
+        280
+      ]
+    },
+    "jumping": {
+      "label": "跳跃",
+      "row": 4,
+      "durations": [
+        140,
+        140,
+        140,
+        140,
+        280
+      ]
+    },
+    "failed": {
+      "label": "失落",
+      "row": 5,
+      "durations": [
+        140,
+        140,
+        140,
+        140,
+        140,
+        140,
+        140,
+        240
+      ]
+    },
+    "waiting": {
+      "label": "等待",
+      "row": 6,
+      "durations": [
+        150,
+        150,
+        150,
+        150,
+        150,
+        260
+      ]
+    },
+    "running": {
+      "label": "专心工作",
+      "row": 7,
+      "durations": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        220
+      ]
+    },
+    "review": {
+      "label": "观察",
+      "row": 8,
+      "durations": [
+        150,
+        150,
+        150,
+        150,
+        150,
+        280
+      ]
+    }
+  },
+  "defaultBehavior": {
+    "enabled": true,
+    "minSeconds": 45,
+    "maxSeconds": 120,
+    "weights": {
+      "waving": 4,
+      "jumping": 1,
+      "review": 3,
+      "waiting": 1,
+      "running": 1,
+      "failed": 0.25
+    },
+    "clickAction": "open-studio",
+    "doubleClickAction": null,
+    "gaze": true,
+    "interactionVersion": 2
+  },
+  "runtimePlayback": {
+    "idleDurationMultiplier": 6,
+    "actionRepetitions": 3,
+    "dragThreshold": 4,
+    "hoverAction": "waiting",
+    "hoverDurationMultiplier": 2,
+    "hoverReachPx": 6,
+    "hoverHoldPx": 16
+  }
+}

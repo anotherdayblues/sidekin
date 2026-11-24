@@ -1,0 +1,161 @@
+/* 手机传文件 in the bubble (plan/20). The QR code sits on a white plate in
+   every skin, since phone cameras read dark on light best; the rest takes
+   the bubble's own tokens like the tip and the 番茄钟 question. */
+.bubble-card [data-phone] {
+  --phone-qr: 128px;
+  display: grid;
+  gap: var(--bubble-gap);
+  padding-block-start: var(--bubble-gap);
+  border-block-start: var(--bubble-border) solid var(--bubble-line);
+  color: var(--bubble-ink);
+  font-size: calc(var(--bubble-type) - 1px);
+}
+.bubble-card[data-state="phone"] [data-phone] {
+  border: 0;
+  padding: 0;
+  font-size: var(--bubble-type);
+}
+.bubble-card[data-state="phone"] .bubble-text {
+  display: none;
+}
+.bubble-card [data-phone] p {
+  margin: 0;
+}
+.bubble-card [data-phone] span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bubble-inset);
+}
+.bubble-card [data-phone] button {
+  font-size: 12px;
+  padding: 2px 9px;
+}
+.bubble-card [data-phone]:not([data-show="qr"]) span button:first-child {
+  background: var(--primary);
+  color: var(--primary-ink);
+  border-color: var(--primary);
+}
+.phone-qr {
+  justify-self: center;
+  width: var(--phone-qr);
+  height: var(--phone-qr);
+  margin: 2px 0;
+  padding: 8px;
+  box-sizing: content-box;
+  border-radius: 14px;
+  background: #fff;
+  color: #111;
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.12),
+    0 6px 18px rgba(0, 0, 0, 0.12);
+  animation: phone-qr-in 420ms cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+.phone-qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+@keyframes phone-qr-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85) rotate(-3deg);
+  }
+}
+/* Phones that opened the page: a green line each, over the instructions. */
+.bubble-card [data-phone] .phone-linked {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ok, #2f9e5b);
+  font-weight: 600;
+}
+.bubble-card [data-phone] .phone-linked[hidden] {
+  display: none;
+}
+.phone-linked li::before {
+  content: "✓ ";
+}
+/* 停止互传 as a button, and 连不上 as a quiet link beside it. */
+.bubble-card [data-phone] .phone-foot {
+  justify-content: space-between;
+}
+.bubble-card [data-phone] .phone-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--bubble-muted);
+  font-size: calc(var(--bubble-type) - 2px);
+  cursor: pointer;
+}
+.bubble-card [data-phone] .phone-link:hover {
+  color: var(--bubble-ink);
+}
+.bubble-card [data-phone] [data-phone-act="help"]::before {
+  content: "?";
+  display: inline-grid;
+  place-items: center;
+  width: 1.15em;
+  height: 1.15em;
+  margin-inline-end: 4px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  font-size: 0.85em;
+  vertical-align: 1px;
+}
+/* Still no phone after a while: the 连不上 link glows, twice. */
+.bubble-card [data-phone] [data-phone-act="help"][data-nudge] {
+  color: var(--primary);
+  animation: phone-nudge 1.2s ease-in-out 2;
+}
+@keyframes phone-nudge {
+  50% {
+    opacity: 0.45;
+  }
+}
+.phone-note {
+  color: var(--bubble-muted);
+  font-size: calc(var(--bubble-type) - 2px);
+}
+/* No phone yet after a while: why it may be, in small print. */
+.phone-help {
+  display: grid;
+  gap: 2px;
+  color: var(--bubble-muted);
+  font-size: calc(var(--bubble-type) - 2px);
+}
+.phone-help ul {
+  margin: 0;
+  padding-inline-start: 1.2em;
+}
+.phone-head {
+  color: var(--bubble-muted);
+  font-size: calc(var(--bubble-type) - 2px);
+}
+.bubble-card [data-phone] blockquote {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bubble-ink) 6%, transparent);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 9.5em;
+  overflow: auto;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-qr {
+    animation: none;
+  }
+}
+/* The QR code and its few lines are short and must show whole, not inside
+   the scrolling list of messages. */
+.bubble-card[data-state="phone"] .bubble-messages {
+  max-height: none;
+  overflow: visible;
+}

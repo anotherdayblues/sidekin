@@ -1,0 +1,105 @@
+/* 专注 records (plan/29, focusRecord.ts): today's sessions and the week by
+   to-do. A session ended early, or on no to-do (只计时), is lighter; none
+   is ever marked as failed. */
+.focus-today,
+.focus-spent {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.focus-today-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 14px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.focus-today-time,
+.focus-today-min {
+  color: var(--ink-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.focus-today-title,
+.focus-spent-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* A finished one carries a small mark before its time; one ended early
+   keeps the room for it, so the times line up. */
+.focus-today-time::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-inline-end: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: 1px;
+}
+.focus-today-row[data-done="false"] .focus-today-time::before {
+  background: transparent;
+}
+.focus-today-row:is([data-done="false"], [data-none]) .focus-today-title,
+.focus-spent-row[data-none] .focus-spent-title {
+  color: var(--ink-2);
+}
+.focus-spent-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.focus-spent-min {
+  color: var(--ink-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.focus-spent-row i {
+  grid-column: 1 / -1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--well);
+}
+.focus-spent-row u {
+  display: block;
+  width: calc(var(--w) * 100%);
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+}
+.focus-spent-row[data-none] u {
+  opacity: 0.45;
+}
+.focus-empty {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 26px 0;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  text-align: center;
+}
+.focus-empty b {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+.focus-empty[hidden],
+.focus-empty-line[hidden] {
+  display: none;
+}
+.focus-empty-line {
+  margin: 0;
+  padding: 20px 0;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  text-align: center;
+}

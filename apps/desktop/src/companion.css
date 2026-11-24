@@ -1,0 +1,127 @@
+/* New surfaces share these tokens; existing theme colors switch with theme.ts. */
+:root,
+:root[data-theme="day"],
+:root[data-theme="night"] {
+  --comp-bg: var(--panel);
+  --comp-text: var(--ink);
+  --comp-muted: var(--ink-2);
+  --comp-rule: var(--line-strong);
+  --comp-control: var(--key);
+  --comp-accent: var(--accent);
+  --comp-gap: 12px;
+  --comp-pad: 22px;
+  --comp-small: 6px;
+  --comp-radius: 8px;
+  --comp-border: 1px;
+  --comp-type: 14px;
+  --comp-title: 20px;
+  --comp-height: 34px;
+  --comp-rail: 64px;
+  --comp-limit: 760px;
+}
+.companion-page {
+  position: absolute;
+  inset: 0 0 0 var(--comp-rail);
+  z-index: 4;
+  background: var(--comp-bg);
+  color: var(--comp-text);
+  overflow: auto;
+  padding: var(--comp-pad);
+  font-size: var(--comp-type);
+}
+.companion-page[hidden] {
+  display: none;
+}
+.companion-page form {
+  display: grid;
+  max-width: var(--comp-limit);
+  gap: var(--comp-gap);
+}
+.companion-page header,
+.companion-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--comp-gap);
+}
+.companion-page h2 {
+  font-size: var(--comp-title);
+  margin: 0 auto 0 0;
+}
+.companion-page label {
+  display: grid;
+  gap: var(--comp-small);
+}
+.companion-page .inline {
+  display: flex;
+  align-items: center;
+}
+.companion-page input:not([type="checkbox"]),
+.companion-page select,
+.companion-page textarea,
+.companion-page button {
+  color: var(--comp-text);
+  background: var(--comp-control);
+  border: var(--comp-border) solid var(--comp-rule);
+  border-radius: var(--comp-radius);
+  padding: var(--comp-small) var(--comp-gap);
+  font: inherit;
+  min-height: var(--comp-height);
+  user-select: text;
+}
+.companion-page output {
+  color: var(--comp-muted);
+}
+.companion-page [hidden] {
+  display: none;
+}
+
+:root {
+  --brain-reminder-jump-ms: 950;
+  --brain-curious-ms: 1100;
+  --comp-curious-angle: -7deg;
+  --comp-curious-duration: 140ms;
+}
+.pet-window canvas[data-pose="curious"] {
+  rotate: var(--comp-curious-angle);
+  transition: rotate var(--comp-curious-duration);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pet-window canvas[data-pose="curious"] {
+    transition: none;
+  }
+}
+:root {
+  --glasses-x: 36%;
+  --glasses-y: 25%;
+  --glasses-size: clamp(18px, 20vw, 48px);
+}
+.pet-glasses {
+  position: absolute;
+  left: var(--glasses-x);
+  top: var(--glasses-y);
+  font-size: var(--glasses-size);
+  line-height: 1;
+  pointer-events: none;
+}
+.companion-notebooks {
+  display: grid;
+  gap: var(--comp-gap);
+}
+.companion-entry {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--comp-small);
+  border-bottom: var(--comp-border) solid var(--comp-rule);
+  padding-block: var(--comp-small);
+}
+.companion-entry span {
+  flex: 1;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.companion-reminders {
+  display: grid;
+  gap: var(--comp-gap);
+}

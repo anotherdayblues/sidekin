@@ -1,0 +1,130 @@
+/* Web sources, the globe key and tool cards. They reuse the shared pieces:
+   chips sit on the well, a proposed tool is a draft card like a new trick,
+   and added tools are rows of the shared settings list. */
+
+/* ---------- sources under an answer ---------- */
+.web-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.web-sources a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--well);
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.5;
+  text-decoration: none;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+.web-sources a:hover {
+  background: var(--key-down);
+  color: var(--ink);
+}
+.source-host {
+  flex-shrink: 0;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.source-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The desktop bubble keeps it to one quiet line. */
+.web-sources.compact {
+  margin-top: 6px;
+}
+.web-sources.compact a {
+  padding: 0;
+  background: none;
+}
+.bubble-card [data-lookup] {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
+/* ---------- the globe key in the composer ---------- */
+.chat-tools > [data-globe]:not([data-available="true"]) {
+  opacity: 0.45;
+}
+.chat-tools > [data-globe][aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-ink) !important;
+}
+
+/* ---------- tools in settings ---------- */
+.set-group .tool-card {
+  margin: 10px 0;
+  border-top: 0;
+  border-radius: 10px;
+}
+.shell .set-group .tool-card h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 650;
+}
+.tool-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.tool-facts dt {
+  color: var(--ink-3);
+}
+.tool-facts dd {
+  margin: 0;
+  color: var(--ink);
+}
+.shell .set-group .tool-key {
+  display: grid;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.shell .set-group .tool-card .tool-key input[type="password"] {
+  width: 320px;
+  max-width: 100%;
+}
+.shell .set-group .tool-card .key.primary {
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-weight: 600;
+  box-shadow: 0 2px 0 rgba(var(--shadow), 0.25);
+}
+.shell .companion-entry > .tool-name {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+.tool-name small {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.tool-row[data-enabled="false"] b {
+  color: var(--ink-3);
+}
+.tool-keys {
+  display: flex;
+  gap: 6px;
+}
+.shell [data-key-help] a {
+  color: var(--ink);
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+}

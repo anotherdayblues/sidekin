@@ -1,0 +1,1788 @@
+/* 功能演示 (plan/17 3.5): a small fake desktop. demoPlayer.ts only sets
+   data-* attributes on the parts; every motion and size lives here. Skins
+   override the tokens and a few signature parts in skins/*.css. */
+.demo {
+  --demo-w: 480px;
+  --demo-h: 280px;
+  --demo-radius: 14px;
+  --demo-wall: linear-gradient(160deg, #cfd9de, #e7ddd0);
+  --demo-window: var(--card);
+  --demo-window-ink: var(--ink);
+  --demo-window-line: var(--line-strong);
+  --demo-bar: var(--well);
+  --demo-select: rgba(64, 132, 255, 0.32);
+  --demo-pointer: #1b1b1b;
+  --demo-pointer-edge: #ffffff;
+  --demo-doc-type: 15px;
+  --demo-key-size: 34px;
+  --demo-key-type: 14px;
+  --demo-ripple: var(--accent);
+  --demo-pet-w: 108px;
+  --demo-bubble-scale: 0.8;
+  --demo-caption-type: 13px;
+  --demo-move-ms: 260ms;
+  --demo-start-ms: 300ms;
+  --demo-press-ms: 70ms;
+  --demo-ripple-ms: 520ms;
+  --demo-pop-ms: 240ms;
+  --demo-hop-ms: 360ms;
+  --demo-fade-ms: 600ms;
+  --demo-glide-ms: 650ms;
+  --demo-snip-ms: 900ms;
+  --demo-bar: color-mix(in srgb, var(--ink) 22%, transparent);
+  --demo-bar-hi: var(--accent);
+  --demo-menu-hot: #3478f6;
+  --demo-menu-hot-ink: #fff;
+  --demo-slide-ms: 420ms;
+  --demo-file: #6aa0e8;
+  --demo-ok: #2f9e5b;
+  --demo-ai: #fbfbfa;
+  --demo-ai-ink: #1d1d1f;
+  --demo-ai-mine: #ececea;
+  --demo-silhouette: color-mix(in srgb, var(--ink) 25%, transparent);
+  position: relative;
+  width: min(100%, var(--demo-w));
+  margin: 0;
+}
+:root[data-theme="night"] .demo {
+  --demo-ai: #222326;
+  --demo-ai-ink: #ececec;
+  --demo-ai-mine: #34353a;
+  --demo-wall: linear-gradient(160deg, #1f2a33, #2c241d);
+  --demo-select: rgba(96, 156, 255, 0.4);
+  --demo-pointer: #f4f1ea;
+  --demo-pointer-edge: #111111;
+}
+.demo-desk {
+  position: relative;
+  height: var(--demo-h);
+  overflow: hidden;
+  border-radius: var(--demo-radius);
+  background: var(--demo-wall);
+  box-shadow:
+    0 0 0 1px var(--line),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: opacity var(--demo-fade-ms) ease;
+  user-select: none;
+}
+.demo[data-fading] .demo-desk {
+  opacity: 0;
+}
+
+/* A document window with the text to select. */
+.demo-window {
+  position: absolute;
+  left: 22px;
+  top: 22px;
+  width: 50%;
+  border-radius: 9px;
+  background: var(--demo-window);
+  color: var(--demo-window-ink);
+  box-shadow:
+    0 0 0 1px var(--demo-window-line),
+    0 8px 20px rgba(var(--shadow), 0.14);
+  overflow: hidden;
+}
+.demo-titlebar {
+  display: block;
+  height: 18px;
+  background:
+    radial-gradient(circle, #ff6159 3.5px, transparent 4px) 10px 50% / 12px 12px
+      no-repeat,
+    radial-gradient(circle, #ffbd2e 3.5px, transparent 4px) 24px 50% / 12px 12px
+      no-repeat,
+    radial-gradient(circle, #28c941 3.5px, transparent 4px) 38px 50% / 12px 12px
+      no-repeat,
+    var(--demo-bar);
+}
+:root[data-platform="win"] .demo-titlebar {
+  background:
+    linear-gradient(var(--ink-3), var(--ink-3)) calc(100% - 10px) 50% / 8px
+      1.5px no-repeat,
+    var(--demo-bar);
+}
+.demo-doc {
+  position: relative;
+  margin: 0;
+  padding: 14px 16px 16px;
+  font-size: var(--demo-doc-type);
+  line-height: 1.55;
+}
+.demo-doc [data-word] {
+  border-radius: 2px;
+}
+.demo-doc [data-word][data-on] {
+  background: var(--demo-select);
+}
+
+/* The mouse: an I-beam while selecting text. */
+.demo-pointer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 20px;
+  margin: -10px 0 0 -5px;
+  opacity: 0;
+  transform: translate(var(--px, 60%), var(--py, 60%));
+  transition:
+    transform var(--demo-start-ms) ease-out,
+    opacity 160ms ease;
+  background:
+    linear-gradient(var(--demo-pointer), var(--demo-pointer)) 50% 0 / 2px 100%
+      no-repeat,
+    linear-gradient(var(--demo-pointer), var(--demo-pointer)) 50% 0 / 10px 2px
+      no-repeat,
+    linear-gradient(var(--demo-pointer), var(--demo-pointer)) 50% 100% / 10px
+      2px no-repeat;
+  filter: drop-shadow(0 0 1px var(--demo-pointer-edge));
+}
+.demo-pointer[data-show] {
+  opacity: 1;
+}
+.demo-pointer[data-drag] {
+  transition:
+    transform var(--demo-move-ms) linear,
+    opacity 160ms ease;
+}
+
+/* Keycaps that sink when pressed; C sends out a ripple each time. */
+.demo-keys {
+  position: absolute;
+  left: 22px;
+  bottom: 22px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity var(--demo-pop-ms) ease,
+    transform var(--demo-pop-ms) ease;
+}
+.demo-keys[data-show] {
+  opacity: 1;
+  transform: none;
+}
+.demo-keys[data-done] {
+  opacity: 0.45;
+}
+.demo-keys kbd {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: var(--demo-key-size);
+  height: var(--demo-key-size);
+  padding: 0 9px;
+  box-sizing: border-box;
+  border-radius: 7px;
+  font:
+    600 var(--demo-key-type) / 1 system-ui,
+    sans-serif;
+  color: var(--ink);
+  background: var(--key);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 3px 0 var(--line-strong);
+  transition:
+    transform var(--demo-press-ms) ease-out,
+    box-shadow var(--demo-press-ms) ease-out,
+    background var(--demo-press-ms) ease-out;
+}
+.demo-keys kbd[data-down] {
+  transform: translateY(3px);
+  background: var(--key-down);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 0 0 var(--line-strong);
+}
+.demo-keys kbd::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 9px;
+  border: 2px solid var(--demo-ripple);
+  opacity: 0;
+  pointer-events: none;
+}
+.demo-keys kbd:last-child[data-down]::after {
+  animation: demo-ripple var(--demo-ripple-ms) ease-out;
+}
+@keyframes demo-ripple {
+  from {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+
+/* The pet in the corner, with its real bubble shrunk above it. */
+.demo-pet {
+  position: absolute;
+  right: 18px;
+  bottom: 6px;
+  width: var(--demo-pet-w);
+}
+.demo-pet canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.demo-pet[data-hop] canvas {
+  animation: demo-hop var(--demo-hop-ms) ease-out;
+}
+@keyframes demo-hop {
+  40% {
+    transform: translateY(-7px) scaleY(1.03);
+  }
+}
+.demo-pet .bubble-shell {
+  --pet-x: calc(100% - var(--demo-pet-w) / 2);
+  position: absolute;
+  right: 0;
+  bottom: calc(100% - 28px);
+  min-width: 250px;
+  max-width: 300px;
+  transform-origin: calc(100% - var(--demo-pet-w) / 2) bottom;
+  transform: scale(calc(var(--demo-bubble-scale) * 0.85));
+  opacity: 0;
+  transition:
+    opacity var(--demo-pop-ms) ease,
+    transform var(--demo-pop-ms) cubic-bezier(0.3, 1.4, 0.6, 1);
+}
+.demo-pet .bubble-shell[data-show] {
+  opacity: 1;
+  transform: scale(var(--demo-bubble-scale));
+}
+.demo-pet .bubble-text:empty {
+  display: none;
+}
+.demo-pet .bubble-card footer {
+  justify-content: flex-end;
+}
+.demo-pet .bubble-card footer button {
+  opacity: 0;
+  transition: opacity var(--demo-pop-ms) ease;
+}
+.demo-pet .bubble-card footer button[data-show] {
+  opacity: 1;
+}
+.demo-pet .bubble-card:not([data-state="answer"]) footer {
+  display: none;
+}
+.demo-pet :is(.bubble-mine, .bubble-text):empty,
+.demo-pet [data-remembered]:not([data-show]) {
+  display: none;
+}
+.demo-pet .bubble-card[data-mode="chat"] {
+  display: flex;
+  flex-direction: column;
+}
+.demo-pet .bubble-card[data-mode="chat"] > .bubble-text {
+  align-self: flex-start;
+}
+
+/* The bubble's text field: what is typed, and a blinking caret. */
+.demo-field {
+  flex: 1;
+  min-width: 0;
+  margin: 4px 0;
+  line-height: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.demo-field:has(span:empty)::before {
+  content: attr(data-placeholder);
+  color: var(--bubble-muted);
+}
+.demo-caret {
+  display: inline-block;
+  width: 1.5px;
+  height: 1.1em;
+  margin-left: 1px;
+  vertical-align: -0.15em;
+  background: var(--bubble-ink);
+  animation: demo-blink 1s steps(1) infinite;
+}
+.demo-field:has(span:empty) .demo-caret {
+  position: absolute;
+}
+@keyframes demo-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.demo-pet .bubble-compose {
+  position: relative;
+}
+.demo-pet .bubble-compose:has(.demo-field span:empty) [data-send] {
+  opacity: 0.3;
+}
+
+/* The pointer's other shapes: an arrow, and a crosshair for snipping. The
+   arrow's tip and the crosshair's centre sit on the point. */
+.demo-pointer[data-shape="arrow"] {
+  width: 14px;
+  height: 20px;
+  margin: 0;
+  background: var(--demo-pointer);
+  clip-path: polygon(
+    0 0,
+    100% 72%,
+    58% 70%,
+    78% 100%,
+    62% 100%,
+    42% 74%,
+    0 100%
+  );
+}
+.demo-pointer[data-shape="cross"] {
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  background:
+    linear-gradient(var(--demo-pointer-edge), var(--demo-pointer-edge)) 50% 0 /
+      2px 100% no-repeat,
+    linear-gradient(var(--demo-pointer-edge), var(--demo-pointer-edge)) 0 50% /
+      100% 2px no-repeat;
+  filter: drop-shadow(0 0 1px #000);
+}
+.demo-pointer[data-shape="arrow"]:not([data-drag]) {
+  transition:
+    transform var(--demo-glide-ms) cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 160ms ease;
+}
+.demo-pointer[data-shape="cross"][data-drag] {
+  transition:
+    transform var(--demo-snip-ms) ease-in-out,
+    opacity 160ms ease;
+}
+/* A click: a ring that spreads from the point. */
+.demo-click {
+  position: absolute;
+  left: -9px;
+  top: -9px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--demo-ripple);
+  opacity: 0;
+  transform: translate(var(--px), var(--py));
+  pointer-events: none;
+}
+.demo-click[data-show] {
+  animation: demo-ripple var(--demo-ripple-ms) ease-out;
+}
+
+/* The pet's right-click menu, beside the pet, with its 翻译 submenu. */
+.demo-menu {
+  position: absolute;
+  right: 120px;
+  bottom: 54px;
+  min-width: 132px;
+  padding: 4px;
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.2;
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 8px 22px rgba(var(--shadow), 0.22);
+  opacity: 0;
+  transform: scale(0.96);
+  transform-origin: right bottom;
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+.demo-menu[data-show] {
+  opacity: 1;
+  transform: none;
+}
+.demo-menu p,
+.demo-menu span {
+  display: block;
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.demo-menu-sub {
+  position: relative;
+}
+.demo-menu-sub::after {
+  content: "›";
+  float: right;
+  margin-left: 12px;
+  color: var(--ink-3);
+}
+.demo-menu [data-hot] {
+  background: var(--demo-menu-hot);
+  color: var(--demo-menu-hot-ink);
+}
+/* Near the screen's right edge, the submenu opens to the left. */
+.demo-menu .demo-submenu {
+  position: absolute;
+  right: calc(100% + 2px);
+  top: -4px;
+  bottom: auto;
+  left: auto;
+  padding: 4px;
+  color: var(--ink);
+}
+:root[data-platform="win"] .demo-menu,
+:root[data-platform="win"] .demo-menu p,
+:root[data-platform="win"] .demo-menu span {
+  border-radius: 4px;
+}
+
+/* Snipping: the screen dims and a box grows around the chart. */
+.demo-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.demo-dim[data-show] {
+  opacity: 1;
+}
+.demo-marquee {
+  position: absolute;
+  left: var(--bx, 0);
+  top: var(--by, 0);
+  width: 0;
+  height: 0;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  opacity: 0;
+  margin: -4px 0 0 -4px;
+}
+.demo-marquee[data-show] {
+  opacity: 1;
+}
+.demo-marquee[data-grow] {
+  width: calc(var(--bw, 0px) + 8px);
+  height: calc(var(--bh, 0px) + 8px);
+  transition:
+    width var(--demo-snip-ms) ease-in-out,
+    height var(--demo-snip-ms) ease-in-out;
+}
+.demo-chart {
+  padding: 10px 14px 14px;
+  font-size: 11px;
+  color: var(--ink-2);
+}
+.demo-chart b {
+  font-weight: 600;
+}
+.demo-chart div {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 64px;
+  margin-top: 8px;
+  padding-bottom: 1px;
+  border-bottom: 1px solid var(--line-strong);
+}
+.demo-chart i {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  background: var(--demo-bar);
+}
+.demo-chart i:nth-child(1) {
+  height: 42%;
+}
+.demo-chart i:nth-child(2) {
+  height: 58%;
+}
+.demo-chart i:nth-child(3) {
+  height: 92%;
+  background: var(--demo-bar-hi);
+}
+.demo-chart i:nth-child(4) {
+  height: 70%;
+}
+.demo-shot {
+  border-radius: 8px;
+  background: var(--demo-window);
+  box-shadow: 0 0 0 1px var(--line);
+}
+.demo-shot .demo-chart {
+  padding: 8px 10px 10px;
+}
+.demo-shot .demo-chart div {
+  height: 48px;
+}
+.demo-shot[data-sent] {
+  align-self: flex-end;
+  width: 64px;
+}
+.demo-shot[data-sent] .demo-chart {
+  padding: 5px 6px 6px;
+}
+.demo-shot[data-sent] .demo-chart b {
+  display: none;
+}
+.demo-shot[data-sent] .demo-chart div {
+  height: 26px;
+  gap: 3px;
+  margin: 0;
+}
+
+/* 记得的事: a panel that slides in, its newest line lit. */
+.demo-panel {
+  position: absolute;
+  left: 22px;
+  top: 22px;
+  width: 44%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--demo-window);
+  color: var(--demo-window-ink);
+  font-size: 13px;
+  box-shadow:
+    0 0 0 1px var(--demo-window-line),
+    0 8px 20px rgba(var(--shadow), 0.14);
+  opacity: 0;
+  transform: translateX(-16px);
+  transition:
+    opacity var(--demo-pop-ms) ease,
+    transform var(--demo-pop-ms) ease;
+}
+.demo-panel[data-show] {
+  opacity: 1;
+  transform: none;
+}
+.demo-panel ul {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.demo-panel li {
+  padding: 5px 8px;
+  border-radius: 6px;
+  transition: background 400ms ease;
+}
+.demo-panel li + li {
+  border-top: 1px solid var(--line);
+}
+.demo-panel li[data-on] {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+/* A desktop clock that runs on to the reminder's time. */
+.demo-clock {
+  position: absolute;
+  right: 44px;
+  top: 14px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font:
+    600 13px/1.4 ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+  color: var(--demo-window-ink);
+  background: color-mix(in srgb, var(--demo-window) 75%, transparent);
+  box-shadow: 0 0 0 1px var(--line);
+}
+.demo-clock[data-fast] {
+  animation: demo-tick 500ms ease-in-out infinite;
+}
+.demo-clock[data-due] {
+  animation: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+@keyframes demo-tick {
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+/* Play and pause, in the corner of the desk. */
+.demo-toggle {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(var(--shadow), 0.28);
+  color: #fff;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 160ms ease;
+}
+.demo:hover .demo-toggle,
+.demo-toggle:focus-visible,
+.demo[data-paused] .demo-toggle {
+  opacity: 1;
+}
+.demo-toggle::before {
+  content: "";
+  display: block;
+  margin: auto;
+  width: 8px;
+  height: 10px;
+  background:
+    linear-gradient(currentColor, currentColor) left / 3px 100% no-repeat,
+    linear-gradient(currentColor, currentColor) right / 3px 100% no-repeat;
+}
+.demo-toggle[data-state="paused"]::before {
+  width: 0;
+  height: 0;
+  margin-left: 10px;
+  background: none;
+  border-left: 9px solid currentColor;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+}
+.demo[data-paused] *,
+.demo[data-paused] *::after {
+  animation-play-state: paused !important;
+}
+
+/* The steps under the desk, each lit as the demo reaches it. */
+.demo-captions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  width: min(100%, var(--demo-w));
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: demo-step;
+  font-size: var(--demo-caption-type);
+  color: var(--ink-3);
+}
+.demo-captions li {
+  counter-increment: demo-step;
+  transition: color var(--demo-pop-ms) ease;
+}
+.demo-captions li::before {
+  content: counter(demo-step) " ";
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  margin-right: 5px;
+  border-radius: 50%;
+  font-size: 11px;
+  background: var(--well);
+  transition: inherit;
+}
+.demo-captions li[data-lit] {
+  color: var(--ink);
+}
+.demo-captions li[data-lit]::before {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* Reduced motion: the same demo as still steps side by side. */
+.demo-stills {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.demo[data-still] {
+  --demo-w: 100%;
+  --demo-h: 150px;
+  --demo-doc-type: 10px;
+  --demo-key-size: 22px;
+  --demo-key-type: 10px;
+  --demo-pet-w: 52px;
+  --demo-bubble-scale: 0.42;
+}
+.demo[data-still] .demo-window {
+  left: 10px;
+  top: 10px;
+  width: 64%;
+}
+.demo[data-still] .demo-doc {
+  padding: 8px 9px 10px;
+}
+.demo[data-still] .demo-keys {
+  left: 10px;
+  bottom: 10px;
+}
+.demo[data-still] .demo-pointer {
+  scale: 0.6;
+}
+.demo[data-still] *,
+.demo[data-still] *::after {
+  transition: none !important;
+  animation: none !important;
+}
+.demo[data-still] figcaption {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+/* ?demo= preview page. */
+.demo-preview {
+  padding: 24px;
+}
+
+/* ---------- 聊天侧边栏 ---------- */
+.demo-sidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 42%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  box-sizing: border-box;
+  background: var(--demo-window);
+  color: var(--demo-window-ink);
+  font-size: 12px;
+  box-shadow:
+    -1px 0 0 var(--demo-window-line),
+    -10px 0 24px rgba(var(--shadow), 0.14);
+  transform: translateX(105%);
+  transition: transform var(--demo-slide-ms) cubic-bezier(0.3, 0.9, 0.3, 1);
+}
+.demo-sidebar[data-show] {
+  transform: none;
+}
+.demo-sidebar .bubble-mine,
+.demo-theirs {
+  margin: 0;
+  max-width: 84%;
+  padding: 5px 9px;
+  border-radius: 12px;
+}
+.demo-sidebar .bubble-mine {
+  align-self: flex-end;
+}
+.demo-theirs {
+  align-self: flex-start;
+  background: var(--msg-theirs-bg);
+  color: var(--msg-theirs-ink);
+  box-shadow: var(--msg-shadow);
+}
+.demo-sidebar .demo-field,
+.demo-ai-input {
+  flex: none;
+  margin-top: auto;
+  padding: 2px 10px;
+  border-radius: 14px;
+  background: var(--well);
+}
+.demo-field:not(:has(span:empty))::before {
+  content: none;
+}
+.demo[data-demo="panel"] .demo-window {
+  width: 46%;
+}
+.demo[data-demo="panel"] .demo-pet {
+  right: 46%;
+}
+
+/* ---------- 文件中转 ---------- */
+.demo-folder,
+.demo-chatwin,
+.demo-app {
+  font-size: 12px;
+}
+.demo-window > b {
+  display: block;
+  padding: 8px 12px 2px;
+  font-size: 12px;
+}
+.demo-file {
+  margin: 6px 12px;
+  padding: 5px 8px 5px 26px;
+  border-radius: 6px;
+  background: linear-gradient(var(--demo-file), var(--demo-file)) 8px 50% / 11px
+    14px no-repeat;
+  transition: opacity 120ms ease;
+}
+.demo-file[data-lifted] {
+  opacity: 0.4;
+}
+.demo-folder {
+  width: 40%;
+}
+.demo-chatwin {
+  left: auto;
+  right: auto;
+  width: 46%;
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity var(--demo-pop-ms) ease,
+    transform var(--demo-pop-ms) ease;
+}
+.demo-chatwin[data-show] {
+  opacity: 1;
+  transform: none;
+}
+.demo-drop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 54px;
+  margin: 8px 12px 12px;
+  padding: 8px;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 8px;
+  align-content: flex-start;
+}
+.demo-drop .demo-chip {
+  visibility: hidden;
+}
+.demo-drop[data-show] .demo-chip {
+  visibility: visible;
+}
+.demo-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: var(--well);
+  color: var(--ink-2);
+}
+/* At the pet's top right, as on the real desktop. */
+.demo-pile {
+  position: absolute;
+  right: 16px;
+  bottom: 104px;
+  width: 30px;
+  height: 36px;
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity var(--demo-pop-ms) ease,
+    transform var(--demo-pop-ms) cubic-bezier(0.3, 1.5, 0.6, 1);
+}
+.demo-pile[data-show] {
+  opacity: 1;
+  transform: none;
+}
+.demo-pile i {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  background: var(--demo-window);
+  box-shadow:
+    0 0 0 1px var(--demo-window-line),
+    0 2px 5px rgba(var(--shadow), 0.18);
+}
+.demo-pile i + i {
+  transform: translate(4px, -4px);
+}
+.demo-pile b {
+  position: absolute;
+  right: -10px;
+  top: -12px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+/* The file under the pointer while it is dragged. */
+.demo-ghost {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  background: var(--demo-window);
+  color: var(--demo-window-ink);
+  box-shadow: 0 4px 12px rgba(var(--shadow), 0.25);
+  opacity: 0;
+  transform: translate(calc(var(--px, 0px) + 8px), calc(var(--py, 0px) + 10px));
+  transition:
+    transform var(--demo-glide-ms) cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 120ms ease;
+  pointer-events: none;
+}
+.demo-ghost[data-show] {
+  opacity: 0.95;
+}
+
+/* ---------- 主窗口和 AI 助手（教新本领、做新宠物） ---------- */
+.demo-app {
+  width: 52%;
+  min-height: 150px;
+}
+.demo-app header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+}
+.demo-app button,
+.demo-trick button {
+  padding: 3px 9px;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--key);
+  box-shadow: 0 0 0 1px var(--line-strong);
+}
+.demo-trick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 12px 12px;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--well);
+  opacity: 0;
+  transform: translateX(-12px);
+  transition:
+    opacity var(--demo-pop-ms) ease,
+    transform var(--demo-pop-ms) ease;
+}
+.demo-trick[data-show] {
+  opacity: 1;
+  transform: none;
+}
+.demo-trick b {
+  margin-right: auto;
+}
+.demo-new {
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.demo-trick[data-kept] .demo-new,
+.demo-trick[data-kept] button {
+  visibility: hidden;
+}
+.demo-trick[data-kept] b::after {
+  content: " ✓";
+  color: var(--demo-ok);
+}
+/* The "copy this for your AI" card. */
+.demo-pop {
+  position: absolute;
+  left: 30%;
+  top: 34px;
+  display: grid;
+  gap: 5px;
+  width: 58%;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 8px 18px rgba(var(--shadow), 0.2);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+.demo-pop[data-show] {
+  opacity: 1;
+  transform: none;
+}
+.demo-pop i {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--well);
+}
+.demo-pop i:nth-child(3) {
+  width: 60%;
+}
+.demo-pop button {
+  justify-self: end;
+}
+.demo-pop button[data-done] {
+  color: var(--accent-ink);
+  background: var(--accent);
+}
+/* An AI assistant's window: no product, just the idea. */
+.demo-ai {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  width: 50%;
+  height: 176px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 9px;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--demo-ai-ink);
+  background: var(--demo-ai);
+  box-shadow:
+    0 0 0 1px var(--demo-window-line),
+    0 12px 28px rgba(var(--shadow), 0.25);
+  opacity: 0;
+  transform: translateY(12px) scale(0.98);
+  transition:
+    opacity var(--demo-pop-ms) ease,
+    transform var(--demo-pop-ms) ease;
+}
+.demo-ai[data-show] {
+  opacity: 1;
+  transform: none;
+}
+.demo-ai > b {
+  padding: 6px 12px 0;
+  font-size: 11px;
+  opacity: 0.7;
+}
+.demo-ai-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+}
+.demo-ai-mine,
+.demo-ai-theirs {
+  margin: 0;
+  max-width: 88%;
+  padding: 5px 9px;
+  border-radius: 10px;
+}
+.demo-ai-mine {
+  align-self: flex-end;
+  display: grid;
+  gap: 3px;
+  background: var(--demo-ai-mine);
+}
+.demo-ai-mine:not([data-show]),
+.demo-ai-theirs:not([data-show]),
+.demo-ai-progress:not([data-show]) {
+  display: none;
+}
+.demo-ai-progress {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background:
+    linear-gradient(var(--accent), var(--accent)) 0 0 / 0% 100% no-repeat,
+    var(--well);
+  animation: demo-progress 1.6s ease-in-out forwards;
+}
+.demo-ai-progress[data-done] {
+  background-size: 100% 100%;
+  animation: none;
+}
+@keyframes demo-progress {
+  to {
+    background-size: 92% 100%;
+  }
+}
+.demo-ai-input {
+  margin: 0 10px 10px;
+}
+.demo-ai-input:not([data-pasted]) .demo-ai-chip {
+  display: none;
+}
+.demo-ai-input .demo-chip {
+  margin-right: 4px;
+}
+/* The roster: tiles, the new one arriving, and +. */
+
+.demo-add-menu {
+  right: auto;
+  left: 110px;
+  bottom: auto;
+  top: 70px;
+}
+.demo-pet[data-away] {
+  opacity: 0;
+  transform: scale(0.6);
+}
+.demo-pet {
+  transition:
+    opacity var(--demo-pop-ms) ease,
+    transform var(--demo-pop-ms) cubic-bezier(0.3, 1.5, 0.6, 1);
+}
+
+/* The destination is a conversation. Dropping attaches the files in its composer. */
+.demo-chatwin {
+  left: 16px;
+  top: 16px;
+  width: 62%;
+}
+.handoff-contact,
+.handoff-thread {
+  padding: 7px 10px;
+}
+.handoff-contact {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-bottom: 1px solid var(--line);
+}
+.handoff-contact i {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 35%, var(--accent-ink) 21%, transparent 23%),
+    radial-gradient(
+      ellipse at 50% 110%,
+      var(--accent-ink) 40%,
+      transparent 42%
+    ),
+    var(--accent);
+}
+.handoff-thread {
+  display: grid;
+  gap: 6px;
+}
+.handoff-thread span {
+  justify-self: start;
+  max-width: 85%;
+  padding: 4px 8px;
+  background: var(--well);
+  border-radius: 9px 9px 9px 2px;
+}
+.handoff-thread span + span {
+  justify-self: end;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: 9px 9px 2px 9px;
+}
+.demo-chatwin .demo-drop {
+  align-items: center;
+  align-content: center;
+  min-height: 36px;
+  margin: 2px 9px 9px;
+  border-style: solid;
+}
+.demo-drop:not([data-show]) .demo-chip,
+.demo-drop[data-show] small {
+  display: none;
+}
+.demo-drop small {
+  color: var(--ink-2);
+}
+.demo-drop .demo-chip {
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+/* Keep the real roster, footer and pet stage in view while pointing at +. */
+.demo[data-demo="make-pet"] .demo-app {
+  width: 69%;
+  left: 14px;
+  top: 16px;
+}
+.make-layout {
+  display: grid;
+  grid-template-columns: 36% 1fr;
+  min-height: 165px;
+}
+.make-rail,
+.make-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 9px;
+  min-width: 0;
+}
+.make-rail {
+  background: var(--well);
+  border-right: 1px solid var(--line);
+}
+.make-rail small {
+  color: var(--ink-2);
+}
+.make-tools {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.make-tools button,
+.make-tools i {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--key);
+  color: var(--ink);
+}
+.make-tools button {
+  font-size: 17px;
+}
+.make-workspace > b {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 5px;
+}
+.make-stage {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  background: var(--well);
+  border-radius: 7px;
+}
+.make-stage canvas {
+  display: none;
+  width: 64px;
+}
+.make-arrival:not([data-show]),
+.make-layout:has(.make-arrival[data-show]) .make-stage span {
+  display: none;
+}
+.make-layout:has(.make-arrival[data-show]) canvas {
+  display: block;
+}
+.make-arrival {
+  border-radius: 5px;
+  padding: 4px;
+  background: var(--card);
+}
+.demo[data-demo="make-pet"] .demo-add-menu {
+  left: 7px;
+  top: auto;
+  bottom: 39px;
+  max-width: calc(100% - 14px);
+}
+.demo-stills:has([data-demo="make-pet"], [data-demo="file-transfer"]) {
+  grid-template-columns: 1fr;
+}
+.demo[data-still]:is([data-demo="make-pet"], [data-demo="file-transfer"]) {
+  --demo-h: 225px;
+}
+
+/* 陪我专注: the clock above the demo pet, at the demo pet's size. */
+.demo-pet .focus-clock {
+  --k: 2.4px;
+  --head: 0.3;
+  --middle: 0.5;
+}
+.demo-pet .focus-confetti {
+  inset: -60% -40% 0;
+  width: 180%;
+  height: 160%;
+}
+.demo-focus-menu {
+  bottom: 70px;
+}
+
+/* ?clock-preview: the pet and its clock window on a wallpaper (plan/19). */
+.clock-preview {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 20% 30%, #f6a96a, transparent 45%),
+    radial-gradient(circle at 80% 70%, #5b8def, transparent 50%),
+    linear-gradient(135deg, #f3d2b3, #9fb7e8);
+}
+:root[data-theme="night"] .clock-preview {
+  background:
+    radial-gradient(circle at 25% 30%, #6a3d8f, transparent 45%),
+    radial-gradient(circle at 75% 70%, #1f4e8c, transparent 50%),
+    linear-gradient(135deg, #1b1c2b, #2c2240);
+}
+.clock-preview-window {
+  position: relative;
+  z-index: 1;
+}
+/* Stands for the clock's window, which changes size about its centre. */
+.clock-preview-glass {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: var(--bar-w);
+  height: var(--bar-h);
+  transition:
+    width 520ms cubic-bezier(0.32, 1.22, 0.42, 1),
+    height 520ms cubic-bezier(0.32, 1.22, 0.42, 1);
+}
+.clock-preview-window[data-peek] .clock-preview-glass {
+  width: 100%;
+  height: 100%;
+}
+.clock-preview-window .focus-clock[data-home="window"] {
+  --k: inherit;
+  position: absolute;
+}
+.clock-preview-pet canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 从手机传 (plan/20): a phone at the left that scans, picks and sends; the
+   code and the question in the bubble; three photos that fly to the pile. */
+.demo-phone {
+  position: absolute;
+  left: 34px;
+  bottom: -14px;
+  width: 112px;
+  height: 214px;
+  padding: 22px 9px 9px;
+  box-sizing: border-box;
+  border-radius: 22px;
+  background: var(--demo-window);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--ink) 75%, transparent),
+    0 14px 30px rgba(var(--shadow), 0.25);
+  transform: translateY(110%) rotate(-6deg);
+  transition: transform var(--demo-slide-ms) cubic-bezier(0.3, 1.3, 0.5, 1);
+  overflow: hidden;
+}
+.demo-phone[data-show] {
+  transform: rotate(-4deg);
+}
+.demo-phone-island {
+  position: absolute;
+  left: 50%;
+  top: 7px;
+  width: 34px;
+  height: 9px;
+  margin-left: -17px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--ink) 80%, transparent);
+}
+/* Scanning: a frame with a line running down it. */
+.demo-phone-scan {
+  position: absolute;
+  inset: 40px 18px auto;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 2px var(--accent);
+  overflow: hidden;
+}
+.demo-phone-scan i {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  height: 2px;
+  background: var(--accent);
+  animation: demo-scan 1.1s ease-in-out infinite alternate;
+}
+@keyframes demo-scan {
+  from {
+    top: 8px;
+  }
+  to {
+    top: calc(100% - 10px);
+  }
+}
+.demo-phone-app {
+  display: none;
+  gap: 8px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--demo-window-ink);
+}
+.demo-phone:not([data-step="scan"]) .demo-phone-scan {
+  display: none;
+}
+.demo-phone:not([data-step="scan"]) .demo-phone-app {
+  display: grid;
+}
+.demo-phone-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+.demo-phone-tiles span {
+  height: 34px;
+  border-radius: 8px;
+  background: var(--well);
+}
+.demo-phone-tiles span:first-child {
+  grid-row: span 2;
+  height: auto;
+  background: var(--accent);
+  position: relative;
+}
+/* Picked: three photos stack on the tile. */
+.demo-phone-tiles span:first-child i {
+  position: absolute;
+  inset: 22% 18%;
+  border-radius: 4px;
+  background: linear-gradient(160deg, #f3b67c, #7ea6e0);
+  box-shadow: 0 0 0 1.5px #fff;
+  opacity: 0;
+  transition:
+    opacity var(--demo-pop-ms) ease,
+    transform var(--demo-pop-ms) ease;
+}
+.demo-phone-tiles span[data-picked] i {
+  opacity: 1;
+}
+.demo-phone-tiles span[data-picked] i:nth-child(1) {
+  transform: rotate(-10deg);
+}
+.demo-phone-tiles span[data-picked] i:nth-child(3) {
+  transform: rotate(9deg) translate(3px, 2px);
+}
+.demo-phone-state {
+  margin: 0;
+  min-height: 2.4em;
+  font-size: 9.5px;
+  color: var(--ink-2);
+}
+.demo-phone[data-step="done"] .demo-phone-state::before {
+  content: "✓ ";
+  color: var(--demo-ok);
+}
+/* The code in the bubble: a small white plate of squares. */
+.demo-qr {
+  display: none;
+  justify-self: center;
+  width: 64px;
+  height: 64px;
+  padding: 5px;
+  border-radius: 8px;
+  background:
+    conic-gradient(#111 25%, #fff 0 50%, #111 0 75%, #fff 0) 0 0 / 12px 12px
+      content-box,
+    #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.demo-qr[data-show] {
+  display: block;
+}
+.demo-choices {
+  display: none;
+  gap: 6px;
+  font-size: 11px;
+}
+.demo-choices[data-show] {
+  display: flex;
+}
+.demo-choices :is(b, i) {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-style: normal;
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.demo-choices b {
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: none;
+}
+.demo-choices b[data-hot] {
+  filter: brightness(0.9);
+}
+/* Three photos fly from the phone, over, and into the pile. */
+.demo-fly {
+  position: absolute;
+  left: 70px;
+  bottom: 120px;
+  width: 22px;
+  height: 26px;
+  border-radius: 4px;
+  background: linear-gradient(160deg, #f3b67c, #7ea6e0);
+  box-shadow:
+    0 0 0 1.5px #fff,
+    0 4px 10px rgba(var(--shadow), 0.25);
+  opacity: 0;
+  pointer-events: none;
+}
+.demo-fly[data-show] {
+  animation: demo-fly 640ms cubic-bezier(0.33, 0.8, 0.4, 1) forwards;
+}
+@keyframes demo-fly {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.6) rotate(-12deg);
+  }
+  45% {
+    opacity: 1;
+    transform: translate(190px, -50px) scale(1.1) rotate(8deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(370px, -6px) scale(0.4);
+  }
+}
+
+/* 剪贴板演示: matches website clipFilm craft — left chat card, right native clipboard popup. */
+.demo-clip-card {
+  position: absolute;
+  left: 14px;
+  top: 18px;
+  width: 214px;
+  height: 182px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 13px;
+  background: var(--demo-window);
+  color: var(--demo-window-ink);
+  box-shadow:
+    0 0 0 1px var(--demo-window-line),
+    0 12px 26px -14px rgba(var(--shadow), 0.28);
+  overflow: hidden;
+}
+.demo-clip-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.demo-clip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #34c759;
+  box-shadow: 0 0 0 2.5px color-mix(in srgb, #34c759 20%, transparent);
+}
+.demo-clip-head b {
+  font-size: 12px;
+  font-weight: 600;
+}
+.demo-clip-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 11px 12px;
+}
+.demo-clip-ask {
+  align-self: flex-start;
+  margin: 0;
+  padding: 7px 10px;
+  border-radius: 11px 11px 11px 4px;
+  background: var(--well);
+  color: var(--demo-window-ink);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+.demo-clip-composer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 5px 8px;
+  border-radius: 9px;
+  background: var(--well);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition:
+    background 200ms ease,
+    box-shadow 200ms ease;
+}
+.demo-clip-composer[data-flash] {
+  background: color-mix(in srgb, var(--accent) 12%, var(--demo-window));
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.demo-clip-reply {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  font-size: 10.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--demo-window-ink);
+}
+.demo-clip-badge {
+  flex: none;
+  padding: 1.5px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--demo-ok) 15%, transparent);
+  color: var(--demo-ok);
+  font-size: 9.5px;
+  font-weight: 650;
+  opacity: 0;
+  transform: translateY(3px);
+  transition:
+    opacity var(--demo-pop-ms) ease,
+    transform var(--demo-pop-ms) ease;
+}
+.demo-clip-badge[data-show] {
+  opacity: 1;
+  transform: translateY(0);
+}
+.demo-clip {
+  position: absolute;
+  right: 14px;
+  top: 10px;
+  width: 228px;
+  padding: 7px 8px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--demo-window) 94%, transparent);
+  color: var(--demo-window-ink);
+  box-shadow:
+    0 0 0 1px var(--demo-window-line),
+    0 16px 34px -14px rgba(var(--shadow), 0.34);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  opacity: 0;
+  transform: translateY(10px) scale(0.94);
+  transform-origin: 70% 100%;
+  transition:
+    opacity var(--demo-pop-ms) ease,
+    transform var(--demo-pop-ms) ease;
+}
+.demo-clip[data-show] {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.demo-clip-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--well);
+  color: var(--ink-3);
+}
+.demo-clip-ico {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+.demo-clip-search {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  font-size: 11px;
+  color: var(--demo-window-ink);
+}
+.demo-clip-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 6px 0 5px;
+  font-size: 10px;
+  color: var(--ink-3);
+}
+.demo-clip-tabs b,
+.demo-clip-tabs span {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+.demo-clip-tabs b[data-on] {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.demo-clip-list {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.demo-clip-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 40px;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    opacity 180ms ease,
+    max-height 220ms ease,
+    padding 220ms ease;
+}
+.demo-clip-row[data-hide] {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  pointer-events: none;
+}
+.demo-clip-row[data-on] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.demo-clip-kind {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--well);
+  color: var(--ink-2);
+}
+.demo-clip-kind.link {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+.demo-clip-kind svg {
+  width: 13px;
+  height: 13px;
+}
+.demo-clip-row[data-on] .demo-clip-kind {
+  background: color-mix(in srgb, var(--accent-ink) 20%, transparent);
+  color: var(--accent-ink);
+}
+.demo-clip-thumb {
+  width: 30px;
+  height: 22px;
+  flex: none;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.demo-clip-copy {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+.demo-clip-copy b {
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.demo-clip-copy small {
+  font-size: 9.5px;
+  line-height: 1.2;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.demo-clip-row[data-on] .demo-clip-copy small {
+  color: color-mix(in srgb, var(--accent-ink) 80%, transparent);
+}
+.demo-clip-pin {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  color: var(--accent);
+  opacity: 0.8;
+}

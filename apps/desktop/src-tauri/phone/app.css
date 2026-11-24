@@ -1,0 +1,793 @@
+/* 手机传文件's phone page. --pet is the pet's own color (r g b), measured
+   from its picture; everything takes its tint from it. Light and dark follow
+   the phone. Motion is soft and springy; reduced motion turns it off. */
+:root {
+  --pet: 236 150 80;
+  --accent: rgb(var(--pet));
+  --bg: #f6f4ef;
+  --ink: #1d1c1a;
+  --soft: rgba(29, 28, 26, 0.56);
+  --card: rgba(255, 255, 255, 0.72);
+  --card-solid: #ffffff;
+  --line: rgba(0, 0, 0, 0.07);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 30px rgba(0, 0, 0, 0.07);
+  --radius: 22px;
+  --spring: cubic-bezier(0.3, 1.35, 0.5, 1);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  color-scheme: light dark;
+  -webkit-text-size-adjust: 100%;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16161a;
+    --ink: #f4f3f0;
+    --soft: rgba(244, 243, 240, 0.58);
+    --card: rgba(40, 40, 46, 0.7);
+    --card-solid: #24242a;
+    --line: rgba(255, 255, 255, 0.08);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 34px rgba(0, 0, 0, 0.35);
+  }
+}
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Segoe UI", Roboto,
+    "Noto Sans SC", sans-serif;
+}
+body {
+  background:
+    radial-gradient(120% 60% at 50% -10%, rgb(var(--pet) / 0.28), transparent 60%),
+    radial-gradient(80% 40% at 100% 30%, rgb(var(--pet) / 0.1), transparent 70%), var(--bg);
+  background-attachment: fixed;
+  transition: background-color 600ms var(--ease);
+}
+button,
+a {
+  font: inherit;
+  color: inherit;
+}
+button {
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.app {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 0 16px calc(var(--safe-b) + 40px);
+}
+
+/* ---- the pet at the top: one row, staying on top while scrolling ---- */
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 -16px 18px;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 10px;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(18px) saturate(1.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+}
+.avatar {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgb(var(--pet) / 0.18);
+  box-shadow: inset 0 0 0 1px rgb(var(--pet) / 0.25);
+}
+.avatar img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+.avatar[data-missing] img {
+  display: none;
+}
+.who {
+  min-width: 0;
+}
+h1 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.status {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--soft);
+}
+.status::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #34c759;
+  box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.18);
+  vertical-align: 1px;
+}
+body[data-offline] .status::before {
+  background: #ff9f0a;
+  box-shadow: 0 0 0 3px rgba(255, 159, 10, 0.2);
+}
+
+/* ---- the three big choices ---- */
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.tile {
+  position: relative;
+  display: grid;
+  align-content: end;
+  gap: 10px;
+  min-height: 118px;
+  padding: 18px;
+  border-radius: var(--radius);
+  background: var(--card);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  box-shadow: var(--shadow), inset 0 0 0 1px var(--line);
+  text-align: left;
+  font-size: 17px;
+  font-weight: 600;
+  overflow: hidden;
+  transition: transform 260ms var(--spring), box-shadow 260ms var(--ease);
+}
+.tile:active {
+  transform: scale(0.96);
+}
+.tile svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.tile-photos {
+  grid-row: span 2;
+  color: #fff;
+  background: linear-gradient(150deg, rgb(var(--pet) / 0.95), rgb(var(--pet) / 0.7) 55%, rgb(var(--pet) / 0.55));
+  box-shadow: 0 16px 36px rgb(var(--pet) / 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.tile-photos::before {
+  content: "";
+  position: absolute;
+  inset: -40% -20% auto auto;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.4), transparent 65%);
+}
+.tile-photos svg {
+  width: 40px;
+  height: 40px;
+}
+.tile-files svg,
+.tile-text svg {
+  color: var(--accent);
+}
+
+/* ---- what the computer sent: grouped by when, pictures as a grid ---- */
+.desk {
+  margin-top: 30px;
+}
+.desk-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 4px 6px;
+}
+.desk h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+[data-act="all"]:not(.ghost) {
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px;
+}
+[data-act="all"][hidden] {
+  display: none;
+}
+.group + .group {
+  margin-top: 14px;
+}
+.when {
+  margin: 0 4px 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--soft);
+}
+.shots,
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.shots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.shots + .rows {
+  margin-top: 8px;
+}
+.shot {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgb(var(--pet) / 0.12);
+  animation: rise 420ms var(--spring) both;
+}
+.shot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.shot[data-new]::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px #fff;
+}
+.rows {
+  display: grid;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line);
+  overflow: hidden;
+}
+.file-row,
+.note-card {
+  position: relative;
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  animation: rise 420ms var(--spring) both;
+}
+.file-row {
+  grid-template-columns: 40px 1fr auto;
+}
+.note-card {
+  grid-template-columns: 1fr auto;
+}
+.rows li + li {
+  border-top: 1px solid var(--line);
+}
+.file-row[data-new]::before,
+.note-card[data-new]::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin-top: -2.5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+/* What was picked to send, in the tray. */
+.picked li {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line);
+  animation: rise 420ms var(--spring) both;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+.picked img,
+.picked video,
+.glyph {
+  width: 48px;
+  height: 48px;
+  border-radius: 11px;
+  object-fit: cover;
+  background: rgb(var(--pet) / 0.14);
+}
+.file-row .glyph {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+.glyph {
+  --g: var(--pet);
+  display: grid;
+  place-items: center;
+  font: 700 10.5px/1 ui-rounded, -apple-system, sans-serif;
+  color: rgb(var(--g));
+  background: rgb(var(--g) / 0.14);
+}
+.glyph::after {
+  content: attr(data-ext);
+}
+.glyph[data-family="doc"] { --g: 66 133 244; }
+.glyph[data-family="sheet"] { --g: 52 168 83; }
+.glyph[data-family="slides"] { --g: 234 120 40; }
+.glyph[data-family="archive"] { --g: 142 110 200; }
+.glyph[data-family="audio"] { --g: 236 72 140; }
+.glyph[data-family="video"] { --g: 230 80 70; }
+.what {
+  min-width: 0;
+  display: grid;
+}
+.name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 550;
+  font-size: 15px;
+}
+.size {
+  font-size: 12.5px;
+  color: var(--soft);
+  font-variant-numeric: tabular-nums;
+}
+.snippet {
+  margin: 0;
+  padding-left: 10px;
+  border-left: 3px solid rgb(var(--pet) / 0.5);
+  font-size: 14.5px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* Download: a round button with an arrow. */
+.get {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgb(var(--pet) / 0.14);
+  transition: transform 200ms var(--spring);
+}
+.get::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v11M7 11l5 5 5-5M6 19h12'/%3E%3C/svg%3E") center / 18px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v11M7 11l5 5 5-5M6 19h12'/%3E%3C/svg%3E") center / 18px no-repeat;
+}
+.pill {
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgb(var(--pet) / 0.16);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 200ms var(--spring);
+}
+.get:active,
+.pill:active {
+  transform: scale(0.92);
+}
+/* Nothing yet: the pet, small, and how to send something here. */
+.desk-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 22px 16px;
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line);
+  text-align: center;
+}
+.desk-empty[hidden] {
+  display: none;
+}
+.desk-empty img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  opacity: 0.85;
+}
+.desk-empty p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--soft);
+}
+
+/* ---- the sheet from below ---- */
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 320ms var(--ease);
+}
+body[data-sheet] .scrim {
+  opacity: 1;
+  pointer-events: auto;
+}
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 86vh;
+  overflow: auto;
+  margin: 0 auto;
+  max-width: 560px;
+  padding: 10px 18px calc(var(--safe-b) + 18px);
+  border-radius: 28px 28px 0 0;
+  background: var(--card-solid);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.18);
+  transform: translateY(105%);
+  visibility: hidden;
+  transition:
+    transform 460ms var(--spring),
+    visibility 0s 460ms;
+  view-transition-name: sheet;
+}
+/* Closed, it is hidden too: pulling the page or a long screenshot must not
+   show its edge. */
+body[data-sheet] .sheet {
+  transform: none;
+  visibility: visible;
+  transition: transform 460ms var(--spring);
+}
+.grip {
+  display: block;
+  width: 38px;
+  height: 5px;
+  margin: 0 auto 14px;
+  border-radius: 3px;
+  background: var(--line);
+}
+.sheet > div {
+  display: none;
+}
+.sheet[data-step="pick"] .sheet-pick,
+.sheet[data-step="wait"] .sheet-wait,
+.sheet[data-step="send"] .sheet-send,
+.sheet[data-step="done"] .sheet-done,
+.sheet[data-step="no"] .sheet-no,
+.sheet[data-step="got"] .sheet-got {
+  display: block;
+  animation: rise 360ms var(--spring) both;
+}
+.picked {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-height: 46vh;
+  overflow: auto;
+}
+.sheet[data-mode="text"] .picked {
+  display: none;
+}
+.note {
+  display: none;
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 0;
+  border-radius: 16px;
+  background: rgb(var(--pet) / 0.08);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  font: inherit;
+  resize: none;
+  outline: none;
+}
+.note:focus {
+  box-shadow: inset 0 0 0 2px rgb(var(--pet) / 0.6);
+}
+.sheet[data-mode="text"] .note {
+  display: block;
+}
+.remove {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--line);
+  position: relative;
+}
+.remove::before,
+.remove::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  top: 14px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--soft);
+  transform: rotate(45deg);
+}
+.remove::after {
+  transform: rotate(-45deg);
+}
+.sheet-bar {
+  display: flex;
+  gap: 10px;
+}
+.primary,
+.ghost {
+  flex: 1;
+  height: 52px;
+  border-radius: 16px;
+  font-weight: 650;
+  font-size: 17px;
+  transition: transform 220ms var(--spring), filter 200ms;
+}
+.primary {
+  flex: 2;
+  color: #fff;
+  background: linear-gradient(180deg, rgb(var(--pet) / 1), rgb(var(--pet) / 0.82));
+  box-shadow: 0 10px 24px rgb(var(--pet) / 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+}
+.ghost {
+  background: var(--line);
+}
+.primary:active,
+.ghost:active {
+  transform: scale(0.96);
+}
+
+/* Waiting for the pet's yes: the pet bobs. */
+.sheet-wait,
+.sheet-done,
+.sheet-no {
+  text-align: center;
+  padding: 8px 0 6px;
+}
+.wait-pet {
+  width: 92px;
+  height: 92px;
+  margin: 6px auto 14px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgb(var(--pet) / 0.16);
+  animation: nod 1.4s var(--ease) infinite;
+}
+.wait-pet img {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+}
+@keyframes nod {
+  30% {
+    transform: translateY(-6px) rotate(-3deg);
+  }
+  60% {
+    transform: translateY(0) rotate(2deg);
+  }
+}
+.wait-title,
+.send-title,
+.done-title,
+.no-title,
+.got-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 650;
+}
+.wait-hint {
+  margin: 4px 0 8px;
+  color: var(--soft);
+  font-size: 14px;
+}
+
+/* Sending: one meter for all, a bar under each. */
+.meter {
+  height: 8px;
+  margin: 14px 0 16px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+.meter i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgb(var(--pet) / 0.7), var(--accent));
+  transform: scaleX(var(--p, 0));
+  transform-origin: left;
+  transition: transform 240ms linear;
+}
+.sending {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  max-height: 40vh;
+  overflow: auto;
+}
+.sending li {
+  display: grid;
+  gap: 5px;
+}
+.sending .bar {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--line);
+  position: relative;
+  overflow: hidden;
+}
+.sending .bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform: scaleX(var(--p, 0));
+  transform-origin: left;
+  transition: transform 200ms linear;
+}
+.sending [data-state="done"] .bar::after {
+  transform: scaleX(1);
+  background: #34c759;
+}
+.sending [data-state="failed"] .bar::after {
+  transform: scaleX(1);
+  background: #ff453a;
+}
+.sending [data-state="done"] .name::after {
+  content: " ✓";
+  color: #34c759;
+}
+
+/* Done: a check draws itself. */
+.done-mark {
+  width: 76px;
+  height: 76px;
+  margin: 8px auto 14px;
+}
+.done-mark svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.done-mark circle {
+  stroke: rgb(var(--pet) / 0.3);
+  fill: rgb(var(--pet) / 0.12);
+  animation: pop 500ms var(--spring) both;
+}
+.done-mark path {
+  stroke: var(--accent);
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: draw 480ms 180ms var(--ease) forwards;
+}
+@keyframes pop {
+  from {
+    transform: scale(0.4);
+    transform-origin: center;
+    opacity: 0;
+  }
+}
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.sheet-done .sheet-bar,
+.sheet-no .sheet-bar,
+.sheet-got .sheet-bar {
+  margin-top: 20px;
+}
+/* What the computer just sent, in the tray, with how to keep it. */
+.got-list {
+  margin-top: 14px;
+  max-height: 52vh;
+  overflow: auto;
+}
+.got-hint {
+  margin: 12px 0 0;
+  color: var(--soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* A picture from the pet, full size; long press saves it, or 下载. */
+.viewer {
+  position: fixed;
+  z-index: 2;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 14px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  view-transition-name: viewer;
+}
+.viewer[hidden] {
+  display: none;
+}
+.viewer img {
+  max-width: 100%;
+  max-height: 78vh;
+  border-radius: 12px;
+  -webkit-touch-callout: default;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--safe-b) + 24px);
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(30, 30, 34, 0.9);
+  color: #fff;
+  font-size: 14px;
+  transform: translate(-50%, 30px);
+  opacity: 0;
+  transition: transform 360ms var(--spring), opacity 240ms;
+  pointer-events: none;
+}
+.toast[data-show] {
+  transform: translate(-50%, 0);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+.viewer .pill {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}

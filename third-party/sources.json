@@ -1,0 +1,212 @@
+[
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "LICENSE",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/LICENSE",
+    "sha256": "4dd13869245e356246a5b770723247bbb80a8f07a181d1d3d873a1734297cdb9"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "references/acceptance-criteria.md",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/references/acceptance-criteria.md",
+    "sha256": "384217c3423cce2741ecb2df350a2e3a77ae8f960cd5a9d202b23e19932e1167"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "references/animation-rows.md",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/references/animation-rows.md",
+    "sha256": "d27b08d599e73cf6a65a03d2b8ad49e9ad408e18292636164e7b2d2f1815615f"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "references/codex-pet-contract.md",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/references/codex-pet-contract.md",
+    "sha256": "8f9c271e0a8269e57cd27cedeff1317975ea5f772f2549572aeefa580d9d58d3"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "references/look-direction.md",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/references/look-direction.md",
+    "sha256": "a7fac553b4ad526307adb7a1d198d9d939ac03df46ff67c882909c65777c4a5e"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "references/qa-rubric.md",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/references/qa-rubric.md",
+    "sha256": "46bd447611d101cca0d89692ee566cfd58abfea30d4cfb7749b2c930e0b7deaf"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "references/worker-prompts.md",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/references/worker-prompts.md",
+    "sha256": "2d33bb1caeec5da820c026578227ddef46c233f9010f38081bda4099ad047ed9"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/assemble_extended_atlas.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/assemble_extended_atlas.py",
+    "sha256": "ca50b13d62858a660e1ae2d15649a1ccb565d03ee185539d22df0e121075eadc"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/combine_direction_blind_verdicts.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/combine_direction_blind_verdicts.py",
+    "sha256": "4dad56adaad032a4e6d070494b0ab2ca316429cf69363450f9fbf7135d1c2d42"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/compose_atlas.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/compose_atlas.py",
+    "sha256": "a76d7c8b81033353004f5cafab8fa174c314f1d79158b69bc83a2f0bd6047fdf"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/compose_cardinal_anchor_strip.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/compose_cardinal_anchor_strip.py",
+    "sha256": "e67ac9816a909cad136189bf23eddf8b16e0fcb430ade2262556bbd12db2bca5"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/derive_running_left_from_running_right.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/derive_running_left_from_running_right.py",
+    "sha256": "ae42859720220fe8a407fc0dfff06e8344e535c6c8019220b1f63db7714baa77"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/despill_chroma_edges.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/despill_chroma_edges.py",
+    "sha256": "dc93a5e752f4100e55010205462a8e7272bac451ee7e29b525abd6157a7fe309"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/extract_cardinal_anchors.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/extract_cardinal_anchors.py",
+    "sha256": "55434d06bc328b1879d98c821f2586963910f89926f4dcbe92682b25555a8cde"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/extract_strip_frames.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/extract_strip_frames.py",
+    "sha256": "86301292945550c4b2c318815c9bfd97a1f9b3fa4e83aea7b31bcfa2ca20e1f2"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/inspect_frames.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/inspect_frames.py",
+    "sha256": "9ef930151ae845a3c9eb3c10dfc8da95947535d18c72992cff5f65081af4c30a"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/make_contact_sheet.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/make_contact_sheet.py",
+    "sha256": "51e2085b8acb172dcdd5fff9993bdee413f3851b714229ca095dc99cd551aa96"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/make_direction_blind_qa_sheet.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/make_direction_blind_qa_sheet.py",
+    "sha256": "52f2a29251872449fed51c7744c3f9f503274ee288eb23efc29a2c568b0d52bd"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/make_direction_qa_sheet.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/make_direction_qa_sheet.py",
+    "sha256": "823e81e0aece24d1d6537889c9daaa2660208ff52604509b24fd5e24e7302acb"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/measure_direction_continuity.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/measure_direction_continuity.py",
+    "sha256": "e24b7065af82eab5638f1fcdeb627d497391a2f1e9ba19801827d1db3a6d8c2d"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/prepare_pet_run.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/prepare_pet_run.py",
+    "sha256": "ca9809003e95248339db3c9fe0625e4e871732146bf06e19efc091191bd9da1f"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/render_animation_previews.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/render_animation_previews.py",
+    "sha256": "911e8813e1b79b7f9da44fae8a667c044818e8c71f41eaa4b280e91c78cde61e"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/validate_atlas.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/validate_atlas.py",
+    "sha256": "ebbbc77cfbd27ef8476ac6fda716e864cf372a2ed4c2beb27ebdb2487e972194"
+  },
+  {
+    "repository": "MakerCore/hatch-pet",
+    "commit": "313a8c92f4847e88154d1e1f34e4ba1c124fbf3f",
+    "source_path": "scripts/validate_direction_blind_verdicts.py",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/scripts/validate_direction_blind_verdicts.py",
+    "sha256": "7871667432918e0ffcdbb9beaf88a01c0af4b9e2809c5000f7b533a9ddc6e13d"
+  },
+  {
+    "repository": "Craybreeding/hatch-pet",
+    "commit": "358880657836596bbf858cfd0909a94e019f823c",
+    "source_path": "examples/mika/pet.json",
+    "local_path": "examples/mika/pet.json",
+    "sha256": "666eb6f3598552f3e063e0d1f7e33a1298db39e48fee33815ffb8f7a3186f47e"
+  },
+  {
+    "repository": "Craybreeding/hatch-pet",
+    "commit": "358880657836596bbf858cfd0909a94e019f823c",
+    "source_path": "examples/mika/spritesheet.webp",
+    "local_path": "third-party/mika-upstream.webp",
+    "sha256": "581ea466e51267e8653b25beb2ce0183b94f047d2d1c33bf0853b9fee6ad00bb"
+  },
+  {
+    "repository": "Craybreeding/hatch-pet",
+    "commit": "358880657836596bbf858cfd0909a94e019f823c",
+    "source_path": "examples/mika/README.md",
+    "local_path": "examples/mika/README.md",
+    "sha256": "7ffe3b2d5640e94602d0648f7487ad423bb987cba24b97ff1f15b38a5da55c22"
+  },
+  {
+    "repository": "Craybreeding/hatch-pet",
+    "commit": "358880657836596bbf858cfd0909a94e019f823c",
+    "source_path": "LICENSE",
+    "local_path": "third-party/Craybreeding-LICENSE",
+    "sha256": "5f3f4cec6970ad0c4ff5ee80748ac97e9db76c89211dd0534d16e78e60a05fa5"
+  },
+  {
+    "repository": "Craybreeding/hatch-pet",
+    "commit": "358880657836596bbf858cfd0909a94e019f823c",
+    "source_path": "NOTICE",
+    "local_path": "third-party/Craybreeding-NOTICE",
+    "sha256": "230ef3ee0632ce19b8cc50c0d8edcf3bf576802590f0924a75cd0d9de6b03737"
+  },
+  {
+    "repository": "Codex hatch-pet Skill (Apache-2.0, LICENSE.txt identical to vendor/hatch-pet/LICENSE)",
+    "commit": "local install ~/.codex/skills/hatch-pet, scripts byte-identical to MakerCore/hatch-pet@313a8c92",
+    "source_path": "SKILL.md",
+    "local_path": "skills/make-desktop-pet/vendor/hatch-pet/SKILL.md",
+    "sha256": "ccfabd5d761faa721586f8793dd93bdd735e2a2c07099a5d593a7e31286e58f3"
+  }
+]

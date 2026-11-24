@@ -1,0 +1,7 @@
+[
+  {"id":"ms-learn","name":"微软使用指南","use":"查微软产品和服务的官方说明。","url":"https://learn.microsoft.com/api/mcp","data":"查询词发给微软。","auth":"none","site":"https://learn.microsoft.com/en-us/training/support/mcp-developer-reference","tools":["microsoft_docs_search"]},
+  {"id":"data-fr","name":"法国公共数据","use":"找人口、交通和城市等公开数据集。","url":"https://mcp.data.gouv.fr/mcp","data":"数据主题和筛选条件发给法国公共数据平台。","auth":"none","site":"https://github.com/datagouv/datagouv-mcp","tools":["search_datasets"]},
+  {"id":"arca-papers","name":"生命科学论文","use":"按主题找公开论文。","url":"https://app.arca.inc/api/public/mcp","data":"论文主题和检索词发给 Arca，不需要提供个人病历。","auth":"none","site":"https://www.arca.inc/mcp","tools":["search_papers"]},
+  {"id":"deepwiki","name":"开源软件问答","use":"了解某个公开软件怎么用。","url":"https://mcp.deepwiki.com/mcp","data":"公开仓库名和问题发给 Cognition 的 DeepWiki。","auth":"none","site":"https://docs.devin.ai/work-with-devin/deepwiki-mcp","tools":["ask_question"]},
+  {"id":"tavily","name":"网页资料检索","use":"按主题找公开网页和摘要。","url":"https://mcp.tavily.com/mcp","data":"搜索词和筛选条件发给 Tavily。","auth":"bearer","site":"https://github.com/tavily-ai/tavily-mcp","tools":["tavily-search","tavily_search"]}
+]

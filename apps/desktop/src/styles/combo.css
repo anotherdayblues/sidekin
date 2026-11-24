@@ -1,0 +1,88 @@
+/* Type-or-pick field: a small arrow on the field, a list under it. */
+.combo {
+  position: relative;
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  justify-self: end;
+}
+.combo > input {
+  box-sizing: border-box;
+  padding-right: 28px !important;
+}
+/* In the model dialog the field spans the row, as before. */
+.model-setup .combo {
+  display: block;
+  width: auto;
+}
+.model-setup .combo > input {
+  width: 100%;
+}
+/* The arrow sits on the wrapper, so skin backgrounds on the field keep it. */
+.combo::after {
+  content: "";
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -5px;
+  border-right: 1.5px solid var(--ink-3);
+  border-bottom: 1.5px solid var(--ink-3);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.combo-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  max-height: 220px;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 10px 28px rgba(var(--shadow), 0.22);
+  font-size: 13px;
+}
+/* Near the bottom of the window the list opens upward. */
+.combo-list[data-up] {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+.combo-list[hidden] {
+  display: none;
+}
+.combo-list li {
+  padding: 6px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.combo-list li:hover,
+.combo-list li[aria-selected="true"] {
+  background: var(--well);
+}
+.combo-list li[data-current]::before {
+  content: "✓ ";
+  color: var(--accent);
+}
+
+/* In settings rows the wrapper takes the width a field would have, and the
+   field fills it (the field's own 60% would otherwise be of the wrapper). */
+.shell .combo {
+  width: min(320px, 60%);
+}
+.shell
+  .combo
+  > input:not([type="checkbox"]):not([type="range"]):not([type="file"]) {
+  width: 100%;
+}

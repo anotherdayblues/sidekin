@@ -1,0 +1,124 @@
+/* 设置: contents on the left, groups on the right. */
+.block[data-for="settings"] .companion-page {
+  position: static;
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 20px;
+  padding: 0 4px 24px;
+  background: none;
+  overflow: visible;
+}
+.set-toc {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  display: grid;
+  gap: 2px;
+  padding-top: 2px;
+}
+.set-toc a {
+  padding: 7px 10px;
+  border-radius: 8px;
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 13px;
+}
+.set-toc a:hover {
+  background: var(--well);
+  color: var(--ink);
+}
+.block[data-for="settings"] form {
+  display: grid;
+  gap: 14px;
+  max-width: 720px;
+}
+.set-group {
+  padding: 14px 20px 10px;
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 1px 0 var(--panel-edge) inset,
+    0 2px 0 rgba(var(--shadow), 0.06);
+  scroll-margin-top: 8px;
+}
+.set-group h3:not(.set-title),
+.set-group h4 {
+  font:
+    600 12px/1.4 -apple-system,
+    "PingFang SC",
+    sans-serif;
+  color: var(--ink-2);
+  margin: 14px 0 4px;
+}
+.set-group .companion-buttons {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0 4px;
+}
+.set-more {
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+}
+.set-more summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 11px 0;
+  color: var(--ink-2);
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+}
+.set-more summary::after {
+  content: "›";
+  transition: transform 0.25s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.set-more[open] summary::after {
+  transform: rotate(90deg);
+}
+.set-more-body {
+  padding-bottom: 6px;
+}
+.set-group fieldset {
+  border: 0;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--well);
+}
+.set-group [data-access],
+.set-group [data-screen] {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 0;
+  color: var(--ink);
+}
+.skin-picker.set-group {
+  margin: 0;
+  max-width: none;
+}
+
+.search-key-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.shell .set-group .search-key-actions label {
+  margin-right: auto;
+  border: 0;
+}
+.shell .search-key-actions input[type="password"] {
+  width: min(40%, 320px);
+}
+.search-key-actions [hidden] {
+  display: none !important;
+}
+
+/* 声音: save and try the voice side by side. */
+.voice-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}

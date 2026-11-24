@@ -1,0 +1,146 @@
+/* ---------- popover ---------- */
+.pop {
+  position: fixed;
+  z-index: 30;
+  --pop-copy-max-height: min(38vh, 260px);
+  width: 300px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 14px 30px -10px rgba(0, 0, 0, 0.4);
+  display: grid;
+  gap: 8px;
+}
+.pop[hidden] {
+  display: none;
+}
+.pop-item {
+  border: 0;
+  background: none;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+.pop-item:hover {
+  background: var(--well);
+}
+.pop-item.current {
+  background: var(--well);
+  font-weight: 600;
+}
+.pop-item b {
+  color: var(--ink-3);
+  font-size: 11px;
+}
+.pop-item em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.pop-item:disabled {
+  cursor: default;
+  color: inherit;
+}
+.pop-item:not(.current):disabled {
+  opacity: 0.5;
+}
+.pop-item:not(.current):disabled:hover {
+  background: none;
+}
+/* ---------- taking one learned thing away ---------- */
+.forget-key {
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink-3);
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+.forget-key {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  font-size: 15px;
+  opacity: 0.55;
+}
+.rule:hover .forget-key,
+.forget-key:focus-visible {
+  opacity: 1;
+}
+.forget-key:hover {
+  color: #b2442f;
+  background: var(--well);
+}
+.pop-lead {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.pop-title {
+  font-size: 14px;
+}
+.pop-lead {
+  margin: 0;
+  line-height: 1.6;
+}
+/* The sentence to copy: wrapped at word boundaries, never mid-name. */
+.pop-code {
+  display: block;
+  max-height: var(--pop-copy-max-height);
+  overflow-y: auto;
+  font:
+    12px/1.6 ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--well);
+  user-select: all;
+  -webkit-user-select: all;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+[hidden] {
+  display: none !important;
+}
+
+/* ---------- the appearance key's menu (studioThemeMenu.ts) ---------- */
+/* Narrow, one choice per line, the current one ticked at the end. */
+.pop[data-kind="theme"] {
+  width: auto;
+  min-width: 150px;
+  padding: 6px;
+}
+.theme-menu {
+  display: grid;
+  gap: 2px;
+}
+.theme-menu .pop-item {
+  align-items: center;
+  padding: 6px 10px;
+}
+.theme-menu .pop-item::after {
+  content: "";
+  width: 12px;
+  height: 12px;
+  margin-left: auto;
+  background: currentColor;
+  -webkit-mask: var(--theme-tick) center / contain no-repeat;
+  mask: var(--theme-tick) center / contain no-repeat;
+  visibility: hidden;
+}
+.theme-menu .pop-item[aria-checked="true"]::after {
+  visibility: visible;
+}
+.theme-menu {
+  --theme-tick: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M2.5 6.3l2.3 2.3 4.7-5'/></svg>");
+}

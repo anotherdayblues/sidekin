@@ -1,0 +1,163 @@
+/* Pet Studio · day: a precise little toy · night: a studio under one lamp.
+   Accent hues come from the seeds in plan/01-总计划.md. */
+
+:root,
+:root[data-theme="day"] {
+  color-scheme: light;
+  --body: #ddd7cb;
+  --panel: #f7f5f0;
+  --panel-edge: #fffdf8;
+  --recess: #e2ded5;
+  --well: #e1ddd3;
+  --ink: #22211e;
+  --ink-2: #686358;
+  --ink-3: #9a9487;
+  --line: rgba(34, 33, 30, 0.11);
+  --line-strong: rgba(34, 33, 30, 0.2);
+  --accent: #f3c518;
+  --accent-ink: #2a2304;
+  --led: #f3c518;
+  --key: #fbf9f4;
+  --key-down: #ebe7de;
+  --primary: #22211e;
+  --primary-ink: #f7f4ec;
+  --card: #fffdf7;
+  --lcd: #23221f;
+  --lcd-ink: #f1e6c8;
+  --shadow: 34, 33, 30;
+  --grain-opacity: 0.35;
+  --stage-light: rgba(255, 254, 250, 0.9);
+  --stage-light-edge: rgba(255, 253, 246, 0);
+  --pet-shadow: rgba(86, 64, 30, 0.2);
+  --dial-night: rgba(34, 33, 30, 0.08);
+}
+/* Night: panels and cards sit a step above the room so they read as
+   surfaces; quiet text (--ink-3) stays near 4.5:1 on them; lines show. */
+:root[data-theme="night"] {
+  color-scheme: dark;
+  --body: #141312;
+  --panel: #201e1b;
+  --panel-edge: #2e2b26;
+  --recess: #0c0b0a;
+  --well: #171614;
+  --ink: #ede6d8;
+  --ink-2: #aaa294;
+  --ink-3: #8f887b;
+  --line: rgba(237, 230, 216, 0.12);
+  --line-strong: rgba(237, 230, 216, 0.22);
+  --accent: #d9a25a;
+  --accent-ink: #1b1306;
+  --led: #f0b25f;
+  --key: #2a2824;
+  --key-down: #1f1d1a;
+  --primary: #d9a25a;
+  --primary-ink: #1b1306;
+  --card: #2a2723;
+  --lcd: #0b0a09;
+  --lcd-ink: #e9a95a;
+  --shadow: 0, 0, 0;
+  --grain-opacity: 0.22;
+  --stage-light: rgba(255, 196, 120, 0.3);
+  --stage-light-edge: rgba(255, 196, 120, 0);
+  --pet-shadow: rgba(0, 0, 0, 0.55);
+  --dial-night: rgba(217, 162, 90, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+/* A desktop app, not a page: dragging anywhere never selects text or
+   drags images. Only the example sentences people copy stay selectable. */
+body {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  cursor: default;
+}
+img,
+canvas {
+  -webkit-user-drag: none;
+}
+input,
+textarea,
+.selectable {
+  user-select: text;
+  -webkit-user-select: text;
+}
+body {
+  font:
+    14px/1.5 -apple-system,
+    BlinkMacSystemFont,
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Microsoft YaHei",
+    sans-serif;
+  color: var(--ink);
+  background: var(--body);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+.mono,
+code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+/* Printed labels on the device body. */
+.silk,
+.label {
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+}
+
+/* Lights out / lights on between themes. */
+#dimmer {
+  position: fixed;
+  inset: 0;
+  background: #050403;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* Injection-moulded matte texture: faint procedural grain on panels only. */
+.studio::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  mix-blend-mode: multiply;
+  z-index: 0;
+}
+:root[data-theme="night"] .studio::before {
+  mix-blend-mode: screen;
+}

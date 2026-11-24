@@ -1,0 +1,30 @@
+{
+  "identifier": "desktop",
+  "description": "Local pet library and desktop interactions",
+  "windows": [
+    "studio",
+    "pet",
+    "bubble",
+    "clock",
+    "chat",
+    "snip-*",
+    "snipcard",
+    "fixture"
+  ],
+  "permissions": [
+    "core:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "core:window:allow-start-dragging",
+    "core:window:allow-set-ignore-cursor-events",
+    "core:window:allow-cursor-position",
+    "core:window:allow-outer-position",
+    "core:window:allow-scale-factor",
+    "core:window:allow-set-position",
+    "core:window:allow-current-monitor",
+    "core:window:allow-primary-monitor",
+    "core:window:allow-outer-size",
+    "core:menu:allow-new",
+    "core:menu:allow-popup"
+  ]
+}

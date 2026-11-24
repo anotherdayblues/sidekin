@@ -1,0 +1,53 @@
+[package]
+name = "pet-studio"
+version = "1.0.0"
+edition = "2021"
+license = "MIT"
+
+[features]
+default = ["file-transfer-lab", "custom-protocol"]
+file-transfer-lab = []
+custom-protocol = ["tauri/custom-protocol"]
+acceptance= []
+trial = []
+
+[build-dependencies]
+cc="1"
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "macos-private-api"] }
+tauri-plugin-dialog = "2"
+drag = "=2.1.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+image = { version = "0.25", default-features = false, features = ["png", "webp"] }
+base64 = "0.22"
+sha2 = "0.10"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+rusqlite = { version = "0.37", features = ["bundled", "backup"] }
+tauri-plugin-global-shortcut = "2"
+xcap = "=0.9.8"
+
+tempfile = "3"
+regex="1"
+unicode-normalization="0.1"
+chrono = "0.4"
+chrono-tz = "0.10"
+iana-time-zone = "0.1"
+# 手机传文件 (plan/18, plan/20): a small LAN server and the QR code.
+tiny_http = "0.12"
+if-addrs = "0.13"
+qrcode = { version = "0.14", default-features = false, features = ["svg"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+plist = "1"
+keyring = { version = "=3.6.3", features = ["apple-native"] }
+
+[target.'cfg(windows)'.dependencies]
+# Already used by Tauri itself; named here to reach MemoryUsageTargetLevel (plan/22 M4).
+webview2-com = "0.39.1"
+windows = { version = "0.62.2", features = ["Graphics_Imaging", "Media_Ocr", "Globalization", "Security_Cryptography", "Storage_Streams", "Win32_System_WinRT"] }
+windows-sys = { version = "0.59", features = ["Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging", "Win32_Foundation", "Win32_Globalization", "Win32_UI_Shell"] }
+winreg = "0.56"
+keyring = { version = "=3.6.3", features = ["windows-native"] }

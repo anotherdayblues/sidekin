@@ -1,0 +1,74 @@
+/* The 待办 and 提醒 demos (demos/todo.ts, demos/reminder.ts): the real
+   to-do card in the demo's small bubble. The card's own look comes from
+   todo/*.css; only what the fake desktop needs is here. */
+.demo {
+  --demo-todo-w: 330px;
+  --demo-todo-scale: 0.74;
+  --demo-todo-tall-scale: 0.6;
+  --demo-todo-taller-scale: 0.52;
+  --demo-todo-mark: color-mix(in srgb, var(--accent) 32%, transparent);
+  --demo-todo-box: 13px;
+}
+/* The to-do card shows only in its state, and then it is the whole bubble. */
+.demo-pet .bubble-card:not([data-state="todo"]) [data-todo],
+.demo-pet
+  .bubble-card[data-state="todo"]
+  > :not(header, [data-todo], .bubble-tail) {
+  display: none;
+}
+.demo-pet .bubble-shell:has(.bubble-card[data-state="todo"]) {
+  min-width: var(--demo-todo-w);
+  max-width: var(--demo-todo-w);
+}
+.demo-pet .bubble-shell[data-show]:has(.bubble-card[data-state="todo"]) {
+  transform: scale(var(--demo-todo-scale));
+}
+/* With the drafts or the snoozes open the card is tall; it shrinks a
+   little to stay on the desk, the emptied line steps aside for the drafts,
+   and the clock, its job done, fades. */
+.demo-pet .bubble-shell[data-show]:has([data-part="drafts"]:not([hidden])) {
+  transform: scale(var(--demo-todo-tall-scale));
+}
+.demo-pet .bubble-shell[data-show]:has([data-part="snoozes"]:not([hidden])) {
+  transform: scale(var(--demo-todo-taller-scale));
+}
+.demo-pet [data-todo]:has([data-part="drafts"]:not([hidden])) .todo-quick {
+  display: none;
+}
+.demo-clock[data-done] {
+  opacity: 0;
+  transition: opacity var(--demo-fade-ms) ease;
+}
+
+/* The line typed in: what was understood is marked, as in the real one. */
+.demo-todo-field {
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 15px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.demo-todo-field mark {
+  border-radius: 4px;
+  background: var(--demo-todo-mark);
+  color: inherit;
+}
+/* A pasted paragraph wraps, smaller, with 整理成几条 in the corner. */
+.demo-todo-field[data-paragraph] {
+  padding-inline-end: 112px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  white-space: normal;
+}
+
+/* The drafts' ticks, all on. */
+.demo-todo-box {
+  flex: none;
+  width: var(--demo-todo-box);
+  height: var(--demo-todo-box);
+  border-radius: 3px;
+  background: var(--accent)
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M2.5 6.3l2.3 2.3 4.7-5'/></svg>")
+    center / 10px no-repeat;
+}

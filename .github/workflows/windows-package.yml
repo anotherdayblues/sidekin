@@ -1,0 +1,46 @@
+name: Windows package
+on:
+  workflow_dispatch:
+  push:
+    branches: [build/windows]
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      CARGO_TARGET_DIR: ${{ github.workspace }}/runs/target-lab-windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm run build:lab
+      - name: Test screenshot card at 125% and 150%
+        run: node --import tsx --test --test-name-pattern="125%|150%" tests/snip-card.test.ts
+      - name: Test native Windows features
+        working-directory: apps/desktop/src-tauri
+        run: cargo test --release --locked --target x86_64-pc-windows-msvc windows_ -- --test-threads=1
+      - name: Verify portable directory
+        shell: pwsh
+        run: |
+          $files = @("Sidekin.exe", "companion-brain.exe", "skills/make-desktop-pet/SKILL.md", "skills/teach-desktop-pet/SKILL.md", "skills/find-pet-tool/SKILL.md")
+          foreach ($file in $files) { if (!(Test-Path (Join-Path releases/Windows $file))) { throw "Missing $file" } }
+          foreach ($src in (Get-ChildItem skills -Recurse -File)) {
+            $rel = [IO.Path]::GetRelativePath($PWD.Path, $src.FullName)
+            if ((Get-FileHash $src.FullName).Hash -ne (Get-FileHash (Join-Path releases/Windows $rel)).Hash) { throw "Skill resource mismatch: $rel" }
+          }
+          $app = Start-Process (Resolve-Path 'releases/Windows/Sidekin.exe') -PassThru
+          try {
+            Start-Sleep 8
+            if ($app.HasExited) { throw "Packaged app exited with $($app.ExitCode)" }
+          } finally {
+            if (!$app.HasExited) { Stop-Process -Id $app.Id }
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Sidekin-Windows-x64
+          path: releases/Windows/
+          if-no-files-found: error
