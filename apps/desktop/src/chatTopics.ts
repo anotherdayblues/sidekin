@@ -3,6 +3,7 @@
 // sidebars: grouped by day, each with the face of the pet it was with and
 // its time; 翻译记录 at the foot. A new topic is the header's key.
 import { t, dateLocale, type Key } from "./i18n.ts";
+import { localizeTopicTitle } from "./topicMedia.ts";
 import type { LinkedTask, Topic } from "./chatBackend.ts";
 
 interface Options {
@@ -119,8 +120,11 @@ export function chatTopics(root: HTMLElement, o: Options) {
         void o.face(topic.pet).then((url) => {
           if (url) face.src = url;
         });
+        const displayTitle = topic.title
+          ? localizeTopicTitle(topic.title, t)
+          : "";
         const title = document.createElement("span");
-        title.textContent = topic.title || t("chat.emptyTopic");
+        title.textContent = displayTitle || t("chat.emptyTopic");
         const meta = document.createElement("small");
         meta.textContent = topicTime(topic.lastAt);
         b.append(face, title, meta);
@@ -128,7 +132,7 @@ export function chatTopics(root: HTMLElement, o: Options) {
         const remove = document.createElement("button");
         remove.type = "button";
         remove.className = "topic-remove";
-        icon(remove, "trash", t("chat.deleteTopic", { title: topic.title }));
+        icon(remove, "trash", t("chat.deleteTopic", { title: displayTitle }));
         remove.onclick = async () => {
           remove.disabled = true;
           let tasks: LinkedTask[];
@@ -144,7 +148,7 @@ export function chatTopics(root: HTMLElement, o: Options) {
           const panel = document.createElement("fieldset");
           panel.className = "topic-delete-confirm";
           const heading = document.createElement("legend");
-          heading.textContent = t("chat.deleteAsk", { title: topic.title });
+          heading.textContent = t("chat.deleteAsk", { title: displayTitle });
           panel.append(heading);
           let removeTasks = false;
           if (tasks.length) {

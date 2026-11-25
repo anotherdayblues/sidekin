@@ -130,6 +130,28 @@ test("real file-stack UI groups drops, expands and keeps files after a cancelled
       ),
       2,
     );
+    // On macOS, Finder-style lists hide both row and header checkboxes so
+    // .all-check never overflows the 0px checkbox column; Windows shows them.
+    await page.evaluate(() => {
+      document.documentElement.dataset.platform = "mac";
+    });
+    assert.deepEqual(
+      await page.evaluate(() => {
+        const all = getComputedStyle(document.querySelector(".all-check")!);
+        const row = getComputedStyle(document.querySelector(".file-check")!);
+        const pile = getComputedStyle(document.querySelector(".pile")!);
+        return {
+          allOpacity: all.opacity,
+          rowOpacity: row.opacity,
+          pileFilter: pile.filter,
+        };
+      }),
+      { allOpacity: "0", rowOpacity: "0", pileFilter: "none" },
+      "macOS hides checkboxes without overlap and keeps .pile free of ancestor filter",
+    );
+    await page.evaluate(() => {
+      document.documentElement.dataset.platform = "win";
+    });
     await page.locator(".file-check").nth(0).check();
     await page.locator(".file-check").nth(1).check();
     assert.equal(
@@ -180,6 +202,112 @@ test("real file-stack UI groups drops, expands and keeps files after a cancelled
       () => (window as any).labView.items().length === 0,
     );
     assert.equal(await page.locator(".pile").count(), 0);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("1-file panel has no spurious scrollbar; regions track badge & notice; blocked drops and discards hook cleanly", async () => {
+  const server = await createServer({
+    root: process.cwd() + "/apps/desktop",
+    configLoader: "runner",
+    server: { host: "127.0.0.1", port: 0, strictPort: false },
+    logLevel: "error",
+  });
+  await server.listen();
+  const browser = await chromium.launch({ channel: "chrome" });
+  try {
+    const page = await browser.newPage({
+      viewport: { width: 544, height: 400 },
+    });
+    await page.addInitScript({
+      content: `globalThis.__name=f=>f; window.discarded=[]; window.labRegions=[]; window.permCalls=[]; window.labInvoke=async(cmd,args)=>{if(cmd==="lab_load")return {state:{items:[],lastRemoved:[]},positions:{}};if(cmd==="lab_regions")window.labRegions=args.regions;if(cmd==="lab_discard_staged")window.discarded.push(args.paths);if(cmd==="open_permission_settings"||cmd==="open_companion_page")window.permCalls.push([cmd,args]);};`,
+    });
+    await page.goto(server.resolvedUrls!.local[0] + "?files");
+    await page.waitForFunction(() => Boolean((window as any).labView));
+    // Drop 1 readable + 1 blocked file: keeps the readable one and shows persistent .perm-card.
+    await page.evaluate(() =>
+      window.dispatchEvent(
+        new CustomEvent("lab-drop", {
+          detail: {
+            paths: ["/fixture/solo.pdf"],
+            blocked: 1,
+            blockedReason: "appDataDenied",
+            x: 420,
+            y: 75,
+          },
+        }),
+      ),
+    );
+    await page.waitForFunction(
+      () => (window as any).labView.items().length === 1,
+    );
+    await page.waitForFunction(
+      () =>
+        document.querySelector<HTMLElement>(".perm-card")?.hidden === false,
+    );
+    // Regions must cover .pile-top, .count badge, and the active .perm-card.
+    await page.waitForFunction(() => (window as any).labRegions.length >= 3);
+    // Clicking the card's action button opens OS appData settings and dismisses the card.
+    await page.locator(".perm-card-action").click();
+    await page.waitForFunction(
+      () => (window as any).permCalls.length === 1,
+    );
+    assert.deepEqual(
+      await page.evaluate(() => (window as any).permCalls[0]),
+      ["open_permission_settings", { kind: "appData" }],
+    );
+    // When appData switch is turned off in Suiby, blocked drop routes to Suiby's permissions section.
+    await page.evaluate(() =>
+      window.dispatchEvent(
+        new CustomEvent("lab-drop", {
+          detail: {
+            paths: [],
+            blocked: 1,
+            blockedReason: "appDataOff",
+            x: 420,
+            y: 75,
+          },
+        }),
+      ),
+    );
+    await page.waitForFunction(
+      () =>
+        document.querySelector<HTMLElement>(".perm-card")?.hidden === false,
+    );
+    await page.locator(".perm-card-action").click();
+    await page.waitForFunction(
+      () => (window as any).permCalls.length === 2,
+    );
+    assert.deepEqual(
+      await page.evaluate(() => (window as any).permCalls[1]),
+      ["open_companion_page", { history: false, section: "access" }],
+    );
+    // Expand the 1-file panel: border-box height must fit without a spurious vertical scrollbar.
+    await page.locator(".pile-top").click();
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(document.querySelector(".file-panel")!).visibility ===
+        "visible",
+    );
+    const overflow = await page.locator(".file-panel").evaluate((el) => ({
+      scrollHeight: el.scrollHeight,
+      clientHeight: el.clientHeight,
+    }));
+    assert.ok(
+      overflow.scrollHeight <= overflow.clientHeight,
+      `1-file panel should not overflow (${overflow.scrollHeight} > ${overflow.clientHeight})`,
+    );
+    // Removing the pile must call lab_discard_staged with the removed path.
+    await page.locator(".remove").evaluate((el: HTMLElement) => el.click());
+    await page.waitForFunction(
+      () => (window as any).discarded.length === 1,
+    );
+    assert.deepEqual(
+      await page.evaluate(() => (window as any).discarded[0]),
+      ["/fixture/solo.pdf"],
+    );
   } finally {
     await browser.close();
     await server.close();

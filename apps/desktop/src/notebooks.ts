@@ -3,7 +3,7 @@
 // (你的情况) and how it does things (做事的经验), as the memory pages of
 // ChatGPT, Pi and nanoMuse keep them: one line each, editable, removable,
 // and a line to add one yourself. Both are shared by every pet.
-import { t } from "./i18n.ts";
+import { lang, t } from "./i18n.ts";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { native } from "./bridge.ts";
@@ -25,6 +25,59 @@ const BOOK_LABEL: Record<Book, "memory.yourSituation" | "memory.notes"> = {
   user: "memory.yourSituation",
   notes: "memory.notes",
 };
+
+const PREVIEW_NOTEBOOKS: Record<
+  string,
+  { profile: string; user: string[]; notes: string[] }
+> = {
+  zh: {
+    profile: "我叫小栗，在做一个叫随伴的桌面宠物项目。\n回答先说结论，尽量简短。",
+    user: ["喜欢乌龙茶。", "周报每周五下午交。"],
+    notes: ["翻译技术文档时保留英文术语，用户更容易对上原文。"],
+  },
+  en: {
+    profile: "I'm Alex, building a desktop companion app called Suiby.\nLead with the conclusion and keep replies brief.",
+    user: ["Likes oolong tea.", "Sends the weekly report every Friday afternoon."],
+    notes: ["Keep technical terms intact when translating docs so they match the source."],
+  },
+  "zh-TW": {
+    profile: "我叫小栗，正在做一個叫隨伴的桌面寵物專案。\n回答先說結論，盡量簡短。",
+    user: ["喜歡烏龍茶。", "週報每週五下午交。"],
+    notes: ["翻譯技術文件時保留英文術語，比較容易對照原文。"],
+  },
+  ja: {
+    profile: "クリです。Suiby というデスクトップペットのアプリを作っています。\n結論から先に、できるだけ簡潔に答えてね。",
+    user: ["烏龍茶が好き。", "週報は毎週金曜の午後に提出する。"],
+    notes: ["技術ドキュメントを翻訳するときは英語の専門用語を残すと原文と照合しやすい。"],
+  },
+  ko: {
+    profile: "Suiby라는 데스크톱 펫 앱을 만들고 있는 민수예요.\n결론부터 먼저, 최대한 짧게 답해 주세요.",
+    user: ["우롱차를 좋아함.", "주간 보고서는 매주 금요일 오후에 제출함."],
+    notes: ["기술 문서를 번역할 때 영문 전문 용어를 유지하면 원문과 대조하기 쉬움."],
+  },
+};
+
+function previewNotebook(): View {
+  const sample = PREVIEW_NOTEBOOKS[lang] ?? PREVIEW_NOTEBOOKS.zh;
+  return {
+    petId: "fixture",
+    profile: {
+      text: sample.profile,
+      used: Array.from(sample.profile).length,
+      limit: 2000,
+    },
+    user: {
+      entries: sample.user,
+      used: sample.user.reduce((n, s) => n + Array.from(s).length, 0),
+      limit: 2000,
+    },
+    notes: {
+      entries: sample.notes,
+      used: sample.notes.reduce((n, s) => n + Array.from(s).length, 0),
+      limit: 2200,
+    },
+  };
+}
 
 export function notebooks(root: HTMLElement) {
   const about = document.createElement("section");
@@ -48,26 +101,7 @@ export function notebooks(root: HTMLElement) {
     const seq = ++revision;
     let data: View;
     try {
-      data = native
-        ? await invoke("memory_view")
-        : {
-            petId: "fixture",
-            profile: {
-              text: "我叫小栗，在做一个叫随伴的桌面宠物项目。\n回答先说结论，尽量简短。",
-              used: 39,
-              limit: 2000,
-            },
-            user: {
-              entries: ["喜欢乌龙茶。", "周报每周五下午交。"],
-              used: 15,
-              limit: 2000,
-            },
-            notes: {
-              entries: ["翻译技术文档时保留英文术语，用户更容易对上原文。"],
-              used: 24,
-              limit: 2200,
-            },
-          };
+      data = native ? await invoke("memory_view") : previewNotebook();
     } catch (e) {
       remembered.textContent = t("memory.readFailed", { error: String(e) });
       return;

@@ -1,19 +1,19 @@
 <p align="center">
-  <img src="apps/website/public/app-icon.png" width="76" height="76" alt="Sidekin icon" />
+  <img src="apps/website/public/app-icon.png" width="76" height="76" alt="Suiby icon" />
 </p>
 
-<h1 align="center">Sidekin</h1>
+<h1 align="center">Suiby</h1>
 
 <p align="center">
   A quiet, local-first desktop utility for macOS &amp; Windows — living in the corner of your screen as a customizable AI companion.
 </p>
 
 <p align="center">
-  <a href="https://sidekin.ajulyroom.com/en/">Website &amp; Interactive Demos</a>
+  <a href="https://suiby.ajulyroom.com/en/">Website &amp; Interactive Demos</a>
   &nbsp;·&nbsp;
-  <a href="https://sidekin.ajulyroom.com/en/#download">Download</a>
+  <a href="https://suiby.ajulyroom.com/en/#download">Download</a>
   &nbsp;·&nbsp;
-  <a href="https://sidekin.ajulyroom.com/en/guide/">Product Guide</a>
+  <a href="https://suiby.ajulyroom.com/en/guide/">Product Guide</a>
   &nbsp;·&nbsp;
   <a href="README.zh-CN.md">简体中文</a>
   &nbsp;·&nbsp;
@@ -21,34 +21,34 @@
 </p>
 
 <p align="center">
-  <a href="https://sidekin.ajulyroom.com/en/">
-    <img src="docs/images/hero-sidebar.jpg" width="840" alt="Sidekin living in the desktop corner alongside its slide-out AI sidebar" />
+  <a href="https://suiby.ajulyroom.com/en/">
+    <img src="docs/images/hero-sidebar.jpg" width="840" alt="Suiby living in the desktop corner alongside its slide-out AI sidebar" />
   </a>
 </p>
 
 <p align="center">
-  <sub>Quiet while you work, handy the moment you need it. Click any preview to try the interactive demos on <a href="https://sidekin.ajulyroom.com/en/">sidekin.ajulyroom.com</a>.</sub>
+  <sub>Quiet while you work, handy the moment you need it. Click any preview to try the interactive demos on <a href="https://suiby.ajulyroom.com/en/">suiby.ajulyroom.com</a>.</sub>
 </p>
 
 ---
 
-## Why Sidekin
+## Why Suiby
 
 I wanted a desktop companion that brings a little warmth and quiet company to the screen — while also being a genuinely useful everyday utility.
 
-Instead of splitting clipboard history, a drag-and-drop file shelf, phone-to-computer transfer, a Pomodoro timer, quick translation, and a lightweight AI sidebar across five separate apps, Sidekin brings them together in one lightweight native app (Tauri + Rust) that follows macOS and Windows platform materials, stays quietly in the corner of your screen, and lets you customize the companion itself with AI.
+Instead of splitting clipboard history, a drag-and-drop file shelf, phone-to-computer transfer, a Pomodoro timer, quick translation, and a lightweight AI sidebar across five separate apps, Suiby brings them together in one lightweight native app (Tauri + Rust) that follows macOS and Windows platform materials, stays quietly in the corner of your screen, and lets you customize the companion itself with AI.
 
 <table>
   <tr>
     <td width="50%" align="center">
-      <a href="https://sidekin.ajulyroom.com/en/#pile">
+      <a href="https://suiby.ajulyroom.com/en/#pile">
         <img src="docs/images/feature-files.jpg" alt="Drag-and-drop file shelf and phone-to-computer LAN transfer" />
       </a>
       <br />
       <sub><strong>File shelf &amp; LAN phone transfer</strong> — drop files onto your pet, or scan a QR code on your phone to send photos and files over local Wi-Fi.</sub>
     </td>
     <td width="50%" align="center">
-      <a href="https://sidekin.ajulyroom.com/en/#things">
+      <a href="https://suiby.ajulyroom.com/en/#things">
         <img src="docs/images/feature-focus.jpg" alt="Minimal Pomodoro focus timer and daily focus stats" />
       </a>
       <br />
@@ -78,7 +78,7 @@ Turn on the AI brain only if you want it, using your own API key (OpenAI, Anthro
 
 ### Custom pets &amp; new moves
 
-Let your imagination run wild — turn a photo of your own cat or dog, a favorite character, or any idea you picture (a pixel robot, a drizzling little cloud, a sleepy slice of toast) into a desktop pet that lives on your screen. Sidekin includes built-in Skills (`make-desktop-pet`, `teach-desktop-pet`) and an open [inbox protocol](docs/收件箱约定.md) to create custom pets, teach them new animated moves, and share pet packs as ZIP files.
+Let your imagination run wild — turn a photo of your own cat or dog, a favorite character, or any idea you picture (a pixel robot, a drizzling little cloud, a sleepy slice of toast) into a desktop pet that lives on your screen. Suiby includes built-in Skills (`make-desktop-pet`, `teach-desktop-pet`) and an open [inbox protocol](docs/收件箱约定.md) to create custom pets, teach them new animated moves, and share pet packs as ZIP files.
 
 > **Tested recommendation for creating pets &amp; moves:** Unlike everyday chat/translation (which works with any cloud API or local model), generating new pets and animated moves requires a **local AI agent that can both generate images and operate your local filesystem/commands**. In our hands-on testing so far, **OpenAI Codex** has been the most consistent; other tools haven't tested as reliably across image generation and local packaging yet.
 
@@ -91,23 +91,23 @@ Let your imagination run wild — turn a photo of your own cat or dog, a favorit
 | Clipboard, file shelf, Pomodoro, local to-dos, pets | **100% local** on your machine |
 | Phone-to-computer QR transfer | **Local Wi-Fi only** (peer-to-peer, never touches a cloud server) |
 | Optional AI chat, translation, vision | Sent **directly from your computer** to the model provider you configure — or stays **100% offline** with local models like Ollama |
-| Telemetry / backend servers | **None.** Sidekin runs no backend server and collects zero analytics. |
+| Telemetry / backend servers | **None.** Suiby runs no backend server and collects zero analytics. |
 
 ---
 
 ## Download &amp; First-Launch Note
 
-Prebuilt installers are available on the [website](https://sidekin.ajulyroom.com/en/#download) and [GitHub Releases](https://github.com/anotherdayblues/sidekin/releases):
+Prebuilt installers are available on the [website](https://suiby.ajulyroom.com/en/#download) and [GitHub Releases](https://github.com/anotherdayblues/suiby/releases):
 
-- **macOS (Apple Silicon):** `Sidekin-Mac-arm64.dmg`
-- **Windows (x64):** `Sidekin-Windows-x64.exe`
+- **macOS (Apple Silicon):** `Suiby-Mac-arm64.dmg`
+- **Windows (x64):** `Suiby-Windows-x64.exe`
 
 Because preview builds are not yet signed with paid Apple notarization or Windows code-signing certificates, your OS may show a routine warning on first launch:
 
-- **macOS:** Drag `Sidekin.app` into `Applications`, open it once, click **Done** on the warning, then go to **System Settings → Privacy &amp; Security** and click **Open Anyway**.
+- **macOS:** Drag `Suiby.app` into `Applications`, open it once, click **Done** on the warning, then go to **System Settings → Privacy &amp; Security** and click **Open Anyway**.
 - **Windows:** On the SmartScreen prompt, click **More info → Run anyway**.
 
-If you prefer not to bypass an unsigned prompt, you can inspect the source and build Sidekin yourself below.
+If you prefer not to bypass an unsigned prompt, you can inspect the source and build Suiby yourself below.
 
 ---
 
@@ -153,7 +153,7 @@ cd apps/desktop/src-tauri && cargo test
 | `apps/desktop/` | Desktop app UI (`src/`) and Rust / Tauri host (`src-tauri/`) |
 | `apps/brain/` | Optional AI sidecar (`Bun` + TypeScript) and system prompts |
 | `apps/shared/` | Shared types, model catalog, and `zh` / `en` locales |
-| `apps/website/` | Static website &amp; interactive demos (`sidekin.ajulyroom.com`) |
+| `apps/website/` | Static website &amp; interactive demos (`suiby.ajulyroom.com`) |
 | `skills/` | Built-in `make-desktop-pet`, `teach-desktop-pet`, and `find-pet-tool` skills |
 | `examples/` | Sample pet packs (`lizi`, `mika`) and taught animation packs |
 | `docs/` | Inbox protocol and design documentation |
@@ -164,5 +164,5 @@ cd apps/desktop/src-tauri && cargo test
 
 ## License &amp; Acknowledgements
 
-Sidekin is open-source software licensed under the [MIT License](LICENSE).  
+Suiby is open-source software licensed under the [MIT License](LICENSE).  
 Third-party libraries and sample asset attributions are documented in [third-party/NOTICE.md](third-party/NOTICE.md).

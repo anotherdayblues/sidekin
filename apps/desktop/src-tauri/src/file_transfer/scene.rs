@@ -92,16 +92,38 @@ pub fn sync(app: &tauri::AppHandle) {
     let factor = scale / frame.units;
     let w = (target.width * factor).ceil() as u32;
     let h = (target.height * factor).ceil() as u32;
-    if physical.is_none_or(|actual| actual.width != w || actual.height != h) {
-        let _ = win.set_size(tauri::PhysicalSize::new(w, h));
-    }
+    let needs_resize = physical.is_none_or(|actual| actual.width != w || actual.height != h);
     let settled = settled(frame, target);
-    if settled.x != frame.x || settled.y != frame.y {
+    let needs_move = settled.x != frame.x || settled.y != frame.y;
+    if needs_resize && needs_move && move_before_resize(frame, target, physical, w, h) {
         coordinates::place(&win, target.x, target.y);
+        let _ = win.set_size(tauri::PhysicalSize::new(w, h));
+    } else {
+        if needs_resize {
+            let _ = win.set_size(tauri::PhysicalSize::new(w, h));
+        }
+        if needs_move {
+            coordinates::place(&win, target.x, target.y);
+        }
     }
     if let Some(g) = geometry_in(app, settled) {
         let _ = app.emit_to("pet", "lab-layout", g);
     }
+}
+// When growing leftward/upward near a screen edge, move the origin first so
+// the expanded size never momentarily pokes past the right/bottom monitor edge
+// (where macOS can constrain or squish the window). When shrinking or moving
+// right/down, resize first so the old wider frame doesn't poke past the edge.
+fn move_before_resize(
+    frame: WindowSpace,
+    target: Rect,
+    actual: Option<tauri::PhysicalSize<u32>>,
+    w: u32,
+    h: u32,
+) -> bool {
+    let growing = actual.is_none_or(|a| w > a.width || h > a.height);
+    let moving_left_or_up = target.x < frame.x || target.y < frame.y;
+    growing && moving_left_or_up
 }
 // A Mac moves the window later, so reading it back right after a move still
 // gives the old place. Draw for where the window is going, or a pet bounced
@@ -223,5 +245,44 @@ mod tests {
         // Nothing moved: keep the window's own place.
         let still = WindowSpace { x: 1162., y: 53., units: 1. };
         assert_eq!(settled(still, target).x, 1162.);
+    }
+    #[test]
+    fn move_before_resize_orders_edge_expansion_and_collapse_safely() {
+        let right_edge = WindowSpace { x: 1300., y: 500., units: 1. };
+        let compact = Some(tauri::PhysicalSize::new(154, 152));
+        // Expanding leftward: move first, then grow.
+        assert!(move_before_resize(
+            right_edge,
+            Rect { x: 900., y: 500., width: 554., height: 220. },
+            compact,
+            554,
+            220,
+        ));
+        // Expanding upward: move first, then grow.
+        assert!(move_before_resize(
+            right_edge,
+            Rect { x: 1300., y: 260., width: 154., height: 392. },
+            compact,
+            154,
+            392,
+        ));
+        // Collapsing rightward back to compact: shrink first, then move.
+        let expanded_frame = WindowSpace { x: 900., y: 500., units: 1. };
+        let expanded_size = Some(tauri::PhysicalSize::new(554, 220));
+        assert!(!move_before_resize(
+            expanded_frame,
+            Rect { x: 1300., y: 500., width: 154., height: 152. },
+            expanded_size,
+            154,
+            152,
+        ));
+        // Growing rightward: resize first is already safe.
+        assert!(!move_before_resize(
+            WindowSpace { x: 100., y: 100., units: 1. },
+            Rect { x: 100., y: 100., width: 554., height: 220. },
+            compact,
+            554,
+            220,
+        ));
     }
 }

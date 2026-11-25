@@ -36,20 +36,26 @@ export function mountStudioView(
   const { renderTape } = parts.tape;
   const { renderDial } = parts.dial;
   const { renderVersions } = parts.versions;
-  const receiptPet = $<HTMLCanvasElement>(".receipt-pet");
   let receiptRevision = 0;
   let lastPetId: string | undefined;
   function renderReceiptPet(p: api.Pet | undefined) {
     const revision = ++receiptRevision;
-    receiptPet.hidden = true;
-    if (!p) return;
+    const canvases = [
+      ...c.app.querySelectorAll<HTMLCanvasElement>(".receipt-pet"),
+    ];
+    for (const canvas of canvases) canvas.hidden = true;
+    if (!p || !canvases.length) return;
     void c
       .thumb(p)
       .then((image) => {
         if (revision !== receiptRevision) return;
-        c.drawCell(receiptPet, image, 0, 0);
-        receiptPet.setAttribute("aria-label", p.displayName);
-        receiptPet.hidden = false;
+        for (const canvas of c.app.querySelectorAll<HTMLCanvasElement>(
+          ".receipt-pet",
+        )) {
+          c.drawCell(canvas, image, 0, 0);
+          canvas.setAttribute("aria-label", p.displayName);
+          canvas.hidden = false;
+        }
       })
       .catch(() => {});
   }

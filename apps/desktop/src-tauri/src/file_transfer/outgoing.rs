@@ -71,8 +71,23 @@ pub async fn lab_drag(
     if icon != root.join("drag-preview.png") || !icon.is_file() {
         return Err("invalid preview".into());
     }
-    if paths.is_empty() || paths.iter().any(|p| !p.is_absolute() || !p.exists()) {
+    if paths.is_empty() {
         return Err("file missing".into());
+    }
+    for p in &paths {
+        if !p.is_absolute() || !p.exists() {
+            return Err("file missing".into());
+        }
+        // Only open/probe volatile or cross-app sandbox paths; normal user paths
+        // (Desktop/Documents/Downloads) rely on `exists()` so we never trigger
+        // extra macOS folder TCC prompts when starting a drag.
+        if super::staging::needs_staging(p) {
+            match super::staging::is_readable(p) {
+                Ok(()) => {}
+                Err(true) => return Err("file_unreadable".into()),
+                Err(false) => return Err("file missing".into()),
+            }
+        }
     }
     let (tx, rx) = channel();
     let end = Arc::new(Mutex::new(Some(tx)));

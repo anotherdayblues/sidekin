@@ -2,8 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>zh-Hans</string>
+		<string>en</string>
+		<string>zh-Hant</string>
+		<string>ja</string>
+		<string>ko</string>
+	</array>
 	<!-- 手机传文件: phones on the same Wi-Fi open a page this app serves. -->
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>随伴用它接收同一个 Wi-Fi 下手机传来的照片和文件。</string>
+	<string>Suiby uses the local network to receive photos and files from your phone on the same Wi-Fi.</string>
 </dict>
 </plist>

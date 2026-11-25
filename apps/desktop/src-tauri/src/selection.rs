@@ -17,6 +17,7 @@ extern "C" {
     fn companion_previous_target() -> isize;
     fn companion_watch_apps();
     fn companion_selection(target: isize, status: *mut i32) -> *mut c_char;
+    fn companion_clipboard_text() -> *mut c_char;
     fn companion_free(text: *mut c_char);
     fn companion_copy(text: *const c_char) -> i32;
     fn companion_replace(target: isize, text: *const c_char) -> i32;
@@ -78,7 +79,8 @@ pub fn watch_apps() {
     };
 }
 /// The pet's menu: clicking the pet brought 随伴 forward, so read the
-/// selection in the app the user was in just before.
+/// selection in the app the user was in just before; with nothing selected,
+/// open the translation input bubble ready to type or paste.
 #[tauri::command]
 pub fn translate_selection_from_menu(app: AppHandle) {
     if !enabled(&app) {
@@ -89,7 +91,30 @@ pub fn translate_selection_from_menu(app: AppHandle) {
     let target = unsafe { companion_previous_target() };
     #[cfg(not(any(windows, target_os = "macos")))]
     let target = 0;
-    translate_from(app, target, false);
+    translate_from(app, target, true);
+}
+
+/// Read plain text currently on the system clipboard without writing or
+/// mutating clipboard history (used by the paste button in translate boxes).
+#[tauri::command]
+pub fn read_clipboard_text() -> String {
+    let _guard = CLIPBOARD.lock().unwrap();
+    #[cfg(any(windows, target_os = "macos"))]
+    {
+        let ptr = unsafe { companion_clipboard_text() };
+        if ptr.is_null() {
+            return String::new();
+        }
+        let text = unsafe { CStr::from_ptr(ptr) }
+            .to_string_lossy()
+            .into_owned();
+        unsafe { companion_free(ptr) };
+        text
+    }
+    #[cfg(not(any(windows, target_os = "macos")))]
+    {
+        String::new()
+    }
 }
 /// The translation shortcut (plan/41): the selection, as from the menu; with
 /// nothing selected, an empty translation bubble to type into.
@@ -118,6 +143,15 @@ fn translate_from(app: AppHandle, target: isize, empty_types: bool) {
     let gen = GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
     std::thread::spawn(move || {
         if !enabled(&app) {
+            return;
+        }
+        #[cfg(target_os = "macos")]
+        if !crate::permissions::is_enabled(&app, "accessibility") {
+            let _ = chat::show(
+                &app,
+                json!({"mode":"error","reason":"permissionOff","at":at}),
+                false,
+            );
             return;
         }
         // Capture the foreground identity before presenting the non-activating window.
@@ -251,20 +285,7 @@ pub async fn replace_with_translation(text: String, target: isize) -> Result<(),
 }
 #[tauri::command]
 pub fn selection_preferences() -> Result<(), String> {
-    #[cfg(target_os = "macos")]
-    {
-        extern "C" {
-            fn companion_request_access() -> i32;
-        }
-        if unsafe { companion_request_access() } != 0 {
-            return Ok(());
-        }
-        std::process::Command::new("/usr/bin/open")
-            .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
-            .spawn()
-            .map_err(|_| t("host.noSystemSettings"))?;
-    }
-    Ok(())
+    crate::permissions::open_os_settings("accessibility")
 }
 
 #[tauri::command]

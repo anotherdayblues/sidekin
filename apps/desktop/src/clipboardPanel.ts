@@ -309,20 +309,44 @@ export function clipboardPanel(session: ClipboardView, call: Call = invoke) {
       await call(action, { session: session.id, id: item.id });
     } catch (e) {
       report(e);
-      if (
-        alive &&
-        mac &&
-        action === "clip_paste" &&
-        (await call<boolean>("selection_access").catch(() => true)) === false &&
-        alive
-      ) {
-        status.append(
-          " ",
-          button(
-            "settings.openSystemSettings",
-            () => void call("selection_preferences").catch(report),
-          ),
-        );
+      if (alive && mac && action === "clip_paste") {
+        const snap = await call<{
+          prefs?: { accessibility?: boolean };
+          os?: { accessibility?: string };
+        }>("permissions_status").catch(() => null);
+        if (!alive) return;
+        if (snap?.prefs?.accessibility === false) {
+          status.append(
+            " ",
+            button(
+              "perm.openAppSettings",
+              () =>
+                void call("open_companion_page", {
+                  history: false,
+                  section: "access",
+                }).catch(report),
+            ),
+          );
+        } else {
+          const denied = snap?.os?.accessibility
+            ? snap.os.accessibility !== "granted"
+            : (await call<boolean>("selection_access").catch(() => true)) ===
+              false;
+          if (alive && denied) {
+            status.append(
+              " ",
+              button(
+                "settings.openSystemSettings",
+                () =>
+                  void call("open_permission_settings", {
+                    kind: "accessibility",
+                  })
+                    .catch(() => call("selection_preferences"))
+                    .catch(report),
+              ),
+            );
+          }
+        }
       }
       input.focus();
     } finally {

@@ -343,8 +343,8 @@ export async function demo() {
   if (native) return invoke("import_example");
   const pet: Pet = {
     id: "lizi",
-    displayName: "栗子",
-    description: "一只温暖的原创橘白小猫，安静陪伴，也会好奇地四处走走。",
+    displayName: t("pet.lizi.name"),
+    description: t("pet.lizi.desc"),
     spriteVersionNumber: 2,
     spritesheetPath: "spritesheet.webp",
     fingerprint: "demo",

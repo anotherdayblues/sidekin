@@ -546,6 +546,17 @@
 .chat-tools > button:active {
   transform: scale(0.94);
 }
+.chat-tools > button[aria-disabled="true"] {
+  opacity: 0.36;
+  cursor: not-allowed;
+}
+.chat-tools > button[aria-disabled="true"]:hover {
+  background: none;
+  color: var(--ink-3) !important;
+}
+.chat-tools > button[aria-disabled="true"]:active {
+  transform: none;
+}
 .chat-status {
   flex: 1;
   padding: 0 6px;
@@ -554,6 +565,16 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+.chat-status-link {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
 }
 .chat-tools [data-send],
 .chat-tools [data-stop] {

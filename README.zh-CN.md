@@ -2,18 +2,18 @@
   <img src="apps/website/public/app-icon.png" width="76" height="76" alt="随伴图标" />
 </p>
 
-<h1 align="center">随伴 · Sidekin</h1>
+<h1 align="center">随伴 · Suiby</h1>
 
 <p align="center">
   安静住在屏幕角落的免费开源桌面效率工具（macOS &amp; Windows）——集齐高频桌面小工具，还能定制属于你的 AI 桌宠。
 </p>
 
 <p align="center">
-  <a href="https://sidekin.ajulyroom.com/">官网与交互演示</a>
+  <a href="https://suiby.ajulyroom.com/">官网与交互演示</a>
   &nbsp;·&nbsp;
-  <a href="https://sidekin.ajulyroom.com/#download">下载体验</a>
+  <a href="https://suiby.ajulyroom.com/#download">下载体验</a>
   &nbsp;·&nbsp;
-  <a href="https://sidekin.ajulyroom.com/guide/">产品指南</a>
+  <a href="https://suiby.ajulyroom.com/guide/">产品指南</a>
   &nbsp;·&nbsp;
   <a href="README.md">English</a>
   &nbsp;·&nbsp;
@@ -21,13 +21,13 @@
 </p>
 
 <p align="center">
-  <a href="https://sidekin.ajulyroom.com/">
+  <a href="https://suiby.ajulyroom.com/">
     <img src="docs/images/hero-sidebar.jpg" width="840" alt="随伴住在桌面角落，右侧滑出不切窗口的原生 AI 侧边栏" />
   </a>
 </p>
 
 <p align="center">
-  <sub>你忙，它安静；你用，它顺手。点击任意图片前往 <a href="https://sidekin.ajulyroom.com/">sidekin.ajulyroom.com</a> 体验全部交互演示。</sub>
+  <sub>你忙，它安静；你用，它顺手。点击任意图片前往 <a href="https://suiby.ajulyroom.com/">suiby.ajulyroom.com</a> 体验全部交互演示。</sub>
 </p>
 
 ---
@@ -41,14 +41,14 @@
 <table>
   <tr>
     <td width="50%" align="center">
-      <a href="https://sidekin.ajulyroom.com/#pile">
+      <a href="https://suiby.ajulyroom.com/#pile">
         <img src="docs/images/feature-files.jpg" alt="桌面文件中转站与手机扫码局域网互传" />
       </a>
       <br />
       <sub><strong>文件中转站 &amp; 手机局域网互传</strong> — 文件往宠物身上一丢暂存，或手机扫码在同一 Wi-Fi 下直传照片与文件，不经过云盘、不压缩。</sub>
     </td>
     <td width="50%" align="center">
-      <a href="https://sidekin.ajulyroom.com/#things">
+      <a href="https://suiby.ajulyroom.com/#things">
         <img src="docs/images/feature-focus.jpg" alt="极简番茄钟专注计时与每日统计" />
       </a>
       <br />
@@ -97,14 +97,14 @@
 
 ## 下载与首次打开说明
 
-预编译安装包可在 [官网](https://sidekin.ajulyroom.com/#download) 或 [GitHub Releases](https://github.com/anotherdayblues/sidekin/releases) 下载：
+预编译安装包可在 [官网](https://suiby.ajulyroom.com/#download) 或 [GitHub Releases](https://github.com/anotherdayblues/suiby/releases) 下载：
 
-- **macOS（Apple 芯片）**：`Sidekin-Mac-arm64.dmg`
-- **Windows（x64）**：`Sidekin-Windows-x64.exe`
+- **macOS（Apple 芯片）**：`Suiby-Mac-arm64.dmg`
+- **Windows（x64）**：`Suiby-Windows-x64.exe`
 
 目前体验版暂未购买 Apple 年度公证与 Windows 代码签名证书，首次打开时系统会例行提示：
 
-- **macOS**：将 `Sidekin.app` 拖进 `Applications` 后双击，遇到「无法验证」弹窗点 **完成**，再到 **系统设置 → 隐私与安全性** 滑到底部点 **仍要打开** 即可（放行一次后永久正常打开）。
+- **macOS**：将 `Suiby.app` 拖进 `Applications` 后双击，遇到「无法验证」弹窗点 **完成**，再到 **系统设置 → 隐私与安全性** 滑到底部点 **仍要打开** 即可（放行一次后永久正常打开）。
 - **Windows**：SmartScreen 蓝色窗口点 **更多信息 → 仍要运行**。
 
 如果你介意未签名提示，完全可以直接查阅源码并在本地自行编译。
@@ -153,7 +153,7 @@ cd apps/desktop/src-tauri && cargo test
 | `apps/desktop/` | 桌面端本体（TypeScript/CSS 界面 `src/` + Rust/Tauri 宿主 `src-tauri/`） |
 | `apps/brain/` | AI 伙伴大脑 sidecar（Bun + TypeScript）与系统提示词 |
 | `apps/shared/` | 桌面端与大脑共用的类型、模型目录与中英文文案 |
-| `apps/website/` | 官方网站与交互演示源码（部署于 `sidekin.ajulyroom.com`） |
+| `apps/website/` | 官方网站与交互演示源码（部署于 `suiby.ajulyroom.com`） |
 | `skills/` | 内置造宠、教新动作与找工具 Skills |
 | `examples/` | 示例宠物包（`lizi`、`mika`）与示范动作包 |
 | `docs/` | 收件箱协议与相关文档 |

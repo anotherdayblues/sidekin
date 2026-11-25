@@ -31,10 +31,10 @@ const MAX_W = 760,
 
 export async function mountSnipCard(root: HTMLElement) {
   document.documentElement.classList.add("snipcard-window");
-  document.documentElement.lang ||= "zh-CN";
+  const docLang = (document.documentElement.lang ||= "zh-CN");
   root.innerHTML = `<section class="snipcard-shell"><article class="snipcard" aria-label="${t("snip.title")}">
     <header data-tauri-drag-region><strong data-tauri-drag-region>${t("snip.title")}</strong><small data-status data-tauri-drag-region role="status"></small><button type="button" data-close></button></header>
-    <div class="snipcard-stage"><div class="snipcard-frame"><img alt="${t("snip.title")}" draggable="false"><div class="snipcard-text" lang="zh-CN" aria-label="${t("snip.textInImage")}"></div></div></div>
+    <div class="snipcard-stage"><div class="snipcard-frame"><img alt="${t("snip.title")}" draggable="false"><div class="snipcard-text" lang="${docLang}" aria-label="${t("snip.textInImage")}"></div></div></div>
     <div class="snipcard-actions"><button type="button" data-copy-text>${t("snip.copyText")}</button><button type="button" data-copy-image>${t("snip.copyImage")}</button><button type="button" data-translate>${t("selection.translate")}</button></div>
     <label class="snipcard-destination">${t("snip.sendTo")}<select aria-label="${t("snip.sendToChat")}"></select></label>
     <form class="snipcard-ask" data-ask><textarea rows="1" placeholder="${t("snip.askImage")}" aria-label="${t("snip.ask")}"></textarea><button type="submit" data-send>${t("snip.ask")}</button></form>

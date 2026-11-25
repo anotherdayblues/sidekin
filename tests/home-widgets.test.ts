@@ -31,13 +31,14 @@ test("清单：没存过用默认三张；存过的只留认识的、不重复�
     { id: "today", on: true },
     { id: "memory", on: false },
     { id: "chats", on: false },
+    { id: "usage", on: false },
   ]);
   const ids = (xs: { id: string }[]) => xs.map((x) => x.id).join();
   const rows = cardList(["today", "focus"]);
-  assert.equal(ids(moved(rows, "focus", -1)), "focus,today,memory,chats");
+  assert.equal(ids(moved(rows, "focus", -1)), "focus,today,memory,chats,usage");
   // At an end it stays.
-  assert.equal(ids(moved(rows, "today", -1)), "today,focus,memory,chats");
-  assert.equal(ids(moved(rows, "chats", 1)), "today,focus,memory,chats");
+  assert.equal(ids(moved(rows, "today", -1)), "today,focus,memory,chats,usage");
+  assert.equal(ids(moved(rows, "usage", 1)), "today,focus,memory,chats,usage");
 });
 
 let server: ViteDevServer, browser: Browser;
@@ -147,6 +148,7 @@ test("卡片清单：开关显示、⋮⋮ 拖动和方向键换顺序，每次�
     "focus:on",
     "memory:on",
     "chats:off",
+    "usage:off",
   ]);
 
   // Off: gone from the column, saved.
@@ -341,5 +343,40 @@ test("性格：宠物那组设置里一行，点开从右边出一块大面板�
   await row.click();
   await page.keyboard.press("Escape");
   assert.equal(await page.locator("dialog.persona-sheet[open]").count(), 0);
+  await page.close();
+});
+
+test("用量小票卡片：在卡片清单里开启后以迷你小票显示今天与本月两列，字体与正文同步，点底部跳到大脑页用量小票", async () => {
+  const page = await open();
+  await page.click("#cards-key");
+  await page.click('.cards-row[data-widget="usage"] .cards-name');
+  await page.keyboard.press("Escape");
+  const w = page.locator('.widget[data-widget="usage"]');
+  await w.locator(".usage-receipt table tbody tr").nth(2).waitFor();
+  const check = await page.evaluate(() => {
+    const bodyFont = getComputedStyle(document.body).fontFamily;
+    const h3 = document.querySelector<HTMLElement>('.widget[data-widget="usage"] .usage-receipt h3')!;
+    const td = document.querySelector<HTMLElement>('.widget[data-widget="usage"] .usage-receipt tbody td')!;
+    const headers = [...document.querySelectorAll('.widget[data-widget="usage"] thead th')].map(e => e.textContent);
+    const rows = [...document.querySelectorAll('.widget[data-widget="usage"] tbody th')].map(e => e.textContent);
+    return {
+      bodyFont,
+      h3Font: getComputedStyle(h3).fontFamily,
+      tdFont: getComputedStyle(td).fontFamily,
+      headers,
+      rows,
+    };
+  });
+  assert.equal(check.h3Font, check.bodyFont, "receipt heading font matches app font");
+  assert.equal(check.tdFont, check.bodyFont, "receipt figure font matches app font");
+  assert.deepEqual(check.headers, ["", "今天", "本月"]);
+  assert.deepEqual(check.rows, ["总 token", "其中缓存命中", "估算费用"]);
+  // Footer button navigates to Settings -> Brain tab.
+  await w.locator(".hc-act").click();
+  await page.waitForFunction(
+    () =>
+      document.querySelector('[data-settings-tab="brain"]')?.getAttribute("aria-selected") === "true" &&
+      !document.querySelector('.block[data-for="settings"]')?.hasAttribute("hidden"),
+  );
   await page.close();
 });

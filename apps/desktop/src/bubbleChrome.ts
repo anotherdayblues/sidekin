@@ -3,6 +3,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { native } from "./bridge.ts";
 import { companionIcons as icons, glyphs } from "./icons.ts";
+import { t } from "./i18n.ts";
 import { lookAt, watchCaret } from "./caretLook.ts";
 
 export function bubbleChrome(
@@ -24,6 +25,8 @@ export function bubbleChrome(
   const copy = pick("[data-copy]");
   const resetCopy = () => (copy.textContent = icons.copy);
   resetCopy();
+  label(pick("[data-paste]"), glyphs.paste, t("translate.pasteClipboard"));
+  label(pick("[data-snip]"), glyphs.snip, t("chat.snip"));
   label(pick("[data-send]"), glyphs.arrow, icons.send);
   pick("[data-stop]").textContent = icons.stop;
   const expand = pick("[data-expand]");

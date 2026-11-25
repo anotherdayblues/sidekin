@@ -1,0 +1,107 @@
+{
+  "default": "zh",
+  "systemFallback": "en",
+  "locales": [
+    {
+      "id": "zh",
+      "nativeName": "简体中文",
+      "shortLabel": "中",
+      "htmlLang": "zh-CN",
+      "hreflang": "zh-CN",
+      "dateLocale": "zh-CN",
+      "hour12": false,
+      "matchTags": ["zh"],
+      "fallback": ["zh"],
+      "websitePath": "/",
+      "guidePath": "/guide/",
+      "brain": {
+        "promptMode": "core",
+        "promptName": "Simplified Chinese",
+        "promptNameZh": "中文",
+        "defaultPartnerZh": "英文",
+        "selfPattern": "中文|汉语|漢語|chinese|^zh",
+        "scriptHeuristic": "han"
+      }
+    },
+    {
+      "id": "en",
+      "nativeName": "English",
+      "shortLabel": "EN",
+      "htmlLang": "en",
+      "hreflang": "en",
+      "dateLocale": "en-US",
+      "hour12": true,
+      "matchTags": ["en"],
+      "fallback": ["en", "zh"],
+      "websitePath": "/en/",
+      "guidePath": "/en/guide/",
+      "brain": {
+        "promptMode": "overlay",
+        "promptName": "English",
+        "promptNameZh": "英文",
+        "defaultPartnerZh": "中文",
+        "selfPattern": "英文|英语|english|^en$"
+      }
+    },
+    {
+      "id": "zh-TW",
+      "nativeName": "繁體中文",
+      "shortLabel": "繁",
+      "htmlLang": "zh-Hant-TW",
+      "hreflang": "zh-Hant-TW",
+      "dateLocale": "zh-TW",
+      "hour12": false,
+      "matchTags": ["zh-hant", "zh-tw", "zh-hk", "zh-mo"],
+      "fallback": ["zh-TW", "zh", "en"],
+      "websitePath": "/zh-tw/",
+      "guidePath": "/zh-tw/guide/",
+      "brain": {
+        "promptMode": "overlay",
+        "promptName": "Traditional Chinese (Taiwan)",
+        "promptNameZh": "繁體中文（台灣用語）",
+        "defaultPartnerZh": "英文",
+        "selfPattern": "繁體|繁体|台灣|台湾|traditional|^zh-?(tw|hant|hk|mo)"
+      }
+    },
+    {
+      "id": "ja",
+      "nativeName": "日本語",
+      "shortLabel": "日本語",
+      "htmlLang": "ja",
+      "hreflang": "ja",
+      "dateLocale": "ja-JP",
+      "hour12": false,
+      "matchTags": ["ja"],
+      "fallback": ["ja", "en", "zh"],
+      "websitePath": "/ja/",
+      "guidePath": "/ja/guide/",
+      "brain": {
+        "promptMode": "overlay",
+        "promptName": "Japanese",
+        "promptNameZh": "日文",
+        "defaultPartnerZh": "英文",
+        "selfPattern": "日文|日语|日語|日本語|japanese|^ja$"
+      }
+    },
+    {
+      "id": "ko",
+      "nativeName": "한국어",
+      "shortLabel": "한국어",
+      "htmlLang": "ko",
+      "hreflang": "ko",
+      "dateLocale": "ko-KR",
+      "hour12": true,
+      "matchTags": ["ko"],
+      "fallback": ["ko", "en", "zh"],
+      "websitePath": "/ko/",
+      "guidePath": "/ko/guide/",
+      "brain": {
+        "promptMode": "overlay",
+        "promptName": "Korean",
+        "promptNameZh": "韩文",
+        "defaultPartnerZh": "英文",
+        "selfPattern": "韩文|韩语|韓文|韓語|한국어|korean|^ko$"
+      }
+    }
+  ]
+}

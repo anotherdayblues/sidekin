@@ -1,4 +1,5 @@
 import services from "./modelServices.json" with { type: "json" };
+import type { LanguageChoice } from "./locales/index.ts";
 export { services };
 export type Service = keyof typeof services;
 export type Protocol =
@@ -54,6 +55,8 @@ export interface CompanionSettings {
   memory: boolean;
   vision: boolean;
   visionShortcut: string;
+  /** Optional global shortcut to snip a screen area straight into the chat sidebar. */
+  chatSnipShortcut: string;
   translation: boolean;
   copyTwice: boolean;
   clipboardShortcut: string;
@@ -65,7 +68,7 @@ export interface CompanionSettings {
   chatShortcut: string;
   panelShortcut: string;
   /** plan/15: "system" follows the computer's language. */
-  language: "system" | "zh" | "en";
+  language: LanguageChoice;
 }
 export const defaults: CompanionSettings = {
   enabled: false,
@@ -83,6 +86,7 @@ export const defaults: CompanionSettings = {
   vision: true,
   // The host picks the shortcuts per system (shortcuts.rs).
   visionShortcut: "Control+Shift+4",
+  chatSnipShortcut: "",
   translation: true,
   copyTwice: true,
   clipboardShortcut: "Control+Shift+2",
@@ -110,7 +114,9 @@ export const errorCodes = [
   "server",
   "budget",
   "screenPermission",
+  "screenPermissionOff",
   "permission",
+  "permissionOff",
   "clipboard",
   "auth",
   "busy",

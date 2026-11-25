@@ -36,7 +36,8 @@ test("the pet tracks the rendered caret across wrapping, mixed glyph widths and 
         input.setSelectionRange(4, 4);
         const wide = caretPoint(input);
         input.value = "a\nb\nc\nd\ne\nf";
-        input.setSelectionRange(input.value.length, input.value.length);
+        // Put the caret on a visible line inside the 48px viewport, then scroll it up.
+        input.setSelectionRange(3, 3);
         const scrolled = caretPoint(input);
         input.scrollTop = 24;
         const afterScroll = caretPoint(input);

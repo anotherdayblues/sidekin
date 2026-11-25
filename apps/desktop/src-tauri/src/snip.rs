@@ -10,12 +10,31 @@ use tauri::{
 };
 use xcap::Monitor;
 
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+enum SnipTarget {
+    #[default]
+    Card,
+    ChatSidebar {
+        restore_chat: bool,
+        restore_bubble: bool,
+        draft_text: Option<String>,
+    },
+}
+impl SnipTarget {
+    fn mode_param(&self) -> &'static str {
+        match self {
+            Self::Card => "",
+            Self::ChatSidebar { .. } => "&mode=chat",
+        }
+    }
+}
 #[derive(Default)]
 pub struct Snips(Mutex<Session>);
 #[derive(Default)]
 struct Session {
     generation: u64,
     selecting: bool,
+    target: SnipTarget,
     windows: Vec<String>,
     displays: std::collections::HashMap<u32, Display>,
     /// Each display as it looked when selection began (freeze first, as
@@ -103,17 +122,107 @@ fn close(app: &AppHandle, windows: Vec<String>) {
         }
     }
 }
-pub fn clear(app: &AppHandle) {
+fn clear_and_take_target(app: &AppHandle) -> SnipTarget {
     let state = app.state::<Snips>();
     let mut s = state.0.lock().unwrap();
     s.generation = s.generation.wrapping_add(1);
     s.selecting = false;
+    let target = std::mem::take(&mut s.target);
     s.displays.clear();
     s.frozen.clear();
     let windows = std::mem::take(&mut s.windows);
     drop(s);
     close(app, windows);
     crate::snip_card::glasses(app, false);
+    target
+}
+pub fn clear(app: &AppHandle) {
+    let _ = clear_and_take_target(app);
+}
+fn restore_cancelled(app: &AppHandle, target: &SnipTarget) {
+    if let SnipTarget::ChatSidebar {
+        restore_chat,
+        restore_bubble,
+        ..
+    } = target
+    {
+        if *restore_chat {
+            crate::chat_window::restore_temporarily(app);
+        } else if *restore_bubble {
+            crate::chat::restore_bubble_temporarily(app);
+        }
+    }
+}
+fn check_screen_permission(app: &AppHandle) -> Result<(), String> {
+    if !crate::permissions::is_enabled(app, "screen") {
+        return Err("screenPermissionOff".into());
+    }
+    if !screen_access() {
+        #[cfg(all(target_os = "macos", not(feature = "acceptance")))]
+        {
+            unsafe extern "C" {
+                fn CGRequestScreenCaptureAccess() -> bool;
+            }
+            crate::permissions::mark_screen_registered();
+            if !unsafe { CGRequestScreenCaptureAccess() } {
+                return Err("screenPermission".into());
+            }
+        }
+        #[cfg(not(all(target_os = "macos", not(feature = "acceptance"))))]
+        return Err("screenPermission".into());
+    }
+    Ok(())
+}
+fn chat_snip_availability(app: &AppHandle) -> serde_json::Value {
+    let state = app.state::<crate::companion::Companion>();
+    let (enabled, vision, shortcut) = {
+        let s = state.settings.lock().unwrap();
+        (s.enabled, s.vision, s.chat_snip_shortcut.trim().to_owned())
+    };
+    if !enabled {
+        return json!({ "state": "off", "shortcut": shortcut });
+    }
+    if !vision {
+        return json!({ "state": "vision-off", "shortcut": shortcut });
+    }
+    let can_see = state
+        .client()
+        .ok()
+        .and_then(|c| c.call("visionInfo", json!({})).ok())
+        .and_then(|v| v.get("canSee").and_then(|b| b.as_bool()))
+        .unwrap_or(false);
+    json!({
+        "state": if can_see { "ready" } else { "no-vision-model" },
+        "shortcut": shortcut,
+    })
+}
+#[tauri::command]
+pub async fn chat_snip_status(app: AppHandle) -> serde_json::Value {
+    tauri::async_runtime::spawn_blocking(move || chat_snip_availability(&app))
+        .await
+        .unwrap_or_else(|_| json!({ "state": "off", "shortcut": "" }))
+}
+fn ensure_chat_snip_allowed(app: &AppHandle) -> Result<(), String> {
+    if chat::busy(app) {
+        return Err(t("chat.stopFirst").into());
+    }
+    let state = app.state::<crate::companion::Companion>();
+    {
+        let s = state.settings.lock().unwrap();
+        if !s.enabled || !s.vision {
+            return Err("disabled".into());
+        }
+    }
+    let can_see = state
+        .client()?
+        .call("visionInfo", json!({}))?
+        .get("canSee")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    if !can_see {
+        return Err("vision".into());
+    }
+    check_screen_permission(app)
 }
 #[tauri::command]
 pub fn screen_access() -> bool {
@@ -131,23 +240,7 @@ pub fn screen_access() -> bool {
 }
 #[tauri::command]
 pub fn screen_preferences() -> Result<(), String> {
-    // Ask macOS first: this puts 随伴 in the Screen Recording list (and shows
-    // the system prompt), so the user only has to switch it on.
-    #[cfg(target_os = "macos")]
-    {
-        unsafe extern "C" {
-            fn CGRequestScreenCaptureAccess() -> bool;
-        }
-        if unsafe { CGRequestScreenCaptureAccess() } {
-            return Ok(());
-        }
-    }
-    #[cfg(target_os = "macos")]
-    std::process::Command::new("/usr/bin/open")
-        .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")
-        .spawn()
-        .map_err(|_| t("host.noSystemSettings"))?;
-    Ok(())
+    crate::permissions::open_os_settings("screen")
 }
 pub fn start(app: AppHandle) {
     crate::tips::used(&app, "snip");
@@ -162,9 +255,10 @@ pub fn start(app: AppHandle) {
             let state = app.state::<Snips>();
             let mut s = state.0.lock().unwrap();
             s.selecting = true;
+            s.target = SnipTarget::Card;
             s.generation
         };
-        if let Err(reason) = open(&app, generation) {
+        if let Err(reason) = open(&app, generation, SnipTarget::Card.mode_param()) {
             if app.state::<Snips>().0.lock().unwrap().generation == generation {
                 clear(&app);
                 let _ = chat::show(
@@ -180,20 +274,62 @@ pub fn start(app: AppHandle) {
 pub fn start_snip(app: AppHandle) {
     start(app);
 }
-fn open(app: &AppHandle, g: u64) -> Result<(), String> {
-    if !screen_access() {
-        #[cfg(all(target_os = "macos", not(feature = "acceptance")))]
-        {
-            unsafe extern "C" {
-                fn CGRequestScreenCaptureAccess() -> bool;
-            }
-            if !unsafe { CGRequestScreenCaptureAccess() } {
-                return Err("screenPermission".into());
-            }
-        }
-        #[cfg(not(all(target_os = "macos", not(feature = "acceptance"))))]
-        return Err("screenPermission".into());
+fn run_chat_snip(app: AppHandle, draft_text: Option<String>) -> Result<(), String> {
+    ensure_chat_snip_allowed(&app)?;
+    crate::tips::used(&app, "snip");
+    clear(&app);
+    // Hide Suiby's own chat & bubble windows before freezing displays so they never appear in the crop.
+    let restore_chat = crate::chat_window::hide_temporarily(&app);
+    let restore_bubble = crate::chat::hide_bubble_temporarily(&app);
+    let hid_card = crate::snip_card::prepare(&app);
+    if restore_chat || restore_bubble || hid_card {
+        std::thread::sleep(std::time::Duration::from_millis(150));
     }
+    let target = SnipTarget::ChatSidebar {
+        restore_chat,
+        restore_bubble,
+        draft_text,
+    };
+    let mode_param = target.mode_param();
+    let generation = {
+        let state = app.state::<Snips>();
+        let mut s = state.0.lock().unwrap();
+        s.selecting = true;
+        s.target = target;
+        s.generation
+    };
+    if let Err(reason) = open(&app, generation, mode_param) {
+        if app.state::<Snips>().0.lock().unwrap().generation == generation {
+            let prev = clear_and_take_target(&app);
+            restore_cancelled(&app, &prev);
+        }
+        return Err(reason);
+    }
+    Ok(())
+}
+#[tauri::command]
+pub async fn start_chat_snip(
+    app: AppHandle,
+    draft_text: Option<String>,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || run_chat_snip(app, draft_text))
+        .await
+        .map_err(|e| e.to_string())?
+}
+/// Triggered by the optional global chat-snip shortcut: surfaces errors in the pet bubble.
+pub fn start_for_chat_from_shortcut(app: AppHandle) {
+    std::thread::spawn(move || {
+        if let Err(reason) = run_chat_snip(app.clone(), None) {
+            let _ = chat::show(
+                &app,
+                json!({"mode":"error","reason":reason,"at":chat::now()}),
+                false,
+            );
+        }
+    });
+}
+fn open(app: &AppHandle, g: u64, mode_param: &str) -> Result<(), String> {
+    check_screen_permission(app)?;
     let monitors = Monitor::all().map_err(|_| t("host.noDisplays"))?;
     if monitors.is_empty() {
         return Err(t("host.noDisplay").into());
@@ -226,7 +362,7 @@ fn open(app: &AppHandle, g: u64) -> Result<(), String> {
         let window = WebviewWindowBuilder::new(
             app,
             &label,
-            WebviewUrl::App(format!("index.html?snip={g}").into()),
+            WebviewUrl::App(format!("index.html?snip={g}{mode_param}").into()),
         )
         .incognito(cfg!(any(feature = "acceptance", feature = "trial")))
         .title(t("host.titleSnip"))
@@ -291,8 +427,10 @@ fn owner(window: &WebviewWindow, g: u64) -> Result<u32, String> {
 }
 #[tauri::command]
 pub fn cancel_snip(app: AppHandle, generation: u64) {
-    if app.state::<Snips>().0.lock().unwrap().generation == generation {
-        clear(&app);
+    let matches = app.state::<Snips>().0.lock().unwrap().generation == generation;
+    if matches {
+        let target = clear_and_take_target(&app);
+        restore_cancelled(&app, &target);
     }
 }
 #[tauri::command]
@@ -306,16 +444,17 @@ pub async fn finish_snip(
     let result = tauri::async_runtime::spawn_blocking({
         let app = app.clone();
         move || {
-            let (windows, frozen) = {
+            let (windows, frozen, target) = {
                 let state = app.state::<Snips>();
                 let mut s = state.0.lock().unwrap();
                 if s.generation != generation || s.windows.is_empty() {
                     return Ok(());
                 }
                 s.selecting = false;
+                let target = std::mem::take(&mut s.target);
                 let frozen = s.frozen.remove(&id);
                 s.frozen.clear();
-                (std::mem::take(&mut s.windows), frozen)
+                (std::mem::take(&mut s.windows), frozen, target)
             };
             close(&app, windows);
             let image = if let Some(full) = frozen {
@@ -343,41 +482,49 @@ pub async fn finish_snip(
                 )?;
                 capture(&app, &m, bounds)?
             };
-            // In the display's own units (points on a Mac), like the overlay.
-            let (selection, screen, units_per_css) = {
-                let state = app.state::<Snips>();
-                let s = state.0.lock().unwrap();
-                if s.generation != generation {
-                    return Ok(());
+            match target {
+                SnipTarget::ChatSidebar { draft_text, .. } => {
+                    crate::snip_card::glasses(&app, false);
+                    crate::chat_window::attach_snip(&app, image, draft_text)?;
                 }
-                let d = s.displays.get(&id).copied().ok_or(t("host.displayGone"))?;
-                let (x, y, w, h) = (
-                    f64::from(d.x),
-                    f64::from(d.y),
-                    f64::from(d.w),
-                    f64::from(d.h),
-                );
-                (
-                    (
-                        x + region.left * w,
-                        y + region.top * h,
-                        (region.right - region.left) * w,
-                        (region.bottom - region.top) * h,
-                    ),
-                    (x, y, w, h),
-                    if cfg!(windows) { d.scale } else { 1. },
-                )
-            };
-            crate::snip_card::present(
-                &app,
-                generation,
-                image,
-                crate::snip_card::Anchor {
-                    selection,
-                    screen,
-                    units_per_css,
-                },
-            )?;
+                SnipTarget::Card => {
+                    // In the display's own units (points on a Mac), like the overlay.
+                    let (selection, screen, units_per_css) = {
+                        let state = app.state::<Snips>();
+                        let s = state.0.lock().unwrap();
+                        if s.generation != generation {
+                            return Ok(());
+                        }
+                        let d = s.displays.get(&id).copied().ok_or(t("host.displayGone"))?;
+                        let (x, y, w, h) = (
+                            f64::from(d.x),
+                            f64::from(d.y),
+                            f64::from(d.w),
+                            f64::from(d.h),
+                        );
+                        (
+                            (
+                                x + region.left * w,
+                                y + region.top * h,
+                                (region.right - region.left) * w,
+                                (region.bottom - region.top) * h,
+                            ),
+                            (x, y, w, h),
+                            if cfg!(windows) { d.scale } else { 1. },
+                        )
+                    };
+                    crate::snip_card::present(
+                        &app,
+                        generation,
+                        image,
+                        crate::snip_card::Anchor {
+                            selection,
+                            screen,
+                            units_per_css,
+                        },
+                    )?;
+                }
+            }
             Ok(())
         }
     })
@@ -385,7 +532,8 @@ pub async fn finish_snip(
     .map_err(|e| e.to_string())?;
     if let Err(ref reason) = result {
         if app.state::<Snips>().0.lock().unwrap().generation == generation {
-            clear(&app);
+            let prev = clear_and_take_target(&app);
+            restore_cancelled(&app, &prev);
             let _ = chat::show(
                 &app,
                 json!({"mode":"error","reason":reason,"at":chat::now()}),
@@ -442,5 +590,16 @@ mod tests {
             assert_eq!(pos, Position::Physical(PhysicalPosition::new(-1280, 0)));
             assert_eq!(size, Size::Physical(PhysicalSize::new(1280, 832)));
         }
+    }
+    #[test]
+    fn snip_target_routes_card_and_chat_mode_params() {
+        assert_eq!(SnipTarget::default(), SnipTarget::Card);
+        assert_eq!(SnipTarget::Card.mode_param(), "");
+        let chat = SnipTarget::ChatSidebar {
+            restore_chat: true,
+            restore_bubble: false,
+            draft_text: Some("帮我看下".into()),
+        };
+        assert_eq!(chat.mode_param(), "&mode=chat");
     }
 }

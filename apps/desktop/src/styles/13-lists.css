@@ -12,25 +12,29 @@
 .shell .companion-entry span {
   flex: 1;
 }
+/* 伙伴大脑: one quiet line under the switch's label (companionLayout.ts). */
+.row-label {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.row-desc {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
 .brain-status {
-  margin: 0 0 6px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: var(--well);
-  box-shadow: inset 0 2px 4px rgba(var(--shadow), 0.12);
-  font:
-    12px/1.5 ui-monospace,
-    "SF Mono",
-    Menlo,
-    monospace;
+  display: block;
+  font-size: 12px;
+  line-height: 1.45;
   color: var(--ink-2);
 }
 .brain-status[data-state="on"]::before {
   content: "";
   display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-right: 8px;
+  width: 6px;
+  height: 6px;
+  margin: 0 6px 1px 0;
   border-radius: 50%;
   background: #3f9b62;
 }

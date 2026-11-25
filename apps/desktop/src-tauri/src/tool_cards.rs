@@ -70,18 +70,14 @@ pub fn receive(root: &Path, dir: &Path, ticket: &str) -> R<String> {
         .map_err(|e| e.to_string())?;
     Ok(p.id)
 }
-/// One short sentence in Chinese or English letters, so nothing like a link,
+/// One short sentence in plain letters (any script), so nothing like a link,
 /// an address, a number or a key can reach the card: a full stop only ends it.
 fn plain_reason(reason: &str) -> bool {
     let r = reason.trim();
     !r.is_empty()
         && r.chars().count() <= 100
-        && r.chars().all(|c| {
-            ('一'..='鿿').contains(&c)
-                || " ，。、！？".contains(c)
-                || c.is_ascii_alphabetic()
-                || " ,.!?'-".contains(c)
-        })
+        && r.chars()
+            .all(|c| c.is_alphabetic() || " ，。、！？,.!?'-ー・".contains(c))
         && !r.trim_end_matches(['.', '!', '?']).contains('.')
 }
 fn studio(w: &WebviewWindow) -> R<()> {
@@ -266,6 +262,8 @@ mod tests {
     fn a_reason_is_a_plain_sentence_in_chinese_or_english() {
         for ok in [
             "用于查公开资料。",
+            "用於查詢公開資料。",
+            "公開ドキュメントを調べるため。",
             "Looks up public docs.",
             "Finds papers, if you're curious!",
         ] {

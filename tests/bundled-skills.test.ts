@@ -25,7 +25,7 @@ test("复制内容保留当前系统的完整路径、空格、安全红线和�
     ["D:\\Programs With Spaces\\随伴", "\\"],
     ["/Applications/随伴.app/Contents/Resources", "/"],
   ]) {
-    for (const id of ["app.sidekin.desktop", "app.sidekin.desktop.trial"]) {
+    for (const id of ["app.suiby.desktop", "app.suiby.desktop.trial"]) {
       const dataRoot = base + sep + id,
         inbox = dataRoot + sep + "inbox",
         manifest = [base, "skills", "future-tool", "SKILL.md"].join(sep);

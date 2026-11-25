@@ -135,8 +135,9 @@ pub fn layout(mut lines: Vec<Line>) -> Recognized {
 }
 
 /// Appends `next` to a row, adding a space only where a reader expects one:
-/// next to Latin letters or digits, but never inside brackets/quotes or
-/// before closing punctuation, and never between CJK characters
+/// next to Latin letters, digits, or Korean Hangul (which uses word spaces),
+/// never inside brackets/quotes or before closing punctuation, and never
+/// between Han/Kana characters (`zh`/`ja`)
 /// (after PowerToys PowerOCR OcrTextFormatter.ShouldInsertSpace).
 pub fn join(row: &mut String, next: &str) {
     if let (Some(left), Some(right)) = (row.chars().last(), next.chars().next()) {
@@ -147,18 +148,28 @@ pub fn join(row: &mut String, next: &str) {
     row.push_str(next);
 }
 
+fn is_hangul(c: char) -> bool {
+    matches!(c, '\u{AC00}'..='\u{D7A3}' | '\u{1100}'..='\u{11FF}' | '\u{3130}'..='\u{318F}')
+}
+
 fn space_between(left: char, right: char) -> bool {
     const OPENING: &str = "([{（【《「『“‘<";
     const CLOSING: &str = ")]}）】》」』”’>";
     const SUFFIX: &str = ",.:;!?%…‥";
     const CJK_PUNCT: &str = "、。・！％，．：；？｡､･";
+    if left.is_whitespace() || right.is_whitespace() {
+        return false;
+    }
     if OPENING.contains(left) || CLOSING.contains(right) || SUFFIX.contains(right) {
         return false;
     }
     if CJK_PUNCT.contains(left) || CJK_PUNCT.contains(right) {
         return false;
     }
-    left.is_ascii_alphanumeric() || right.is_ascii_alphanumeric()
+    left.is_ascii_alphanumeric()
+        || right.is_ascii_alphanumeric()
+        || is_hangul(left)
+        || is_hangul(right)
 }
 
 #[cfg(test)]
@@ -204,6 +215,51 @@ mod tests {
         join(&mut s, "world");
         join(&mut s, ".");
         assert_eq!(s, "Hello world.");
+    }
+    #[test]
+    fn joining_inserts_spaces_for_korean_and_keeps_zh_ja_spaceless() {
+        // Korean Hangul words get spaces between words and around Latin/digits,
+        // but stay tight against punctuation and brackets.
+        let mut ko = String::from("오늘");
+        join(&mut ko, "날씨가");
+        join(&mut ko, "좋아요");
+        join(&mut ko, ".");
+        assert_eq!(ko, "오늘 날씨가 좋아요.");
+
+        let mut ko_mix = String::from("Suiby");
+        join(&mut ko_mix, "버전");
+        join(&mut ko_mix, "2");
+        join(&mut ko_mix, "(");
+        join(&mut ko_mix, "한국어");
+        join(&mut ko_mix, ")");
+        assert_eq!(ko_mix, "Suiby 버전 2 (한국어)");
+
+        let mut ko_paren = String::from("안녕(");
+        join(&mut ko_paren, "한국어");
+        join(&mut ko_paren, ")");
+        assert_eq!(ko_paren, "안녕(한국어)");
+
+        let mut ko_jamo = String::from("ㄱㄴ");
+        join(&mut ko_jamo, "안녕");
+        assert_eq!(ko_jamo, "ㄱㄴ 안녕");
+
+        // Chinese and Japanese stay spaceless between Han/Kana, spaced around Latin/digits.
+        let mut zh = String::from("中文");
+        join(&mut zh, "繁體");
+        join(&mut zh, "測試");
+        assert_eq!(zh, "中文繁體測試");
+
+        let mut ja = String::from("今日は");
+        join(&mut ja, "いい");
+        join(&mut ja, "天気");
+        join(&mut ja, "です");
+        join(&mut ja, "。");
+        assert_eq!(ja, "今日はいい天気です。");
+
+        let mut ja_mix = String::from("バージョン");
+        join(&mut ja_mix, "2");
+        join(&mut ja_mix, "公開");
+        assert_eq!(ja_mix, "バージョン 2 公開");
     }
     #[test]
     fn empty_and_broken_lines_are_dropped() {

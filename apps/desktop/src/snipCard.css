@@ -15,7 +15,7 @@ html.snipcard-window,
 }
 .snipcard-shell {
   box-sizing: border-box;
-  padding: 8px;
+  padding: 14px;
   min-width: 360px;
 }
 .snipcard {
@@ -95,8 +95,7 @@ html.snipcard-window,
   line-height: 1;
   letter-spacing: normal;
   word-spacing: normal;
-  font-family:
-    -apple-system, "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-sans);
   -webkit-user-select: text;
   user-select: text;
   cursor: text;
@@ -231,6 +230,16 @@ html.snipcard-window,
 }
 
 /* ===== Skin touches (optional) ===== */
+:root[data-skin="native"] .snipcard {
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.08),
+    0 6px 20px rgba(0, 0, 0, 0.12);
+}
+:root[data-skin="native"][data-theme="night"] .snipcard {
+  box-shadow:
+    0 0 0 0.5px rgba(255, 255, 255, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.34);
+}
 
 .snipcard-destination {
   display: flex;

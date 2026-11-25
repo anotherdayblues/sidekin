@@ -189,3 +189,60 @@ test("只有延时承诺也会继续执行，拿到回执才结束；反复只�
   assert.match(failed.result.text, /未能确认/);
   assert.equal(server.requests.length, 6);
 });
+
+test("多语言提醒创建与停滞守卫启发式覆盖 zh / zh-TW / en / ja / ko", async () => {
+  const { isReminderCreationRequest, timedPromise, trailingAction } =
+    await import("../../apps/brain/src/turnEnd.ts");
+
+  // Reminder creation requests
+  for (const req of [
+    "1 分钟后提醒我喝水",
+    "10 分鐘後提醒我開會",
+    "每週一早上 9 點提醒我寫週報",
+    "Remind me in 5 minutes to stretch",
+    "10分後に水を飲むようリマインドして",
+    "明日9時に会議を通知して",
+    "10분 후에 물 마시라고 알려 줘",
+    "내일 9시에 회의 알림 설정해 줘",
+  ]) {
+    assert.ok(
+      isReminderCreationRequest(req),
+      `expected isReminderCreationRequest true: ${req}`,
+    );
+  }
+  for (const req of [
+    "取消明天的提醒",
+    "刪除明天的提醒",
+    "Cancel my reminder for tomorrow",
+    "明日のリマインダーを削除して",
+    "내일 알림 취소해 줘",
+    "明天提醒我一下？",
+  ]) {
+    assert.ok(
+      !isReminderCreationRequest(req),
+      `expected isReminderCreationRequest false: ${req}`,
+    );
+  }
+
+  // Timed promise guard across locales
+  assert.ok(timedPromise("10 分鐘後提醒我", "好，已經幫你設好提醒了。"));
+  assert.ok(timedPromise("10分後に通知して", "リマインダーを設定しました。"));
+  assert.ok(
+    timedPromise("20秒後にニュースを調べて", "わかりました、後で調べますね。"),
+  );
+  assert.ok(timedPromise("10분 후에 알려 줘", "알림을 설정했습니다."));
+  assert.ok(
+    timedPromise("10분 뒤에 확인해 줘", "알겠습니다, 이따가 확인해 드릴게요."),
+  );
+  // Refusals should NOT trigger timedPromise
+  assert.ok(!timedPromise("10 分鐘後提醒我", "無法建立這個提醒。"));
+  assert.ok(!timedPromise("10分後に通知して", "設定できませんでした。"));
+  assert.ok(!timedPromise("10분 후에 알려 줘", "알림을 설정할 수 없습니다."));
+
+  // Trailing action guard across locales
+  assert.ok(trailingAction("我現在就幫你查詢一下。"));
+  assert.ok(trailingAction("今から調べてみますね。"));
+  assert.ok(trailingAction("지금 바로 확인해 볼게요."));
+  assert.ok(trailingAction("Let me now check that for you."));
+  assert.ok(!trailingAction("查詢完成，明天是晴天。"));
+});

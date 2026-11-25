@@ -1,4 +1,4 @@
-import { t } from "./i18n.ts";
+import { named, t } from "./i18n.ts";
 import contract from "../../../skills/teach-desktop-pet/references/teaching-contract.json";
 import { ANIMATIONS, type Action } from "./animation.ts";
 
@@ -50,9 +50,9 @@ export function canEditAction(name: string, layer: Layer): boolean {
 const MINUTE = 60_000;
 
 export function actionLabel(name: string, layer: Layer = EMPTY_LAYER) {
-  return (
-    layer.actions[name]?.label ?? ANIMATIONS[name as Action]?.label ?? name
-  );
+  if (layer.actions[name]?.label) return layer.actions[name].label;
+  const fallback = ANIMATIONS[name as Action]?.label;
+  return fallback ? named(`act.base.${name}`, fallback) : name;
 }
 const EVENT_WORDS: Record<PetEvent, string> = {
   click: t("rule.click"),

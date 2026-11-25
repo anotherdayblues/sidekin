@@ -2,7 +2,7 @@
 //!
 //! - On macOS, uses a zero-permission clipboard state machine with 5 false-positive
 //!   guardrails (same foreground app, 65–750ms gap, identical non-empty text,
-//!   concealed/password-manager/own-write exclusions, and 900ms cooldown) so Sidekin
+//!   concealed/password-manager/own-write exclusions, and 900ms cooldown) so Suiby
 //!   never needs Input Monitoring or triggers macOS's persistent "Accessing all apps"
 //!   indicator.
 //! - On Windows, uses the native copy-key monitor (`copy-keys.cpp`).

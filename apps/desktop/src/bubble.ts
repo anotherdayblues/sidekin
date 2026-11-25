@@ -31,6 +31,7 @@ import { bubbleTip } from "./bubbleTip.ts";
 import { bubbleFocus, type FocusAsk } from "./bubbleFocus.ts";
 import { bubblePhone, type PhoneOffer } from "./bubblePhone.ts";
 import { bubbleTodo } from "./todo/bubble.ts";
+import { snipTooltip, watchChatSnip } from "./snipTool.ts";
 export async function mountBubble(root: HTMLElement) {
   document.documentElement.classList.add("bubble-window");
   document.body.classList.add("bubble-window");
@@ -51,6 +52,7 @@ export async function mountBubble(root: HTMLElement) {
     mineEl.hidden = !text;
   }
   const send = pick("[data-send]"),
+    snip = pick<HTMLButtonElement>("[data-snip]"),
     stop = pick("[data-stop]"),
     action = pick("[data-action]"),
     pin = pick("[data-pin]"),
@@ -99,6 +101,28 @@ export async function mountBubble(root: HTMLElement) {
     }
   };
   const compose = pick(".bubble-compose");
+  let canSnip = false;
+  const syncSnip = () => {
+    // Option A (confirmed): show snip button in chat mode only when multimodal snip is ready;
+    // hide in translate mode and when model is text-only so the compact 320px bubble stays clean.
+    snip.hidden = !canSnip || view.mode !== "chat";
+  };
+  watchChatSnip((avail) => {
+    canSnip = avail.state === "ready";
+    const tip = snipTooltip(avail);
+    snip.title = tip;
+    snip.setAttribute("aria-label", tip);
+    syncSnip();
+  });
+  snip.onclick = async () => {
+    if (!canSnip || !native) return;
+    const draft = input.value.trim();
+    try {
+      await invoke("start_chat_snip", { draftText: draft || null });
+    } catch (e) {
+      error(String(e).replace(/^Error:\s*/, ""));
+    }
+  };
   const { grow, lookAtCard, resetCopy } = bubbleChrome(root, {
     shell,
     card,
@@ -178,6 +202,7 @@ export async function mountBubble(root: HTMLElement) {
       });
     }
     if (s === "tool") note.textContent = t("bubble.usingTool");
+    syncSnip();
     translation.sync(s);
   };
   function overflows() {

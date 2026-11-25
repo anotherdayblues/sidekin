@@ -127,3 +127,87 @@ test("翻译方向按对方语言定，语气写进目标语言", async () => {
     setLocale("zh");
   }
 });
+
+test("规范语言代码与旧版多语言显示名均正确映射并准确触发防自译回退", async () => {
+  const { resolvePartnerLanguage, translationTarget } =
+    await import("../../apps/brain/src/translate.ts");
+  const { getLocale } = await import("../../apps/shared/locales/index.ts");
+
+  const zh = getLocale("zh");
+  const zhTw = getLocale("zh-TW");
+  const en = getLocale("en");
+  const ja = getLocale("ja");
+  const ko = getLocale("ko");
+
+  // Canonical codes map cleanly to Chinese prompt labels
+  assert.equal(resolvePartnerLanguage("en").labelZh, "英文");
+  assert.equal(resolvePartnerLanguage("zh").labelZh, "中文");
+  assert.equal(resolvePartnerLanguage("zh-TW").labelZh, "繁體中文（台灣用語）");
+  assert.equal(resolvePartnerLanguage("ja").labelZh, "日文");
+  assert.equal(resolvePartnerLanguage("ko").labelZh, "韩文");
+  assert.equal(resolvePartnerLanguage("fr").labelZh, "法文");
+  assert.equal(resolvePartnerLanguage("de").labelZh, "德文");
+  assert.equal(resolvePartnerLanguage("es").labelZh, "西班牙文");
+  // Unknown free-text passes through verbatim
+  assert.equal(resolvePartnerLanguage("Dutch").labelZh, "Dutch");
+
+  // Canonical codes in translationTarget
+  assert.deepEqual(translationTarget("周末一起吃拉面吧", "ja", undefined, zh), {
+    target: "日文",
+    into: "日文",
+  });
+  assert.equal(
+    translationTarget("Hello", "zh-TW", undefined, en).target,
+    "英文（原文已经是英文时，译成繁體中文（台灣用語））",
+  );
+  assert.equal(
+    translationTarget("こんにちは", "ko", "formal", ja).target,
+    "日文（原文已经是日文时，译成韩文），语气正式、礼貌",
+  );
+  assert.equal(
+    translationTarget("안녕하세요", "fr", undefined, ko).target,
+    "韩文（原文已经是韩文时，译成法文）",
+  );
+  assert.equal(
+    translationTarget("你好", "de", undefined, zhTw).target,
+    "繁體中文（台灣用語）（原文已经是繁體中文（台灣用語）时，译成德文）",
+  );
+
+  // Legacy localized names across all 5 locales normalize cleanly
+  assert.deepEqual(translationTarget("周末一起吃拉面吧", "일본어", undefined, zh), {
+    target: "日文",
+    into: "日文",
+  });
+  assert.equal(
+    translationTarget("Hello", "フランス語", undefined, en).target,
+    "英文（原文已经是英文时，译成法文）",
+  );
+  assert.equal(
+    translationTarget("안녕하세요", "スペイン語", undefined, ko).target,
+    "韩文（原文已经是韩文时，译成西班牙文）",
+  );
+
+  // Self-translation guard across all 5 locales (canonical codes + cross-locale legacy names)
+  for (const selfZh of ["zh", "zh-TW", "中文", "Chinese", "中国語", "중국어"])
+    assert.equal(translationTarget("你好", selfZh, undefined, zh).into, "英文");
+  for (const selfZhTw of ["zh", "zh-TW", "中文", "繁體中文", "Chinese", "中国語"])
+    assert.equal(
+      translationTarget("你好", selfZhTw, undefined, zhTw).target,
+      "繁體中文（台灣用語）（原文已经是繁體中文（台灣用語）时，译成英文）",
+    );
+  for (const selfEn of ["en", "English", "英文", "英語", "영어"])
+    assert.equal(
+      translationTarget("Hello", selfEn, undefined, en).target,
+      "英文（原文已经是英文时，译成中文）",
+    );
+  for (const selfJa of ["ja", "Japanese", "日文", "日本語", "일본어"])
+    assert.equal(
+      translationTarget("こんにちは", selfJa, undefined, ja).target,
+      "日文（原文已经是日文时，译成英文）",
+    );
+  for (const selfKo of ["ko", "Korean", "韩文", "韓文", "한국어", "韓国語"])
+    assert.equal(
+      translationTarget("안녕하세요", selfKo, undefined, ko).target,
+      "韩文（原文已经是韩文时，译成英文）",
+    );
+});

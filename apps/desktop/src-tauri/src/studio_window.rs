@@ -128,6 +128,7 @@ fn build(app: &AppHandle) -> Result<(), String> {
         .cloned()
         .ok_or("no studio window in the config")?;
     config.visible = false;
+    config.title = crate::locale::t("host.studioTitle");
     let w = tauri::WebviewWindowBuilder::from_config(app, &config)
         .map_err(|e| e.to_string())?
         .build()

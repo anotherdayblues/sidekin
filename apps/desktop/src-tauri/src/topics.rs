@@ -21,6 +21,40 @@ pub fn list(dir: &Path, query: &str) -> Result<Vec<Topic>> {
     list_for(dir, query, None)
 }
 
+fn format_topic_title_in(first: &str, locale_id: &str) -> String {
+    let mut rest = first.lines().next().unwrap_or("");
+    let mut out = String::new();
+    if let Some(after) = rest.strip_prefix("［截图］") {
+        out.push_str(&crate::locale::t_in(locale_id, "host.topicMedia.snip"));
+        rest = after;
+    } else if let Some(after) = rest.strip_prefix("［图片］") {
+        out.push_str(&crate::locale::t_in(locale_id, "host.topicMedia.image"));
+        rest = after;
+    }
+    if let Some(after) = rest.strip_prefix("［文件：") {
+        if let Some((names, tail)) = after.split_once('］') {
+            if out.ends_with(']') {
+                out.push(' ');
+            }
+            out.push_str(&crate::locale::tf_in(
+                locale_id,
+                "host.topicMedia.file",
+                &[("name", &names)],
+            ));
+            rest = tail;
+        }
+    }
+    if out.ends_with(']') && !rest.is_empty() && !rest.starts_with(char::is_whitespace) {
+        out.push(' ');
+    }
+    out.push_str(rest);
+    out.chars().take(40).collect()
+}
+
+fn format_topic_title(first: &str) -> String {
+    format_topic_title_in(first, crate::locale::current())
+}
+
 pub fn list_for(dir: &Path, query: &str, pet: Option<&str>) -> Result<Vec<Topic>> {
     let db = history::open(dir)?;
     let query = query.trim();
@@ -40,13 +74,7 @@ pub fn list_for(dir: &Path, query: &str, pet: Option<&str>) -> Result<Vec<Topic>
             let first: String = r.get(1)?;
             Ok(Topic {
                 id: r.get(0)?,
-                title: first
-                    .lines()
-                    .next()
-                    .unwrap_or("")
-                    .chars()
-                    .take(40)
-                    .collect(),
+                title: format_topic_title(&first),
                 last_at: r.get(2)?,
                 turns: r.get(3)?,
                 pet: r.get(4)?,
@@ -308,5 +336,24 @@ mod tests {
         assert!(current(dir, "cat", 2).unwrap().is_some());
         assert_eq!(current(dir, "dog", 2).unwrap(), None);
         assert_eq!(current(dir, "cat", 1 + HOUR).unwrap(), None);
+    }
+
+    #[test]
+    fn topic_titles_localize_media_markers_in_every_locale() {
+        assert_eq!(format_topic_title_in("［图片］这是什么花？", "zh"), "［图片］这是什么花？");
+        assert_eq!(format_topic_title_in("［图片］What flower?", "en"), "[Image] What flower?");
+        assert_eq!(format_topic_title_in("［截图］幫我看一下", "zh-TW"), "［截圖］幫我看一下");
+        assert_eq!(
+            format_topic_title_in("［截图］これは何？", "ja"),
+            "[スクリーンショット] これは何？"
+        );
+        assert_eq!(
+            format_topic_title_in("［文件：notes.pdf］요약해 줘", "ko"),
+            "[파일: notes.pdf] 요약해 줘"
+        );
+        assert_eq!(
+            format_topic_title_in("［截图］［文件：a.txt］Hi", "en"),
+            "[Screenshot] [File: a.txt] Hi"
+        );
     }
 }

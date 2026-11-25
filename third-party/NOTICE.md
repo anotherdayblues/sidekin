@@ -21,7 +21,7 @@ The following third-party files are included directly in this repository under t
 
 ## 2. Bundled Runtime & Major Dependencies
 
-Key open-source components bundled in Sidekin desktop builds:
+Key open-source components bundled in Suiby desktop builds:
 
 | Component | Purpose | License |
 | --- | --- | --- |
@@ -38,7 +38,7 @@ Key open-source components bundled in Sidekin desktop builds:
 
 ## 3. Design References (Independent Implementations)
 
-The following projects inspired specific interaction patterns or tool designs in Sidekin. No code from these projects is depended upon at runtime; Sidekin implements its own logic independently:
+The following projects inspired specific interaction patterns or tool designs in Suiby. No code from these projects is depended upon at runtime; Suiby implements its own logic independently:
 
 - **Hermes Agent** (MIT, see `Hermes-Agent-LICENSE`) — two-notebook memory tool design reference.
 - **get-selected-text** (MIT / Apache-2.0) — reference for OS-level selected-text capture patterns.

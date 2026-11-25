@@ -1,53 +1,167 @@
-/* 设置: contents on the left, groups on the right. */
+/* 设置: top segmented tabs over a single centered column of grouped cards. */
 .block[data-for="settings"] .companion-page {
   position: static;
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
-  gap: 20px;
-  padding: 0 4px 24px;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 14px;
+  padding: 4px 4px 24px;
   background: none;
   overflow: visible;
 }
-.set-toc {
+.block[data-for="settings"] .companion-page > .set-tabs,
+.block[data-for="settings"] .companion-page > form {
+  width: 100%;
+  max-width: 720px;
+}
+.set-tabs {
   position: sticky;
   top: 0;
-  align-self: start;
-  display: grid;
-  gap: 2px;
-  padding-top: 2px;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 0 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--body);
 }
-.set-toc a {
-  padding: 7px 10px;
-  border-radius: 8px;
+.set-tabs button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 76px;
+  border: 0;
+  border-radius: 10px;
+  padding: 7px 12px;
+  background: transparent;
   color: var(--ink-2);
-  text-decoration: none;
-  font-size: 13px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.14s,
+    color 0.14s,
+    box-shadow 0.14s;
 }
-.set-toc a:hover {
+.set-tabs button svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+.set-tabs button:hover:not([aria-selected="true"]) {
   background: var(--well);
   color: var(--ink);
+}
+.set-tabs button[aria-selected="true"] {
+  background: var(--key);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow:
+    0 0 0 0.5px var(--line-strong),
+    0 1px 3px rgba(var(--shadow), 0.12);
+}
+.set-card > .set-more:first-of-type {
+  border-top: 0;
+  margin-top: 0;
 }
 .block[data-for="settings"] form {
   display: grid;
   gap: 14px;
   max-width: 720px;
 }
+.set-tab-panel {
+  display: grid;
+  gap: 14px;
+}
+.set-tab-panel[hidden] {
+  display: none;
+}
+/* A group is a small title (and note) above one card of rows (settingsGroup.ts). */
 .set-group {
-  padding: 14px 20px 10px;
+  scroll-margin-top: 8px;
+}
+.set-group > .set-title,
+.set-group > .set-note {
+  padding-inline: 20px;
+}
+.set-card {
+  padding: 4px 20px;
   border-radius: 12px;
   background: var(--panel);
   box-shadow:
     0 0 0 1px var(--line),
     0 1px 0 var(--panel-edge) inset,
     0 2px 0 rgba(var(--shadow), 0.06);
-  scroll-margin-top: 8px;
+}
+.shell .set-group .set-card > :first-child {
+  border-top: 0;
+}
+/* A row that opens something (上手引导): a plain row with a chevron. */
+.shell .set-group button.set-row-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 0;
+  padding: 9px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+}
+.shell .set-group button.set-row-link:active {
+  transform: none;
+  box-shadow: none;
+  background: none;
+  opacity: 0.7;
+}
+.row-chev {
+  color: var(--ink-3);
+  font-size: 16px;
+}
+/* Notes inside a card sit in the row rhythm, not against its edge. */
+.set-card > .companion-online > .set-note:first-child {
+  margin: 10px 0 2px;
+}
+/* Numbers are short: a narrow field, right of its label. */
+.shell .set-card input[type="number"] {
+  width: 7em;
+  text-align: right;
+}
+/* Pop-up menus size to their choice, as in System Settings. */
+.shell .set-card select {
+  width: auto;
+  min-width: 9em;
+  max-width: 60%;
+}
+/* A row that only works while the row above it is on (连按两次 → 翻译):
+   stays flush-left with every other row, and greys out when disabled. */
+.set-sub:has(input:disabled) > span {
+  color: var(--ink-3);
+}
+.set-sub input:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 .set-group h3:not(.set-title),
 .set-group h4 {
-  font:
-    600 12px/1.4 -apple-system,
-    "PingFang SC",
-    sans-serif;
+  font: 600 12px/1.4 var(--font-sans);
   color: var(--ink-2);
   margin: 14px 0 4px;
 }
@@ -88,15 +202,117 @@
 }
 .set-group [data-access],
 .set-group [data-screen] {
+  display: none;
+}
+.perm-list {
+  display: grid;
+}
+.perm-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 9px 0;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.perm-row:first-child {
+  border-top: 0;
+}
+.perm-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.perm-title {
+  font-size: 13.5px;
+  font-weight: 500;
   color: var(--ink);
 }
-.skin-picker.set-group {
-  margin: 0;
-  max-width: none;
+.perm-desc {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+.perm-row[data-enabled="false"] .perm-title {
+  color: var(--ink-2);
+}
+.perm-row[data-enabled="false"] .perm-desc {
+  opacity: 0.78;
+}
+.perm-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.perm-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.perm-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  flex-shrink: 0;
+}
+.perm-state[data-tone="ok"] .perm-dot {
+  background: #30b55b;
+}
+.perm-state[data-tone="warn"] .perm-dot {
+  background: #e89624;
+}
+.perm-state[data-tone="off"] {
+  color: var(--ink-3);
+}
+.perm-state[data-tone="off"] .perm-dot {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.4px var(--ink-3);
+}
+.shell .set-group button.perm-link,
+.onboard button.perm-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 7px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.shell .set-group button.perm-link:hover,
+.onboard button.perm-link:hover {
+  background: var(--well);
+}
+.shell .set-group button.perm-link:active,
+.onboard button.perm-link:active {
+  transform: none;
+  box-shadow: none;
+  background: var(--well);
+  opacity: 0.85;
+}
+.perm-chev {
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.72;
+}
+.perm-footnote {
+  margin: 6px 0 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-3);
 }
 
 .search-key-actions {

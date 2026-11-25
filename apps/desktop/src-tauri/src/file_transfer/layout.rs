@@ -5,6 +5,16 @@ pub const OFFSET_X: f64 = 176.;
 pub const OFFSET_Y: f64 = 110.;
 pub const CARD_W: f64 = 64.;
 pub const CARD_H: f64 = 78.;
+// Visual breathing room for rotated back sheets, badge and soft drop-shadow.
+const CARD_OVERHANG_X: f64 = 8.;
+const CARD_OVERHANG_Y: f64 = 4.;
+// Transparent window bleed around overlays so shadows, rotated sheets, badges
+// and notices are never clipped by the native window edge. Click-through stays
+// exact because petPointer.ts hit-tests DOM elements directly.
+const OVERLAY_BLEED: f64 = 12.;
+const PANEL_BLEED_X: f64 = 24.;
+const PANEL_BLEED_TOP: f64 = 22.;
+const PANEL_BLEED_BOTTOM: f64 = 28.;
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Rect {
     pub x: f64,
@@ -53,10 +63,10 @@ pub fn group_bounds(view: &Value, width: f64, body: Rect) -> Rect {
     if let Some(positions) = attachments(view, width, body).as_object() {
         for p in positions.values() {
             bounds = bounds.union(Rect {
-                x: p["x"].as_f64().unwrap(),
-                y: p["y"].as_f64().unwrap(),
-                width: CARD_W,
-                height: CARD_H,
+                x: p["x"].as_f64().unwrap() - CARD_OVERHANG_X,
+                y: p["y"].as_f64().unwrap() - CARD_OVERHANG_Y,
+                width: CARD_W + CARD_OVERHANG_X * 2.,
+                height: CARD_H + CARD_OVERHANG_Y * 2.,
             });
         }
     }
@@ -102,7 +112,18 @@ pub fn viewport(
         height: height(size),
     };
     for r in overlays {
-        content = content.union(*r);
+        let is_panel = r.width >= 160. && r.height >= 70.;
+        let (bx, bt, bb) = if is_panel {
+            (PANEL_BLEED_X, PANEL_BLEED_TOP, PANEL_BLEED_BOTTOM)
+        } else {
+            (OVERLAY_BLEED, OVERLAY_BLEED, OVERLAY_BLEED)
+        };
+        content = content.union(Rect {
+            x: r.x - bx,
+            y: r.y - bt,
+            width: r.width + bx * 2.,
+            height: r.height + bt + bb,
+        });
     }
     let l = (anchor.0 + content.x * units)
         .max(desktop.x)
@@ -218,5 +239,57 @@ mod tests {
             assert!(frame.y >= 30.);
         }
         assert!(open.width > closed.width);
+    }
+    #[test]
+    fn viewport_reserves_shadow_and_sheet_bleed_around_overlays() {
+        let desktop = Rect {
+            x: 0.,
+            y: 0.,
+            width: 1470.,
+            height: 920.,
+        };
+        let anchor = (400., 300.);
+        let card = Rect {
+            x: 88.,
+            y: 50.,
+            width: CARD_W,
+            height: CARD_H,
+        };
+        let folded = viewport(anchor, 1., 140., &[card], desktop);
+        assert!(
+            folded.x + folded.width >= anchor.0 + card.x + card.width + OVERLAY_BLEED,
+            "folded card right edge needs bleed for rotated sheets and shadow"
+        );
+        let panel = Rect {
+            x: -368.,
+            y: 40.,
+            width: 360.,
+            height: 180.,
+        };
+        let expanded = viewport(anchor, 1., 140., &[card, panel], desktop);
+        assert!(
+            expanded.x <= anchor.0 + panel.x - PANEL_BLEED_X,
+            "expanded panel left edge needs shadow bleed"
+        );
+        assert!(
+            expanded.y + expanded.height
+                >= anchor.1 + panel.y + panel.height + PANEL_BLEED_BOTTOM,
+            "expanded panel bottom edge needs shadow bleed"
+        );
+    }
+    #[test]
+    fn group_bounds_gives_folded_pile_edge_breathing_room() {
+        let body = Rect {
+            x: 0.2,
+            y: 0.35,
+            width: 0.6,
+            height: 0.6,
+        };
+        let g = group_bounds(&json!({"state":{"items":[{"id":"a"}]}}), 140., body);
+        let card_right = (body.x + body.width) * 140. - 24. + CARD_W;
+        assert!(
+            g.x + g.width >= card_right + CARD_OVERHANG_X,
+            "fit_group should keep rotated sheet overhang clear of screen edges"
+        );
     }
 }

@@ -3,6 +3,7 @@ pub mod layout;
 pub mod outgoing;
 mod pointer;
 mod scene;
+pub mod staging;
 mod state;
 pub mod tracker;
 use layout::Rect;
@@ -125,6 +126,25 @@ pub fn lab_expand(app: tauri::AppHandle) {
     let _ = app.emit_to("pet", "lab-expand", true);
 }
 #[tauri::command]
+pub fn lab_discard_staged(app: tauri::AppHandle, paths: Vec<String>) {
+    if let Some(lab) = app.try_state::<Lab>() {
+        staging::discard_staged(&lab.staged_root, &paths);
+    }
+}
+fn referenced_paths(view: &Value) -> Vec<String> {
+    ["items", "lastRemoved"]
+        .into_iter()
+        .flat_map(|key| {
+            view["state"][key]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .flat_map(|i| i["paths"].as_array().cloned().unwrap_or_default())
+                .filter_map(|p| p.as_str().map(String::from))
+        })
+        .collect()
+}
+#[tauri::command]
 pub fn lab_existing(paths: Vec<String>) -> Vec<String> {
     paths
         .into_iter()
@@ -167,12 +187,18 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     }
     let root = app.state::<crate::State>().root.join("file-transfer");
     std::fs::create_dir_all(&root)?;
-    let lab = Lab::open(root);
+    let staged_root = app
+        .path()
+        .app_cache_dir()
+        .map(|d| d.join("file-transfer-staged"))
+        .unwrap_or_else(|_| root.join("staged"));
+    let lab = Lab::open(root).with_staged_root(staged_root);
     lab.size.store(
         app.state::<crate::State>().settings.lock().unwrap().size,
         Ordering::Relaxed,
     );
     let view = lab.view.lock().unwrap().clone();
+    staging::cleanup_orphans(&lab.staged_root, &referenced_paths(&view));
     lab.save(view)?;
     app.manage(lab);
     tracker::spawn(app.handle().clone());
@@ -254,9 +280,27 @@ pub fn handle(window: &tauri::Window, event: &tauri::WindowEvent) {
             tauri::DragDropEvent::Drop { paths, position } => {
                 s.valid_drag.store(false, Ordering::Relaxed);
                 if drop_target(window, &s, position.x, position.y, scale) {
+                    let allow_app_data =
+                        crate::permissions::is_enabled(window.app_handle(), "appData");
+                    let prepared =
+                        staging::prepare_drop_with_policy(&s.staged_root, paths, allow_app_data);
+                    let total_blocked = prepared.blocked + prepared.blocked_off;
+                    let blocked_reason = if prepared.blocked_off > 0 && prepared.blocked == 0 {
+                        Some("appDataOff")
+                    } else if total_blocked > 0 {
+                        Some("appDataDenied")
+                    } else {
+                        None
+                    };
                     let _ = window.emit(
                         "lab-drop",
-                        json!({"paths":paths,"x":position.x/scale,"y":position.y/scale}),
+                        json!({
+                            "paths": prepared.accepted,
+                            "blocked": total_blocked,
+                            "blockedReason": blocked_reason,
+                            "x": position.x / scale,
+                            "y": position.y / scale
+                        }),
                     );
                 }
                 let _ = window.emit("lab-hover", json!({"active":false,"x":0,"y":0}));

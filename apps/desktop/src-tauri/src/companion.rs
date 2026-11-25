@@ -98,6 +98,8 @@ pub struct Settings {
     pub memory: bool,
     pub vision: bool,
     pub vision_shortcut: String,
+    /// Optional global shortcut to snip a screen region directly into the chat sidebar.
+    pub chat_snip_shortcut: String,
     pub translation: bool,
     /// Copy twice in a moment to translate what was copied.
     pub copy_twice: bool,
@@ -141,6 +143,7 @@ impl Default for Settings {
             memory: true,
             vision: true,
             vision_shortcut: crate::shortcuts::VISION.into(),
+            chat_snip_shortcut: crate::shortcuts::CHAT_SNIP.into(),
             translation: true,
             copy_twice: true,
             clipboard_shortcut: crate::shortcuts::CLIPBOARD.into(),
@@ -216,7 +219,7 @@ impl Settings {
         if !(256..=16_000_000).contains(&self.context_window) {
             return Err(t("host.contextRange").into());
         }
-        if !crate::locale::CHOICES.contains(&self.language.as_str()) {
+        if !crate::locale::is_valid_choice(&self.language) {
             return Err(t("host.languageUnknown").into());
         }
         Ok(())
@@ -474,7 +477,7 @@ fn stage_online_keys<S: crate::credentials::Secrets>(
     }
     let mut keys = fallback_keys.unwrap_or_default();
     if keys.len() > settings.fallbacks.len() {
-        return Err("备用钥匙与配置不符".into());
+        return Err(t("host.backupKeysMismatch").into());
     }
     keys.resize(settings.fallbacks.len(), None);
     let known = old.credential_accounts()?;
@@ -667,7 +670,18 @@ pub async fn save_companion(
             || state.sync(&app, &old, old_key),
         )?;
         *state.settings.lock().unwrap() = settings.clone();
+        let prev_locale = crate::locale::current();
         crate::locale::set(&settings.language);
+        if crate::locale::current() != prev_locale {
+            let handle = app.clone();
+            let _ = app.run_on_main_thread(move || {
+                crate::tray_menu::refresh_locale(&handle);
+                crate::refresh_window_titles(&handle);
+            });
+            if let Ok(snap) = crate::snapshot(&app) {
+                let _ = app.emit("library-changed", snap);
+            }
+        }
         let in_use = settings.credential_accounts()?;
         for (id, reference) in changed_keys {
             let _ = store.activated(&state.dir, &id, &reference, &in_use);

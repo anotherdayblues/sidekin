@@ -30,8 +30,8 @@ export interface Connection {
   visionModel?: string;
   canSee?: boolean;
   contextWindow?: number;
-  /** plan/15: the language the user reads, "zh" or "en". */
-  locale?: "zh" | "en";
+  /** plan/15 + registry SSOT: the language the user reads (e.g. "zh", "en"). */
+  locale?: string;
 }
 export function modelFor(c: Connection, vision = false): Model<Api> {
   const service = c.service ?? "custom",

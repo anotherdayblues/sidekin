@@ -22,16 +22,24 @@ const keyPages: Record<string, [string, string]> = {
 export function onlineSettings(form: HTMLFormElement) {
   const section = document.createElement("section");
   section.className = "companion-online";
-  section.innerHTML = `<h3>${t("online.title")}</h3><p class="set-note">${t("online.note")}</p><p class="set-note" data-search-guide></p><label>${t("settings.searchService")}<select data-search><option value="follow">${t("online.followModel")}</option><option value="">${t("common.off")}</option><option value="bocha">${t("online.bocha")}</option><option value="glm">${t("online.glm")}</option><option value="tavily">Tavily</option><option value="brave">Brave</option><option value="searxng">SearXNG</option></select></label><label data-url-label>${t("online.searxngUrl")}<input data-search-url type="url"></label><div class="search-key-actions"><label data-key-label for="search-service-key">${t("online.searchKey")}</label><input id="search-service-key" data-search-key type="password" autocomplete="off" placeholder="${t("online.keyHidden")}"><button type="button" data-save-online>${t("online.testSave")}</button></div><output data-online-status aria-live="polite"></output><p class="set-note" data-key-help hidden></p><label>${t("online.searchLimit")}<input data-search-limit type="number" required min="0" max="10000" step="1"></label><h3>${t("online.backups")}</h3><div data-backups></div><button type="button" data-add>${t("online.addBackup")}</button><label>${t("online.dailyLimit")}<input data-limit type="number" min="0" max="1000000000" step="1"></label>`;
+  section.dataset.part = "search";
+  section.innerHTML = `<p class="set-note" data-search-guide></p><label>${t("settings.searchService")}<select data-search><option value="follow">${t("online.followModel")}</option><option value="">${t("common.off")}</option><option value="bocha">${t("online.bocha")}</option><option value="glm">${t("online.glm")}</option><option value="tavily">Tavily</option><option value="brave">Brave</option><option value="searxng">SearXNG</option></select></label><label data-url-label>${t("online.searxngUrl")}<input data-search-url type="url"></label><div class="search-key-actions"><label data-key-label for="search-service-key">${t("online.searchKey")}</label><input id="search-service-key" data-search-key type="password" autocomplete="off" placeholder="${t("online.keyHidden")}"><button type="button" data-save-online>${t("online.testSave")}</button></div><output data-online-status aria-live="polite"></output><p class="set-note" data-key-help hidden></p><label>${t("online.searchLimit")}<input data-search-limit type="number" required min="0" max="10000" step="1"></label>`;
+  // 备用模型 and the daily limit live apart from search (a folded group in
+  // 设置), with their own save button and status, saved by the same request.
+  const backups = document.createElement("section");
+  backups.className = "companion-online";
+  backups.dataset.part = "backups";
+  backups.innerHTML = `<div data-backups></div><button type="button" data-add>${t("online.addBackup")}</button><label>${t("online.dailyLimit")}<input data-limit type="number" min="0" max="1000000000" step="1"></label><div class="search-key-actions"><button type="button" data-save-online>${t("online.testSave")}</button></div><output data-online-status aria-live="polite"></output>`;
   const usage = usageReceipt();
   const usageBody = document.createElement("div");
   usage.append(usageBody);
   usage.dataset.usage = "";
   usage.setAttribute("aria-live", "polite");
-  form.append(section, usage);
+  form.append(section, backups, usage);
   let busy = false;
+  const parts = [section, backups];
   const pick = <T extends HTMLElement>(q: string) =>
-    section.querySelector<T>(q)!;
+    (section.querySelector<T>(q) ?? backups.querySelector<T>(q))!;
   const search = pick<HTMLSelectElement>("[data-search]"),
     url = pick<HTMLInputElement>("[data-search-url]"),
     key = pick<HTMLInputElement>("[data-search-key]"),
@@ -109,8 +117,9 @@ export function onlineSettings(form: HTMLFormElement) {
     rows.append(block);
     update();
   }
-  pick("[data-save-online]").onclick = () =>
-    form.dispatchEvent(new Event("save-online"));
+  for (const part of parts)
+    part.querySelector<HTMLElement>("[data-save-online]")!.onclick = () =>
+      form.dispatchEvent(new Event("save-online"));
   add.onclick = () => {
     if (rows.children.length < 2)
       row({
@@ -137,10 +146,11 @@ export function onlineSettings(form: HTMLFormElement) {
   return {
     setBusy(value: boolean) {
       busy = value;
-      for (const input of section.querySelectorAll<
-        HTMLInputElement | HTMLSelectElement | HTMLButtonElement
-      >("input,select,button"))
-        input.disabled = value;
+      for (const part of parts)
+        for (const input of part.querySelectorAll<
+          HTMLInputElement | HTMLSelectElement | HTMLButtonElement
+        >("input,select,button"))
+          input.disabled = value;
       update();
     },
     refresh,

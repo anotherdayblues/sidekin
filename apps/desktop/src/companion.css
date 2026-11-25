@@ -58,7 +58,8 @@
 .companion-page input:not([type="checkbox"]),
 .companion-page select,
 .companion-page textarea,
-.companion-page button {
+/* Tabs are navigation, not form controls (11-settings.css styles them). */
+.companion-page button:where(:not([role="tab"])) {
   color: var(--comp-text);
   background: var(--comp-control);
   border: var(--comp-border) solid var(--comp-rule);

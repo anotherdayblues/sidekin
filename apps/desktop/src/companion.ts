@@ -11,7 +11,6 @@ import {
   showShortcut,
   shortcutValue,
 } from "./shortcutRecorder.ts";
-import { comboBox } from "./combo.ts";
 import "./styles/shortcut-recorder.css";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -23,6 +22,7 @@ import {
   type CompanionSettings,
   type Service,
 } from "../../shared/companion.ts";
+import { LOCALES } from "../../shared/locales/index.ts";
 import "./companion.css";
 export { type CompanionSettings };
 let preview: CompanionSettings = { ...defaults };
@@ -37,11 +37,11 @@ export function companionPage(app: HTMLElement) {
   const host =
     app.querySelector<HTMLElement>('.block[data-for="settings"]') ?? app;
   page.innerHTML = `<form><header><h2>${t("settings.companion")}</h2><button type="button" data-close>${t("settings.backToPet")}</button></header>
-  <label>${t("settings.language")}<select name="language"><option value="system">${t("settings.followSystem")}</option><option value="zh">中文</option><option value="en">English</option></select></label>
+  <label>${t("settings.language")}<select name="language"><option value="system">${t("settings.followSystem")}</option>${LOCALES.map((l) => `<option value="${l.id}">${l.nativeName}</option>`).join("")}</select></label>
   <div class="switch-row"><span>${t("settings.enable")}</span><input type="checkbox" name="enabled" role="switch" aria-label="${t("settings.enable")}" class="slide-switch"></div>
   <div class="model-current"><span data-current-model></span><button type="button" data-configure>${t("settings.configureModel")}</button></div>
   <div class="switch-row"><span>${t("settings.translation")}</span><input type="checkbox" name="translation" role="switch" aria-label="${t("settings.translation")}" class="slide-switch"></div>
-  <div data-access hidden>${t("settings.accessNeeded")}<button type="button" data-preferences>${t("settings.openSystemSettings")}</button></div><div class="switch-row"><span>${t("settings.memory")}</span><input name="memory" type="checkbox" role="switch" aria-label="${t("settings.memory")}" class="slide-switch"></div><div class="switch-row"><span>${t("settings.reminders")}</span><input name="reminders" type="checkbox" role="switch" aria-label="${t("settings.reminders")}" class="slide-switch"></div><div class="switch-row"><span>${t("settings.vision")}</span><input type="checkbox" name="vision" role="switch" aria-label="${t("settings.vision")}" class="slide-switch"></div><label>${t("settings.visionShortcut")}<input name="visionShortcut"></label><div data-screen hidden>${t("settings.screenOff")}<button type="button" data-screen-prefs>${t("settings.openSystemSettings")}</button></div><div class="switch-row" data-copy-twice><span>${t("settings.copyTwice")}</span><input name="copyTwice" type="checkbox" role="switch" aria-label="${t("settings.copyTwice")}" class="slide-switch"></div><label>${t("settings.translationTarget")}<input name="translationTarget" list="languages" maxlength="60" placeholder="${t("settings.auto")}"><datalist id="languages"><option value="${t("settings.auto")}"><option value="${t("lang.chinese")}"><option value="${t("lang.english")}"><option value="${t("lang.japanese")}"><option value="${t("lang.french")}"></datalist></label><label>${t("settings.translationShortcut")}<input name="translationShortcut"></label>
+  <div data-access hidden>${t("settings.accessNeeded")}<button type="button" data-preferences>${t("settings.openSystemSettings")}</button></div><div class="switch-row"><span>${t("settings.memory")}</span><input name="memory" type="checkbox" role="switch" aria-label="${t("settings.memory")}" class="slide-switch"></div><div class="switch-row"><span>${t("settings.reminders")}</span><input name="reminders" type="checkbox" role="switch" aria-label="${t("settings.reminders")}" class="slide-switch"></div><div class="switch-row"><span>${t("settings.vision")}</span><input type="checkbox" name="vision" role="switch" aria-label="${t("settings.vision")}" class="slide-switch"></div><label>${t("settings.visionShortcut")}<input name="visionShortcut"></label><label>${t("keys.chatSnip")}<input name="chatSnipShortcut"></label><div data-screen hidden>${t("settings.screenOff")}<button type="button" data-screen-prefs>${t("settings.openSystemSettings")}</button></div><div class="switch-row" data-copy-twice><span>${t("settings.copyTwice")}</span><input name="copyTwice" type="checkbox" role="switch" aria-label="${t("settings.copyTwice")}" class="slide-switch"></div><label>${t("settings.translationShortcut")}<input name="translationShortcut"></label>
   <label>${t("clip.shortcut")}<input name="clipboardShortcut"></label><label>${t("settings.chatShortcut")}<input name="chatShortcut"></label><label>${t("settings.panelShortcut")}<input name="panelShortcut"></label><label>${t("settings.personality")}<textarea name="personality"></textarea></label><div class="companion-buttons"><button type="button" data-persona-save>${t("settings.personaSave")}</button><button type="button" data-persona-reset>${t("settings.personaReset")}</button></div><output data-persona-output></output>
   <output role="status"></output></form>`;
   host.append(page);
@@ -107,13 +107,15 @@ export function companionPage(app: HTMLElement) {
     "chatShortcut",
     "panelShortcut",
     "visionShortcut",
+    "chatSnipShortcut",
     "translationShortcut",
     "clipboardShortcut",
   ])
     recordShortcut(field(name), pauseShortcuts);
   field("chatShortcut").dataset.optional = "true";
   field("chatShortcut").placeholder = t("keys.unset");
-  comboBox(field("translationTarget"));
+  field("chatSnipShortcut").dataset.optional = "true";
+  field("chatSnipShortcut").placeholder = t("keys.unset");
   // Name the copy key the way this keyboard shows it.
   const copyLabel = form.querySelector("[data-copy-twice] span");
   if (copyLabel)
@@ -138,6 +140,11 @@ export function companionPage(app: HTMLElement) {
   );
   page.querySelector<HTMLElement>("[data-configure]")!.onclick = () =>
     setup.open();
+  // 连按两次复制 only works while 翻译 is on (copy_twice.rs): follow it.
+  const followTranslation = () => {
+    field("copyTwice").disabled = !field("translation").checked;
+  };
+  field("translation").addEventListener("change", followTranslation);
   function readControls(): Partial<CompanionSettings> {
     return {
       enabled: field("enabled").checked,
@@ -145,15 +152,11 @@ export function companionPage(app: HTMLElement) {
       memory: field("memory").checked,
       vision: field("vision").checked,
       visionShortcut: shortcutValue(field("visionShortcut")),
+      chatSnipShortcut: shortcutValue(field("chatSnipShortcut")),
       translation: field("translation").checked,
       clipboardShortcut: shortcutValue(field("clipboardShortcut")),
       copyTwice: field("copyTwice").checked,
       translationShortcut: shortcutValue(field("translationShortcut")),
-      translationTarget: ["", t("settings.auto"), "auto"].includes(
-        field("translationTarget").value.trim(),
-      )
-        ? "auto"
-        : field("translationTarget").value.trim(),
       chatShortcut: shortcutValue(field("chatShortcut")),
       panelShortcut: shortcutValue(field("panelShortcut")),
       language: field("language").value as CompanionSettings["language"],
@@ -170,13 +173,10 @@ export function companionPage(app: HTMLElement) {
       else if ("shortcut" in f.dataset) showShortcut(f, String(v));
       else f.value = String(v);
     }
-    if (s.translationTarget === "auto")
-      field("translationTarget").value = t("settings.auto");
     page.querySelector<HTMLElement>("[data-current-model]")!.textContent =
       s.modelVerified
-        ? t("settings.currentModel", {
+        ? t("settings.currentService", {
             service: named("service." + s.service, presets[s.service][0]),
-            model: s.model,
             tools: t(
               s.toolCheck?.baseUrl === s.baseUrl &&
                 s.toolCheck?.model === s.model &&
@@ -192,6 +192,7 @@ export function companionPage(app: HTMLElement) {
             ),
           })
         : t("settings.noModel");
+    followTranslation();
     showOnboard();
   }
   let saves = Promise.resolve();
@@ -213,9 +214,10 @@ export function companionPage(app: HTMLElement) {
     const run = saves.then(async () => {
       status.textContent = t("settings.saving");
       if (withOnline)
-        page.querySelector<HTMLOutputElement>(
+        for (const out of page.querySelectorAll<HTMLOutputElement>(
           "[data-online-status]",
-        )!.textContent = t("settings.verifying");
+        ))
+          out.textContent = t("settings.verifying");
       try {
         const latest = await getSettings();
         const s = { ...latest, ...patch };
@@ -236,19 +238,17 @@ export function companionPage(app: HTMLElement) {
             if (typeof value === "boolean") input.checked = value;
             else if ("shortcut" in input.dataset)
               showShortcut(input, String(value));
-            else
-              input.value =
-                value === "auto" && key === "translationTarget"
-                  ? t("settings.auto")
-                  : String(value);
+            else input.value = String(value);
           }
+          followTranslation();
         }
         markCompanion(app, saved, show);
         status.textContent = t("settings.saved");
         if (withOnline)
-          page.querySelector<HTMLOutputElement>(
+          for (const out of page.querySelectorAll<HTMLOutputElement>(
             "[data-online-status]",
-          )!.textContent = t("settings.groupSaved");
+          ))
+            out.textContent = t("settings.groupSaved");
       } catch (e) {
         if (!withOnline && revision === inputRevision) {
           for (const key of Object.keys(controls)) {
@@ -257,12 +257,9 @@ export function companionPage(app: HTMLElement) {
             if (typeof value === "boolean") input.checked = value;
             else if ("shortcut" in input.dataset)
               showShortcut(input, String(value));
-            else
-              input.value =
-                value === "auto" && key === "translationTarget"
-                  ? t("settings.auto")
-                  : String(value);
+            else input.value = String(value);
           }
+          followTranslation();
         }
         const message = String(e).replace(/^Error:\s*/, "");
         const match = message.match(/^(backup:\d+|search):(.+)$/);
@@ -279,9 +276,10 @@ export function companionPage(app: HTMLElement) {
             })
           : (errorText[message] ?? message);
         if (withOnline)
-          page.querySelector<HTMLOutputElement>(
+          for (const out of page.querySelectorAll<HTMLOutputElement>(
             "[data-online-status]",
-          )!.textContent = status.textContent;
+          ))
+            out.textContent = status.textContent;
       } finally {
         if (withOnline) online.setBusy(false);
       }
@@ -296,10 +294,6 @@ export function companionPage(app: HTMLElement) {
   page.querySelector<HTMLElement>("[data-close]")!.onclick = () => {
     page.hidden = true;
   };
-  page.querySelector<HTMLElement>("[data-preferences]")!.onclick = () =>
-    void invoke("selection_preferences");
-  page.querySelector<HTMLElement>("[data-screen-prefs]")!.onclick = () =>
-    void invoke("screen_preferences");
   async function open(fixture?: string) {
     const current = await getSettings();
     // Only the browser preview accepts fixtures; production always reads persisted settings.
@@ -333,26 +327,24 @@ export function companionPage(app: HTMLElement) {
       refreshDocs(),
       online.refresh(),
       persona("load"),
+      refreshPermissions(),
     ]);
     const previewSections: Record<string, string> = {
-      online: ".companion-online",
-      usage: "[data-usage]",
-      persona: "[name=personality]",
-      library: ".companion-library",
-      external: ".companion-external",
+      online: "online",
+      usage: "usage",
+      external: "tools",
+      access: "access",
     };
     if (!native && fixture && previewSections[fixture])
-      page.querySelector(previewSections[fixture])?.scrollIntoView();
+      openSection(previewSections[fixture], false);
+    if (!native && fixture === "persona")
+      page.querySelector("[name=personality]")?.scrollIntoView();
+    if (!native && fixture === "library")
+      page.querySelector(".companion-library")?.scrollIntoView();
     if (fixture === "reminders")
       page.querySelector(".companion-reminders")?.scrollIntoView();
     if (fixture === "memory")
       page.querySelector(".companion-notebooks")?.scrollIntoView();
-    page.querySelector<HTMLElement>("[data-screen]")!.hidden =
-      !native || !saved.vision || (await invoke<boolean>("screen_access"));
-    page.querySelector<HTMLElement>("[data-access]")!.hidden =
-      !native ||
-      !saved.translation ||
-      (await invoke<boolean>("selection_access"));
     status.textContent =
       !native && fixture
         ? ((
@@ -363,8 +355,6 @@ export function companionPage(app: HTMLElement) {
             } as Record<string, string>
           )[fixture] ?? "")
         : "";
-    if (!native && fixture === "permission")
-      page.querySelector<HTMLElement>("[data-access]")!.hidden = false;
   }
   const show = () =>
     app.dispatchEvent(new CustomEvent("show-block", { detail: "settings" }));
@@ -372,16 +362,14 @@ export function companionPage(app: HTMLElement) {
     void listen<string>("settings-section", async (e) => {
       await open();
       show();
-      document.getElementById("set-" + e.payload)?.scrollIntoView();
+      openSection(e.payload, false);
     });
   if (native)
     void listen<boolean>("companion-open", async () => {
       // From the bubble: errors land on 伙伴大脑.
       await open();
       show();
-      document
-        .getElementById("set-brain")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      openSection("brain", true);
     });
   if (native)
     void listen<any>("brain-event", (e) => {
@@ -390,6 +378,8 @@ export function companionPage(app: HTMLElement) {
       if (e.payload.method === "crash") status.textContent = errorText.crash;
     });
   let showOnboard = () => {};
+  let refreshPermissions = () => Promise.resolve();
+  let openSection = (_id: string, _smooth = true) => {};
   const guide = arrangeCompanion({
     app,
     page,
@@ -403,6 +393,8 @@ export function companionPage(app: HTMLElement) {
   app.addEventListener("pet-changed", () => void persona("load"));
   refreshGuide = guide.refresh;
   showOnboard = guide.show;
+  refreshPermissions = guide.refreshPermissions;
+  openSection = guide.openSection;
   // Screenshot scripts open a step of the guide directly.
   if (!native) Object.assign(window, { __guide: guide });
   // The first launch opens 设置 on the guide (tips.rs).

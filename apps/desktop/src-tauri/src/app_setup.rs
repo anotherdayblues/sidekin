@@ -38,6 +38,7 @@ pub fn run(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     tray_menu::install(app)?;
+    refresh_window_titles(app.handle());
     #[cfg(feature = "acceptance")]
     acceptance::launch(app.handle())?;
     refresh(app.handle()).map_err(std::io::Error::other)?;

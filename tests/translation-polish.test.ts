@@ -62,8 +62,16 @@ test("翻译页和翻译气泡", async () => {
     await page.fill(".tr-search", "");
     assert.equal(await items.count(), 2);
     // A click on the record, not its buttons, puts its original in the box.
+    assert.ok(
+      await page.locator("[data-tr-paste]").isVisible(),
+      "paste button shows when translate panel input is empty",
+    );
     await items.nth(1).locator(".tr-when").click();
     assert.equal(await page.inputValue(".tr-compose textarea"), "Hello");
+    assert.ok(
+      !(await page.locator("[data-tr-paste]").isVisible()),
+      "paste button hides once text is in the box",
+    );
     await items.nth(0).locator(".tr-copy").click();
     assert.equal(await page.inputValue(".tr-compose textarea"), "Hello");
     // The bar: your language, then theirs, then 语气.
@@ -73,6 +81,12 @@ test("翻译页和翻译气泡", async () => {
     );
     assert.equal(
       await page.inputValue(".chat-translation .tb-partner"),
+      "en",
+    );
+    assert.equal(
+      await page
+        .locator(".chat-translation .tb-partner option:checked")
+        .textContent(),
       "英文",
     );
     await page.close();
@@ -101,6 +115,7 @@ test("翻译页和翻译气泡", async () => {
       (window as any).__studio.bubble("translation-typing"),
     );
     assert.ok(await visible(".bubble-card .translate-bar"));
+    assert.ok(!(await visible(".bubble-compose [data-paste]")), "hidden while text is in the box");
     assert.ok(!(await visible("[data-selection-tabs]")));
     assert.ok(!(await visible("[data-replace]")));
     assert.equal(
@@ -109,9 +124,12 @@ test("翻译页和翻译气泡", async () => {
         .getAttribute("placeholder"),
       "打字翻译，回车发出",
     );
-    // Chat has no bar.
+    await bubble.fill(".bubble-compose textarea", "");
+    assert.ok(await visible(".bubble-compose [data-paste]"), "visible when translate box is empty");
+    // Chat has no bar and no paste button.
     await bubble.evaluate(() => (window as any).__studio.bubble("answer"));
     assert.ok(!(await visible(".bubble-card .translate-bar")));
+    assert.ok(!(await visible(".bubble-compose [data-paste]")));
   } finally {
     await browser.close();
     await server.close();

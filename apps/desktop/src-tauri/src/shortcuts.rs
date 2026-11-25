@@ -18,6 +18,7 @@ pub const PANEL: &str = "Control+Shift+1";
 pub const CLIPBOARD: &str = "Control+Shift+2";
 pub const TRANSLATE: &str = "Control+Shift+3";
 pub const VISION: &str = "Control+Shift+4";
+pub const CHAT_SNIP: &str = "";
 /// Earlier builds gave each build its own modifiers (the full app ⌃⌥, the
 /// trial ⌃⌥⇧, the dev build ⌃⌥⇧⌘), and plan/38 moved them to Alt+Space /
 /// Alt+Shift+*. A shortcut still at any earlier default was never chosen, so
@@ -116,6 +117,15 @@ fn desired(s: &Settings) -> Result<HashMap<Shortcut, &'static str>, String> {
             if desired.insert(key, "vision").is_some() {
                 return Err(t("host.keysSame").into());
             }
+            if !s.chat_snip_shortcut.trim().is_empty() {
+                let chat_snip = s
+                    .chat_snip_shortcut
+                    .parse::<Shortcut>()
+                    .map_err(|_| t("host.snipKeyBad"))?;
+                if desired.insert(chat_snip, "chat-snip").is_some() {
+                    return Err(t("host.keysSame").into());
+                }
+            }
         }
         if s.translation {
             let key = s
@@ -175,6 +185,8 @@ pub fn apply(app: &AppHandle, s: &Settings) -> Result<(), String> {
                     let _ = crate::chat_window::toggle(app);
                 } else if action == Some("vision") {
                     crate::snip::start(app.clone());
+                } else if action == Some("chat-snip") {
+                    crate::snip::start_for_chat_from_shortcut(app.clone());
                 } else if action == Some("translate") {
                     crate::selection::translate_shortcut(app.clone());
                 }
@@ -255,8 +267,14 @@ mod tests {
         assert_eq!(desired(&s).unwrap().len(), 4);
         s.chat_shortcut = "Super+Shift+K".into();
         assert_eq!(desired(&s).unwrap().len(), 5);
+        s.chat_snip_shortcut = "Super+Shift+A".into();
+        assert_eq!(desired(&s).unwrap().len(), 6);
         s.vision = false;
         assert_eq!(desired(&s).unwrap().len(), 4);
+        s.vision = true;
+        s.chat_snip_shortcut = s.vision_shortcut.clone();
+        assert!(desired(&s).is_err());
+        s.chat_snip_shortcut.clear();
         s.panel_shortcut = s.chat_shortcut.clone();
         assert!(desired(&s).is_err());
     }

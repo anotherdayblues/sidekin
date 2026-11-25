@@ -1,0 +1,3 @@
+"CFBundleDisplayName" = "Suiby";
+"CFBundleName" = "Suiby";
+"NSLocalNetworkUsageDescription" = "同じ Wi-Fi 上のスマートフォンから写真やファイルを受け取るためにローカルネットワークを使用します。";

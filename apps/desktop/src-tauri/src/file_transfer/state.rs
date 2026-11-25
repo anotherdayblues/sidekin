@@ -9,6 +9,7 @@ use std::{
 };
 pub struct Lab {
     pub root: PathBuf,
+    pub staged_root: PathBuf,
     pub view: Mutex<Value>,
     pub regions: Mutex<Vec<Rect>>,
     pub outgoing: AtomicBool,
@@ -66,8 +67,10 @@ impl Lab {
                 width: 1.,
                 height: 1.,
             });
+        let staged_root = root.join("staged");
         Self {
             root,
+            staged_root,
             view: Mutex::new(view),
             regions: Mutex::new(vec![]),
             outgoing: AtomicBool::new(false),
@@ -81,6 +84,10 @@ impl Lab {
             cursor_near: AtomicBool::new(true),
             panel_open: AtomicBool::new(false),
         }
+    }
+    pub fn with_staged_root(mut self, staged_root: PathBuf) -> Self {
+        self.staged_root = staged_root;
+        self
     }
     pub fn count(&self) -> usize {
         self.view.lock().unwrap()["state"]["items"]

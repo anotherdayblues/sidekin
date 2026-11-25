@@ -74,7 +74,10 @@ pub fn pick_address(
                 || n.contains("wi-fi")
                 || n.contains("wlan")
                 || n.contains("ethernet")
-                || n.contains("以太网");
+                || n.contains("以太网")
+                || n.contains("乙太網路")
+                || n.contains("イーサネット")
+                || n.contains("이더넷");
             (route == Some(*ip)) as i32 * 100 + range + physical as i32 * 5
         })
         .map(|(_, ip)| *ip)
@@ -292,6 +295,11 @@ mod tests {
         );
         // Not on any network: nothing, not 127.0.0.1.
         assert_eq!(pick_address(&cards(&[("lo0", "127.0.0.1")]), None), None);
+        // Localized Windows Ethernet adapter names get the physical adapter bonus.
+        for name in ["乙太網路", "イーサネット", "이더넷"] {
+            let localized = cards(&[("other0", "192.168.1.10"), (name, "192.168.1.20")]);
+            assert_eq!(pick_address(&localized, None), Some(ip("192.168.1.20")), "{name}");
+        }
     }
     #[test]
     fn codes_are_long_hex_and_different() {

@@ -13,16 +13,25 @@ fn profiles(dir: &Path) -> R<BTreeMap<String, String>> {
     }
 }
 pub fn default(desc: &str) -> String {
-    default_in(desc, crate::locale::english())
+    default_in(desc, crate::locale::current())
+}
+fn default_template(locale_id: &str) -> &'static str {
+    for id in crate::locale::fallback_chain(locale_id) {
+        match id {
+            "zh-TW" => return include_str!("../../../brain/prompts/persona-default.zh-TW.md"),
+            "ja" => return include_str!("../../../brain/prompts/persona-default.ja.md"),
+            "ko" => return include_str!("../../../brain/prompts/persona-default.ko.md"),
+            "en" => return include_str!("../../../brain/prompts/persona-default.en.md"),
+            "zh" => return include_str!("../../../brain/prompts/persona-default.md"),
+            _ => {}
+        }
+    }
+    include_str!("../../../brain/prompts/persona-default.md")
 }
 /// The packaged personality in the user's language, after the pet's own words.
-fn default_in(desc: &str, english: bool) -> String {
-    let text = if english {
-        include_str!("../../../brain/prompts/persona-default.en.md")
-    } else {
-        include_str!("../../../brain/prompts/persona-default.md")
-    }
-    .trim_end();
+fn default_in(desc: &str, locale_id: &str) -> String {
+    let desc = crate::library::localize_lizi_desc(crate::library::LIZI_ID, desc, locale_id);
+    let text = default_template(locale_id).trim_end();
     let desc: String = desc
         .chars()
         .take(1500usize.saturating_sub(text.chars().count() + 1))
@@ -93,9 +102,27 @@ pub async fn greet_user(app: AppHandle) -> R<()> {
 mod tests {
     #[test]
     fn the_packaged_personality_follows_the_language() {
-        let zh = super::default_in("橘猫", false);
-        let en = super::default_in("橘猫", true);
+        let zh = super::default_in("橘猫", "zh");
+        let en = super::default_in("橘猫", "en");
         assert!(zh.starts_with("橘猫\n说话方式："));
         assert!(en.starts_with("橘猫\nHow you talk:"));
+    }
+
+    #[test]
+    fn lizi_default_persona_localizes_description_across_all_locales() {
+        for locale_id in ["zh", "en", "zh-TW", "ja", "ko"] {
+            let text = super::default_in(crate::library::LIZI_DEFAULT_DESC, locale_id);
+            let expected_desc = crate::locale::t_in(locale_id, "pet.lizi.desc");
+            assert!(
+                text.starts_with(&format!("{expected_desc}\n")),
+                "locale {locale_id}: got {text}"
+            );
+            if locale_id != "zh" {
+                assert!(
+                    !text.contains("一只温暖"),
+                    "locale {locale_id} leaked Simplified Chinese default description"
+                );
+            }
+        }
     }
 }

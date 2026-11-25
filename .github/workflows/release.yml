@@ -32,10 +32,10 @@ jobs:
           $installers = @(Get-ChildItem apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis -Filter '*.exe')
           if ($installers.Count -ne 1) { throw "Expected one NSIS installer" }
           New-Item -ItemType Directory -Path releases | Out-Null
-          Copy-Item $installers[0].FullName releases/Sidekin-Windows-x64.exe
+          Copy-Item $installers[0].FullName releases/Suiby-Windows-x64.exe
       - uses: actions/upload-artifact@v4
         with:
-          name: Sidekin-Windows-x64
-          path: releases/Sidekin-Windows-x64.exe
+          name: Suiby-Windows-x64
+          path: releases/Suiby-Windows-x64.exe
           if-no-files-found: error
           retention-days: 7

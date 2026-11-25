@@ -6,8 +6,10 @@
 import { t, dateLocale } from "./i18n.ts";
 import { invoke } from "@tauri-apps/api/core";
 import { native } from "./bridge.ts";
+import { glyphs } from "./icons.ts";
 import { renderText } from "./richText.ts";
-import { translateBar } from "./translateBar.ts";
+import { readClipboardText, translateBar } from "./translateBar.ts";
+import { formatIntoLang } from "./translateLang.ts";
 
 export interface TranslationRecord {
   id: number;
@@ -41,13 +43,31 @@ export function translationLog(
   page.className = "chat-translation";
   page.hidden = true;
   page.setAttribute("aria-label", t("chat.translations"));
-  page.innerHTML = `<header><button type="button" data-tr-back>← ${t("translations.back")}</button><strong>${t("chat.translations")}</strong><button type="button" data-tr-clear>${t("translations.clearAll")}</button></header><form class="tr-compose"><textarea rows="2" placeholder="${t("translate.placeholder")}" aria-label="${t("translate.placeholder")}"></textarea><div class="tr-compose-foot"><output role="status"></output><button type="submit" data-tr-send>${t("selection.translate")}</button></div></form><input type="search" class="tr-search" placeholder="${t("translations.search")}" aria-label="${t("translations.search")}"><div class="tr-scroll"></div>`;
+  page.innerHTML = `<header><button type="button" data-tr-back>← ${t("translations.back")}</button><strong>${t("chat.translations")}</strong><button type="button" data-tr-clear>${t("translations.clearAll")}</button></header><form class="tr-compose"><textarea rows="2" placeholder="${t("translate.placeholder")}" aria-label="${t("translate.placeholder")}"></textarea><div class="tr-compose-foot"><output role="status"></output><button type="button" class="tr-paste" data-tr-paste aria-label="${t("translate.pasteClipboard")}" title="${t("translate.pasteClipboard")}">${glyphs.paste}</button><button type="submit" data-tr-send>${t("selection.translate")}</button></div></form><input type="search" class="tr-search" placeholder="${t("translations.search")}" aria-label="${t("translations.search")}"><div class="tr-scroll"></div>`;
   shell.append(page);
   const scroll = page.querySelector<HTMLElement>(".tr-scroll")!;
   const compose = page.querySelector<HTMLFormElement>(".tr-compose")!;
   const box = compose.querySelector("textarea")!;
   const status = compose.querySelector("output")!;
+  const pasteBtn = compose.querySelector<HTMLButtonElement>("[data-tr-paste]")!;
   const search = page.querySelector<HTMLInputElement>(".tr-search")!;
+  let pasteHintTimer = 0;
+  pasteBtn.onclick = async () => {
+    const text = (await readClipboardText()).trim();
+    if (!text) {
+      clearTimeout(pasteHintTimer);
+      status.textContent = t("translate.clipboardEmpty");
+      pasteHintTimer = window.setTimeout(() => {
+        if (status.textContent === t("translate.clipboardEmpty"))
+          status.textContent = "";
+      }, 1800);
+      return;
+    }
+    status.textContent = "";
+    box.value = text;
+    box.focus();
+    box.setSelectionRange(text.length, text.length);
+  };
   const bar = translateBar();
   compose.prepend(bar.el);
   let token = "";
@@ -155,7 +175,7 @@ export function translationLog(
     const meta = document.createElement("small");
     meta.className = "tr-when";
     meta.textContent = record.into
-      ? `${when(record.at)} · ${t("translate.into", { lang: record.into })}`
+      ? `${when(record.at)} · ${t("translate.into", { lang: formatIntoLang(record.into, t) })}`
       : when(record.at);
     const source = document.createElement("details");
     source.className = "tr-source";

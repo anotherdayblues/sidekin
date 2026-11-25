@@ -107,6 +107,21 @@ pub fn hide_bubble(app: AppHandle) -> Result<(), String> {
     }
     Ok(())
 }
+/// Hide the bubble during screen capture without resetting its DOM or draft text.
+/// Returns true if the bubble was visible and hidden.
+pub fn hide_bubble_temporarily(app: &AppHandle) -> bool {
+    let Some(w) = app.get_webview_window("bubble") else {
+        return false;
+    };
+    w.is_visible().unwrap_or(false) && w.hide().is_ok()
+}
+/// Restore the bubble after a cancelled chat snip, keeping its draft intact.
+pub fn restore_bubble_temporarily(app: &AppHandle) {
+    if let Some(w) = app.get_webview_window("bubble") {
+        let _ = w.show();
+        let _ = w.set_focus();
+    }
+}
 #[tauri::command]
 pub fn size_bubble(app: AppHandle, width: f64, height: f64) -> Result<(), String> {
     if crate::clipboard::active(&app) {
@@ -377,7 +392,11 @@ fn run(runtime: &AppHandle, client: brain::Client, turn: Turn) -> Result<Value, 
         let mut full = turn.stored.clone();
         for a in answers {
             if let (Some(q), Some(v)) = (a["question"].as_str(), a["answer"].as_str()) {
-                full.push_str(&format!("\n栗子问：{q}\n我的回答：{v}"));
+                full.push_str(&format!(
+                    "\n{}\n{}",
+                    crate::locale::tf("host.petAsked", &[("name", &turn.name), ("text", &q)]),
+                    crate::locale::tf("host.myAnswer", &[("text", &v)]),
+                ));
             }
         }
         if full != turn.stored {
@@ -552,7 +571,7 @@ pub fn open_companion_page(
     section: Option<String>,
 ) -> Result<(), String> {
     crate::open_studio(app.clone())?;
-    if let Some(id) = section.filter(|s| matches!(s.as_str(), "online" | "tools")) {
+    if let Some(id) = section.filter(|s| matches!(s.as_str(), "online" | "tools" | "access")) {
         crate::studio_window::emit(&app, "settings-section", id);
         return Ok(());
     }

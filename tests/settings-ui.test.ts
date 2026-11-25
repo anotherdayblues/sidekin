@@ -70,7 +70,7 @@ async function fixture(
             position: null,
             behaviors: {},
             theme: "day",
-            skin: "studio",
+            skin: "native",
           },
         };
       if (cmd === "get_persona")
@@ -85,7 +85,12 @@ async function fixture(
       if (cmd === "tool_cards") return { pending: [], tools: [] };
       if (cmd === "external_config") return { servers: [], grants: [] };
       if (
-        ["list_documents", "list_reminders", "pending_reminders"].includes(cmd)
+        [
+          "list_documents",
+          "list_reminders",
+          "pending_reminders",
+          "todo_list",
+        ].includes(cmd)
       )
         return [];
       if (["screen_access", "selection_access"].includes(cmd)) return true;
@@ -129,13 +134,14 @@ test(
       return null;
     });
     try {
+      await f.page.locator('[data-settings-tab="brain"]').click();
       await f.page.locator("[data-search]").selectOption("brave");
       await f.page.locator("[data-search-key]").fill("fixture-only");
-      await f.page.locator("[data-save-online]").click();
+      await f.page.locator("#set-online [data-save-online]").click();
       await f.page.waitForFunction(
         () =>
           document
-            .querySelector("[data-online-status]")
+            .querySelector("#set-online [data-online-status]")
             ?.textContent?.includes("正在") ||
           document
             .querySelector('.companion-page output[role="status"]')
@@ -230,12 +236,13 @@ test(
       return null;
     });
     try {
+      await f.page.locator('[data-settings-tab="brain"]').click();
       await f.page.locator("[data-search]").selectOption("brave");
       await f.page.locator("[data-search-key]").fill("fixture-only");
-      await f.page.locator("[data-save-online]").click();
+      await f.page.locator("#set-online [data-save-online]").click();
       await f.page.waitForFunction(() =>
         document
-          .querySelector("[data-online-status]")
+          .querySelector("#set-online [data-online-status]")
           ?.textContent?.includes("正在"),
       );
       await f.page.evaluate(() => {
@@ -253,7 +260,7 @@ test(
       assert.equal(settings.memory, false);
       assert.equal(settings.search, null);
       assert.match(
-        await f.page.locator("[data-online-status]").innerText(),
+        await f.page.locator("#set-online [data-online-status]").innerText(),
         /fixture-save-failed/,
       );
       assert.ok(await f.page.locator("[data-search-key]").inputValue());
@@ -277,6 +284,7 @@ test(
         : null;
     });
     try {
+      await f.page.locator('[data-settings-tab="abilities"]').click();
       const input = f.page.locator('[name="memory"]');
       const initial = await input.isChecked();
       await f.page
@@ -482,6 +490,533 @@ test(
         }
       });
       assert.deepEqual(changes, [true, false]);
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+test(
+  "设置页 4 个分段切换正常，外观保留在通用页底部，外部跳转自动切到对应分区",
+  { skip: !allowed },
+  async () => {
+    const f = await fixture(async (cmd) =>
+      cmd === "companion_settings"
+        ? { ...defaults, enabled: true, modelVerified: true }
+        : null,
+    );
+    try {
+      // Default tab is 通用, with #set-look (外观) at the bottom of the general panel.
+      assert.equal(
+        await f.page
+          .locator('[data-settings-tab="general"]')
+          .getAttribute("aria-selected"),
+        "true",
+      );
+      assert.equal(
+        await f.page.locator('[data-settings-panel="general"] #set-look').count(),
+        1,
+      );
+      assert.equal(
+        await f.page.locator('[data-settings-panel="perms"]').isHidden(),
+        true,
+      );
+      // External section event switches directly to 系统权限 tab.
+      await f.page.evaluate(() =>
+        (window as any).qaEvent("settings-section", "access"),
+      );
+      await f.page.waitForFunction(
+        () =>
+          document
+            .querySelector('[data-settings-tab="perms"]')
+            ?.getAttribute("aria-selected") === "true",
+      );
+      assert.equal(
+        await f.page.locator('[data-settings-panel="perms"]').isVisible(),
+        true,
+      );
+      // External section event for #set-online (上网查资料) switches to 大脑, already open.
+      await f.page.evaluate(() =>
+        (window as any).qaEvent("settings-section", "online"),
+      );
+      await f.page.waitForFunction(
+        () =>
+          document
+            .querySelector('[data-settings-tab="brain"]')
+            ?.getAttribute("aria-selected") === "true",
+      );
+      assert.equal(await f.page.locator("[data-search]").isVisible(), true);
+      // Folded #set-backups opens its fold.
+      await f.page.evaluate(() =>
+        (window as any).qaEvent("settings-section", "backups"),
+      );
+      await f.page.waitForFunction(
+        () => document.querySelector<HTMLDetailsElement>("#set-backups")?.open === true,
+      );
+      assert.deepEqual(f.errors, []);
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+/** RGB of one screen pixel, read from a 1×1 PNG screenshot. */
+async function pixel(page: import("playwright").Page, x: number, y: number) {
+  const png = await page.screenshot({ clip: { x, y, width: 1, height: 1 } });
+  let at = 8,
+    idat = Buffer.alloc(0);
+  while (at < png.length) {
+    const len = png.readUInt32BE(at),
+      type = png.toString("ascii", at + 4, at + 8);
+    if (type === "IDAT")
+      idat = Buffer.concat([idat, png.subarray(at + 8, at + 8 + len)]);
+    at += 12 + len;
+  }
+  const raw = (await import("node:zlib")).inflateSync(idat);
+  return [raw[1], raw[2], raw[3]].join(",");
+}
+
+/** The sticky tab bar against the page just beside it, plus a tab's own style. */
+async function bandCheck(page: import("playwright").Page) {
+  const box = await page.evaluate(() => {
+    const bar = document.querySelector<HTMLElement>(".set-tabs")!;
+    const r = bar.getBoundingClientRect();
+    const tab = bar.querySelector<HTMLElement>('[aria-selected="false"]')!;
+    const cs = getComputedStyle(tab);
+    return {
+      left: r.left,
+      top: r.top,
+      tabBorder: cs.borderTopWidth,
+      tabBg: cs.backgroundColor,
+    };
+  });
+  return {
+    bar: await pixel(page, Math.round(box.left + 4), Math.round(box.top + 6)),
+    behind: await pixel(page, Math.round(box.left - 8), Math.round(box.top + 6)),
+    tabBorder: box.tabBorder,
+    tabBg: box.tabBg,
+  };
+}
+
+test(
+  "设置页标签不带表单按钮边框（两套皮肤，日间与夜间）",
+  { skip: !allowed },
+  async () => {
+    const f = await fixture(async (cmd) =>
+      cmd === "companion_settings" ? defaults : null,
+    );
+    try {
+      for (const skin of ["native", "studio"])
+        for (const theme of ["day", "night"]) {
+          await f.page.evaluate(
+            ([skin, theme]) => {
+              document.documentElement.dataset.skin = skin;
+              document.documentElement.dataset.theme = theme;
+            },
+            [skin, theme],
+          );
+          const r = await bandCheck(f.page);
+          const where = `${skin}/${theme}`;
+          assert.equal(r.tabBorder, "0px", `${where}: tab border`);
+          assert.equal(r.tabBg, "rgba(0, 0, 0, 0)", `${where}: tab background`);
+        }
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+test(
+  "能力页分组叫「功能」；设置页不再显示对方语言，保存其他项时保留它",
+  { skip: !allowed },
+  async () => {
+    let settings = {
+      ...defaults,
+      enabled: true,
+      modelVerified: true,
+      translationTarget: "ja",
+    };
+    let calls = 0;
+    const f = await fixture(async (cmd, p) => {
+      if (cmd === "save_companion") {
+        calls++;
+        settings = { ...settings, ...p.settings };
+      }
+      return ["companion_settings", "save_companion"].includes(cmd)
+        ? settings
+        : null;
+    });
+    try {
+      await f.page.locator('[data-settings-tab="abilities"]').click();
+      assert.equal(
+        await f.page.locator("#set-abilities .set-title").innerText(),
+        "功能",
+      );
+      assert.equal(
+        await f.page.locator('.companion-page [name="translationTarget"]').count(),
+        0,
+      );
+      await f.page.getByRole("switch", { name: "记忆与旧对话搜索" }).click();
+      await waitForSave(() => calls, 1);
+      await f.page.waitForFunction(
+        () =>
+          document.querySelector('.companion-page output[role="status"]')
+            ?.textContent === "已保存",
+      );
+      assert.equal(settings.translationTarget, "ja");
+      assert.deepEqual(f.errors, []);
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+test(
+  "伙伴大脑状态是开关下的一行副文字，模型名不重复出现",
+  { skip: !allowed },
+  async () => {
+    const f = await fixture(async (cmd) =>
+      cmd === "companion_settings"
+        ? {
+            ...defaults,
+            enabled: true,
+            modelVerified: true,
+            model: "fixture-model",
+          }
+        : null,
+    );
+    try {
+      await f.page.locator('[data-settings-tab="brain"]').click();
+      const r = await f.page.evaluate(() => {
+        const s = document.querySelector<HTMLElement>(".brain-status")!;
+        const cs = getComputedStyle(s);
+        return {
+          bg: cs.backgroundColor,
+          inSwitchRow: !!s
+            .closest(".switch-row")
+            ?.querySelector('[name="enabled"]'),
+          text: s.textContent,
+          current: document.querySelector("[data-current-model]")!.textContent,
+        };
+      });
+      assert.equal(r.bg, "rgba(0, 0, 0, 0)");
+      assert.ok(r.inSwitchRow, "status sits in the 开启伙伴大脑 row");
+      assert.match(r.text ?? "", /fixture-model/);
+      assert.doesNotMatch(r.current ?? "", /fixture-model/);
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+test(
+  "设置页吸顶条与身后表面同色；原生皮肤没有外层大卡；分组标题在卡片外",
+  { skip: !allowed },
+  async () => {
+    const f = await fixture(async (cmd) =>
+      cmd === "companion_settings" ? defaults : null,
+    );
+    try {
+      for (const skin of ["native", "studio"])
+        for (const theme of ["day", "night"]) {
+          await f.page.evaluate(
+            ([skin, theme]) => {
+              document.documentElement.dataset.skin = skin;
+              document.documentElement.dataset.theme = theme;
+            },
+            [skin, theme],
+          );
+          const r = await bandCheck(f.page);
+          const gap = Math.max(
+            ...r.bar.split(",").map((v, i) => Math.abs(+v - +r.behind.split(",")[i])),
+          );
+          assert.ok(gap <= 3, `${skin}/${theme}: sticky bar ${r.bar} vs surface ${r.behind}`);
+        }
+      await f.page.evaluate(() => {
+        document.documentElement.dataset.skin = "native";
+        document.documentElement.dataset.theme = "day";
+      });
+      const outer = await f.page.evaluate(() => {
+        const cs = getComputedStyle(
+          document.querySelector('.block[data-for="settings"] .companion-page')!,
+        );
+        return { bg: cs.backgroundColor, shadow: cs.boxShadow };
+      });
+      assert.deepEqual(outer, { bg: "rgba(0, 0, 0, 0)", shadow: "none" });
+      await f.page.locator('[data-settings-tab="abilities"]').click();
+      const layout = await f.page.evaluate(() => {
+        const g = document.querySelector("#set-abilities")!;
+        return {
+          titleInCard: !!g.querySelector(".set-card .set-title"),
+          rowsInCard: g.querySelectorAll(".set-card .switch-row").length,
+        };
+      });
+      assert.equal(layout.titleInCard, false);
+      assert.ok(layout.rowsInCard >= 4);
+      // 外观 follows the same shape: a bare section, its title above one card.
+      const look = await f.page.evaluate(() => {
+        const g = document.querySelector<HTMLElement>("#set-look")!;
+        return {
+          bg: getComputedStyle(g).backgroundColor,
+          titleInCard: !!g.querySelector(".set-card .set-title"),
+        };
+      });
+      assert.deepEqual(look, { bg: "rgba(0, 0, 0, 0)", titleInCard: false });
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+test(
+  "「连按两次 ⌘C」跟随翻译开关：翻译关闭时不可操作",
+  { skip: !allowed },
+  async () => {
+    let settings = { ...defaults, enabled: true, modelVerified: true, translation: false };
+    const f = await fixture(async (cmd, p) => {
+      if (cmd === "save_companion") settings = { ...settings, ...p.settings };
+      return ["companion_settings", "save_companion"].includes(cmd)
+        ? settings
+        : null;
+    });
+    try {
+      await f.page.locator('[data-settings-tab="abilities"]').click();
+      const copy = f.page.locator('[name="copyTwice"]');
+      assert.equal(await copy.isDisabled(), true, "off with translation off");
+      await f.page.getByRole("switch", { name: "翻译", exact: true }).click();
+      assert.equal(await copy.isDisabled(), false, "on once translation is on");
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+test(
+  "大脑关着时引导是标签下的一行横幅：继续设置展开三步，×收起；首次启动直接打开三步",
+  { skip: !allowed },
+  async () => {
+    const f = await fixture(async (cmd) =>
+      cmd === "companion_settings" ? defaults : null,
+    );
+    try {
+      const banner = f.page.locator(".onboard-banner");
+      const card = f.page.locator(".onboard");
+      await banner.waitFor({ state: "visible" });
+      assert.equal(await card.isVisible(), false, "no big card by itself");
+      assert.match(await banner.innerText(), /还差 \d 步完成设置/);
+      assert.equal(
+        await f.page.evaluate(() => {
+          const tabs = document.querySelector(".set-tabs")!;
+          const b = document.querySelector(".onboard-banner")!;
+          return !!(tabs.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+        }),
+        true,
+        "banner sits below the tabs",
+      );
+      await banner.getByRole("button", { name: "继续设置" }).click();
+      assert.equal(await card.isVisible(), true);
+      assert.equal(await banner.isVisible(), false);
+      await card.getByRole("button", { name: "以后再说" }).click();
+      assert.equal(await card.isVisible(), false);
+      assert.equal(await banner.isVisible(), false, "以后再说 dismisses both");
+
+      // First launch: the host emits "guide-open" (tips.rs).
+      await f.page.evaluate(() => (window as any).qaEvent("guide-open", null));
+      await card.waitFor({ state: "visible" });
+      assert.deepEqual(f.errors, []);
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+test("引导横幅的 × 只收起横幅", { skip: !allowed }, async () => {
+  const f = await fixture(async (cmd) =>
+    cmd === "companion_settings" ? defaults : null,
+  );
+  try {
+    const banner = f.page.locator(".onboard-banner");
+    await banner.waitFor({ state: "visible" });
+    await banner.getByRole("button", { name: "以后再说" }).click();
+    assert.equal(await banner.isVisible(), false);
+    assert.equal(await f.page.locator(".onboard").isVisible(), false);
+  } finally {
+    await f.close();
+  }
+});
+
+test("用量小票直接放在「用量」标题下，不再套灰卡", { skip: !allowed }, async () => {
+  const f = await fixture(async (cmd) =>
+    cmd === "companion_settings" ? defaults : null,
+  );
+  try {
+    await f.page.locator('[data-settings-tab="brain"]').click();
+    const r = await f.page.evaluate(() => {
+      const u = document.querySelector("[data-usage]")!;
+      return {
+        inGroup: !!u.closest("#set-usage"),
+        inCard: !!u.closest(".set-card"),
+      };
+    });
+    assert.deepEqual(r, { inGroup: true, inCard: false });
+  } finally {
+    await f.close();
+  }
+});
+
+test(
+  "快捷键页分「打开窗口」「对选中的内容」两组，名称不带「快捷键」，每行一句说明",
+  { skip: !allowed },
+  async () => {
+    const f = await fixture(async (cmd) =>
+      cmd === "companion_settings" ? { ...defaults, chatShortcut: "" } : null,
+    );
+    try {
+      await f.page.locator('[data-settings-tab="shortcuts"]').click();
+      const groups = await f.page.evaluate(() =>
+        [...document.querySelectorAll('[data-settings-panel="shortcuts"] .set-group')].map(
+          (g) => ({
+            title: g.querySelector(".set-title")!.textContent,
+            names: [...g.querySelectorAll(".row-name")].map((n) => n.textContent),
+            descs: [...g.querySelectorAll(".row-desc")].filter((d) => d.textContent).length,
+          }),
+        ),
+      );
+      assert.deepEqual(groups, [
+        { title: "打开窗口", names: ["聊天", "聊天侧边栏", "剪贴板历史"], descs: 3 },
+        { title: "对选中的内容", names: ["翻译", "截屏识图", "圈屏提问"], descs: 3 },
+      ]);
+      assert.equal(
+        await f.page.locator('[name="chatShortcut"]').getAttribute("placeholder"),
+        "点击设置",
+      );
+      assert.equal(
+        await f.page.locator('[name="chatSnipShortcut"]').getAttribute("placeholder"),
+        "点击设置",
+      );
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+test(
+  "各页按常用程度排序：上网查资料直接展开在伙伴大脑下面，用量小票在最下面",
+  { skip: !allowed },
+  async () => {
+    const f = await fixture(async (cmd) =>
+      cmd === "companion_settings" ? defaults : null,
+    );
+    try {
+      const order = await f.page.evaluate(() =>
+        Object.fromEntries(
+          ["general", "brain", "abilities"].map((tab) => [
+            tab,
+            [
+              ...document.querySelectorAll(
+                `[data-settings-panel="${tab}"] > .set-group`,
+              ),
+            ].map((g) => g.id),
+          ]),
+        ),
+      );
+      assert.deepEqual(order, {
+        general: ["set-general", "set-look", "set-guide"],
+        brain: ["set-brain", "set-online", "set-brain-more", "set-usage"],
+        abilities: ["set-abilities", "set-voice", "set-phone"],
+      });
+      const parts = await f.page.evaluate(() => ({
+        onlineIsGroup: document.querySelector("#set-online")?.tagName,
+        searchInOnline: !!document.querySelector("#set-online [data-search]"),
+        backupsInFold: !!document.querySelector(
+          "#set-brain-more details#set-backups [data-backups]",
+        ),
+        backupsSave: !!document.querySelector("#set-backups [data-save-online]"),
+      }));
+      assert.deepEqual(parts, {
+        onlineIsGroup: "SECTION",
+        searchInOnline: true,
+        backupsInFold: true,
+        backupsSave: true,
+      });
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+test(
+  "通用页一致：上手引导是普通行，语言是紧凑的弹出菜单",
+  { skip: !allowed },
+  async () => {
+    const f = await fixture(async (cmd) =>
+      cmd === "companion_settings" ? defaults : null,
+    );
+    try {
+      const r = await f.page.evaluate(() => {
+        const steps = document.querySelector<HTMLElement>("#set-guide [data-guide-steps]")!;
+        const cs = getComputedStyle(steps);
+        const lang = document.querySelector<HTMLElement>('#set-general [name="language"]')!;
+        return {
+          rowClass: steps.classList.contains("set-row-link"),
+          bg: cs.backgroundColor,
+          shadow: cs.boxShadow,
+          langWidth: lang.getBoundingClientRect().width,
+        };
+      });
+      assert.equal(r.rowClass, true);
+      assert.equal(r.bg, "rgba(0, 0, 0, 0)");
+      assert.equal(r.shadow, "none");
+      assert.ok(r.langWidth < 240, `language popup ${r.langWidth}px wide`);
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+test(
+  "能力页「连按两次 ⌘C」与同卡片其他行左对齐；滚动时吸顶标签条贴紧顶部不露缝",
+  { skip: !allowed },
+  async () => {
+    const f = await fixture(async (cmd) =>
+      cmd === "companion_settings" ? defaults : null,
+    );
+    try {
+      await f.page.locator('[data-settings-tab="abilities"]').click();
+      const lefts = await f.page.evaluate(() =>
+        [
+          ...document.querySelectorAll<HTMLElement>(
+            "#set-abilities .set-card .switch-row > span",
+          ),
+        ].map((el) => Math.round(el.getBoundingClientRect().left)),
+      );
+      assert.ok(lefts.length >= 5);
+      assert.equal(
+        new Set(lefts).size,
+        1,
+        `rows should share one left edge, got ${lefts.join(",")}`,
+      );
+
+      await f.page.locator('[data-settings-tab="brain"]').click();
+      const gap = await f.page.evaluate(() => {
+        const block = document.querySelector<HTMLElement>(
+          '.block[data-for="settings"]',
+        )!;
+        block.scrollTop = 260;
+        const b = block.getBoundingClientRect();
+        const t = document.querySelector<HTMLElement>(".set-tabs")!.getBoundingClientRect();
+        return {
+          scrollTop: block.scrollTop,
+          blockTop: Math.round(b.top),
+          tabsTop: Math.round(t.top),
+          gap: Math.round(t.top - b.top),
+        };
+      });
+      assert.ok(gap.scrollTop > 0, "settings block should scroll");
+      assert.ok(
+        gap.gap <= 1,
+        `sticky tabs should touch top of settings block, got gap=${gap.gap}px (block=${gap.blockTop}, tabs=${gap.tabsTop})`,
+      );
     } finally {
       await f.close();
     }

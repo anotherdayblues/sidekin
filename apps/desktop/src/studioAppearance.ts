@@ -1,5 +1,5 @@
 import { t } from "./i18n.ts";
-import { el } from "./studioDom.ts";
+import { settingsGroup } from "./settingsGroup.ts";
 import { applySkin, SKINS, type Skin } from "./skin.ts";
 import type { mountStudioNavigation } from "./studioNavigation.ts";
 import type { StudioContext } from "./studioContext.ts";
@@ -10,21 +10,21 @@ export function mountStudioAppearance(
 ) {
   const { $, app, save, lcd } = c;
   // ---------- skins ----------
-  const skinPicker = el("section", "skin-picker set-group");
-  skinPicker.id = "set-look";
-  skinPicker.innerHTML = `<h3 class="set-title">${t("settings.look")}</h3><p class="set-note">${t("studio.skinNote")}</p><div class="skin-cards">${SKINS.map(
+  const look = settingsGroup("look", t("settings.look"), t("studio.skinNote"));
+  const skinPicker = look.section;
+  skinPicker.classList.add("skin-picker");
+  look.card.innerHTML = `<div class="skin-cards">${SKINS.map(
     (k) =>
-      `<button class="skin-card" data-skin="${k.id}" aria-pressed="false"><span class="skin-thumb skin-thumb-${k.id}" aria-hidden="true"><i></i><i></i><i></i></span><b>${k.label}</b><small>${k.note}</small></button>`,
+      `<button type="button" class="skin-card" data-skin="${k.id}" aria-pressed="false"><span class="skin-thumb skin-thumb-${k.id}" aria-hidden="true"><i></i><i></i><i></i></span><b>${k.label}</b><small>${k.note}</small></button>`,
   ).join("")}</div>`;
-  (
-    app.querySelector("#companion-form") ?? $(`.block[data-for="settings"]`)
-  ).append(skinPicker);
-  app
-    .querySelector(".set-toc")
-    ?.insertAdjacentHTML(
-      "beforeend",
-      `<a href="#set-look">${t("settings.look")}</a>`,
-    );
+  const slot = app.querySelector('[data-settings-slot="look"]');
+  if (slot) slot.replaceWith(skinPicker);
+  else
+    (
+      app.querySelector('[data-settings-panel="general"]') ??
+      app.querySelector("#companion-form") ??
+      $(`.block[data-for="settings"]`)
+    ).append(skinPicker);
   skinPicker.onclick = (e) => {
     const b = (e.target as HTMLElement).closest<HTMLElement>("[data-skin]");
     if (!b) return;

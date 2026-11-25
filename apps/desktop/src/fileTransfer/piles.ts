@@ -58,13 +58,18 @@ export async function mountPiles(root: HTMLElement) {
   const notice = document.createElement("output");
   notice.className = "notice";
   notice.setAttribute("aria-live", "polite");
+  const permCard = document.createElement("aside");
+  permCard.className = "perm-card";
+  permCard.setAttribute("role", "status");
+  permCard.hidden = true;
+  let permCardMode: "appDataDenied" | "appDataOff" | null = null;
   const cue = document.createElement("div");
   cue.className = "drop-cue";
   cue.hidden = true;
   cue.textContent = t("files.dropCue");
   const items = document.createElement("section");
   items.className = "piles";
-  root.append(items, cue, notice);
+  root.append(items, cue, notice, permCard);
   const store = new ShelfStore({
     persistence: {
       load: () => view.state,
@@ -92,15 +97,123 @@ export async function mountPiles(root: HTMLElement) {
   }
   let scheduled = false,
     noticeTimer: number;
+  function placeNotice() {
+    if (document.documentElement.dataset.petScene !== "true") return;
+    if (!notice.textContent?.trim()) return;
+    const pet = geometry.pet ?? DEFAULT_GEOMETRY.pet!;
+    const w = notice.offsetWidth;
+    const h = notice.offsetHeight;
+    const minX = geometry.work.x + 12;
+    const maxX = Math.max(minX, geometry.work.x + geometry.work.width - w - 12);
+    const desiredX = geometry.origin.x + (pet.width - w) / 2;
+    const x = Math.max(minX, Math.min(maxX, desiredX));
+    const minY = geometry.work.y + 12;
+    const maxY = Math.max(
+      minY,
+      geometry.work.y + geometry.work.height - h - 12,
+    );
+    const desiredY = geometry.origin.y + Math.max(0, pet.height - h - 4);
+    const y = Math.max(minY, Math.min(maxY, desiredY));
+    notice.style.left = Math.round(x) + "px";
+    notice.style.top = Math.round(y) + "px";
+    notice.style.bottom = "auto";
+    notice.style.transform = "none";
+  }
+  function placePermCard() {
+    if (permCard.hidden) return;
+    const pet = geometry.pet ?? DEFAULT_GEOMETRY.pet!;
+    const w = permCard.offsetWidth || 256;
+    const h = permCard.offsetHeight || 110;
+    const minX = geometry.work.x + 12;
+    const maxX = Math.max(minX, geometry.work.x + geometry.work.width - w - 12);
+    const desiredX = geometry.origin.x + (pet.width - w) / 2;
+    const x = Math.max(minX, Math.min(maxX, desiredX));
+    const minY = geometry.work.y + 12;
+    const maxY = Math.max(
+      minY,
+      geometry.work.y + geometry.work.height - h - 12,
+    );
+    const above = geometry.origin.y - h - 8;
+    const below = geometry.origin.y + pet.height + 8;
+    const desiredY = above >= minY ? above : below;
+    const y = Math.max(minY, Math.min(maxY, desiredY));
+    permCard.style.left = Math.round(x) + "px";
+    permCard.style.top = Math.round(y) + "px";
+  }
+  function hidePermCard() {
+    if (permCard.hidden) return;
+    permCard.hidden = true;
+    permCardMode = null;
+    permCard.replaceChildren();
+    void regions();
+  }
+  function showPermCard(mode: "appDataDenied" | "appDataOff") {
+    permCardMode = mode;
+    const isOff = mode === "appDataOff";
+    const head = document.createElement("div");
+    head.className = "perm-card-head";
+    const title = document.createElement("strong");
+    title.textContent = t(
+      isOff ? "files.permOffTitle" : "files.permDeniedTitle",
+    );
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "perm-card-close";
+    closeBtn.setAttribute("aria-label", t("common.close"));
+    closeBtn.textContent = "×";
+    closeBtn.onclick = hidePermCard;
+    head.append(title, closeBtn);
+
+    const desc = document.createElement("p");
+    desc.className = "perm-card-body";
+    desc.textContent = t(isOff ? "files.permOffBody" : "files.permDeniedBody");
+
+    const foot = document.createElement("div");
+    foot.className = "perm-card-foot";
+    const act = document.createElement("button");
+    act.type = "button";
+    act.className = "perm-card-action";
+    act.textContent = t(
+      isOff ? "perm.openAppSettings" : "settings.openSystemSettings",
+    );
+    act.onclick = () => {
+      if (isOff) {
+        void call("open_companion_page", {
+          history: false,
+          section: "access",
+        });
+      } else {
+        void call("open_permission_settings", { kind: "appData" });
+      }
+      hidePermCard();
+    };
+    foot.append(act);
+
+    permCard.replaceChildren(head, desc, foot);
+    permCard.hidden = false;
+    placePermCard();
+    void regions();
+  }
   function say(text: string) {
     notice.textContent = text;
+    placeNotice();
+    placePermCard();
+    void regions();
     clearTimeout(noticeTimer);
-    noticeTimer = window.setTimeout(() => (notice.textContent = ""), 2400);
+    noticeTimer = window.setTimeout(() => {
+      notice.textContent = "";
+      void regions();
+    }, 2400);
   }
   async function regions() {
-    const rects = Array.from(
-      items.querySelectorAll<HTMLElement>(".pile-top,.file-panel,.remove"),
-    )
+    const elements: HTMLElement[] = Array.from(
+      items.querySelectorAll<HTMLElement>(
+        ".pile-top,.file-panel,.remove,.count",
+      ),
+    );
+    if (notice.textContent?.trim()) elements.push(notice);
+    if (!permCard.hidden) elements.push(permCard);
+    const rects = elements
       .map((e) => {
         const r = e.getBoundingClientRect();
         return { x: r.x, y: r.y, width: r.width, height: r.height };
@@ -143,18 +256,23 @@ export async function mountPiles(root: HTMLElement) {
       panel.style.width = Math.min(PANEL.width, geometry.work.width) + "px";
       panel.style.maxHeight =
         Math.min(PANEL.height, geometry.work.height) + "px";
-      if (!panelPlacement || panelPlacement.id !== expanded)
+      if (!panelPlacement || panelPlacement.id !== expanded) {
+        const cs = getComputedStyle(panel);
+        const borderY =
+          (parseFloat(cs.borderTopWidth) || 0) +
+          (parseFloat(cs.borderBottomWidth) || 0);
         panelPlacement = {
           id: expanded,
           ...expandedBounds(anchor, geometry, {
             width: panel.offsetWidth,
             height: Math.min(
-              panel.scrollHeight,
+              Math.ceil(panel.scrollHeight + borderY),
               PANEL.height,
               geometry.work.height,
             ),
           }),
         };
+      }
       panel.style.left = panelPlacement.x - anchor.x + "px";
       panel.style.top = panelPlacement.y - anchor.y + "px";
       panel.style.width = panelPlacement.width + "px";
@@ -181,6 +299,7 @@ export async function mountPiles(root: HTMLElement) {
     // 手机传文件: files the phone sent may go to the trash; the host knows
     // which those are and leaves every other file alone (phone/mod.rs).
     void call("phone_discard", { paths: chosen }).catch(() => {});
+    void call("lab_discard_staged", { paths: chosen }).catch(() => {});
     if (selection.anchor && chosen.includes(selection.anchor))
       selection.anchor = null;
     schedule();
@@ -219,7 +338,11 @@ export async function mountPiles(root: HTMLElement) {
       // Delivered files stay staged: the same files often go to several places.
       say(result === "Dropped" ? t("files.delivered") : t("files.stillHere"));
     } catch (e) {
-      say(t("files.notSent"));
+      if (String(e).includes("file_unreadable")) {
+        showPermCard("appDataDenied");
+      } else {
+        say(t("files.notSent"));
+      }
       console.warn(e);
     } finally {
       dragging = false;
@@ -327,8 +450,19 @@ export async function mountPiles(root: HTMLElement) {
     schedule();
     return group?.id ?? null;
   }
-  await on<{ paths: string[]; x: number; y: number }>("lab-drop", (e) => {
+  await on<{
+    paths: string[];
+    blocked?: number;
+    blockedReason?: "appDataOff" | "appDataDenied" | null;
+    x: number;
+    y: number;
+  }>("lab-drop", (e) => {
     if (e.paths.length) receive(e.paths, e.x, e.y);
+    if ((e.blocked ?? 0) > 0) {
+      showPermCard(
+        e.blockedReason === "appDataOff" ? "appDataOff" : "appDataDenied",
+      );
+    }
   });
   await on<{ active: boolean; x: number; y: number }>("lab-hover", (e) => {
     cue.hidden = !e.active;
@@ -366,6 +500,8 @@ export async function mountPiles(root: HTMLElement) {
         group.style.top = p.y + geometry.origin.y + "px";
       }
     }
+    placeNotice();
+    placePermCard();
     void regions();
     if (pressed || dragging) reflowPending = true;
     else {
@@ -402,6 +538,10 @@ export async function mountPiles(root: HTMLElement) {
       removePaths(expanded, Array.from(selection.paths));
     }
     if (e.key === "Escape") {
+      if (permCardMode) {
+        hidePermCard();
+        return;
+      }
       expanded = null;
       panelPlacement = null;
       selection.paths.clear();

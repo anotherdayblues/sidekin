@@ -3,6 +3,10 @@
 import { t } from "./i18n.ts";
 import { invoke } from "@tauri-apps/api/core";
 import { errorText } from "./errorText.ts";
+import {
+  openAppPermissionsPage,
+  openPermissionSettings,
+} from "./permissionsView.ts";
 import type { BubbleMode, BubbleView } from "./bubbleView.ts";
 
 /** Reasons fixed in settings rather than by trying again. */
@@ -22,7 +26,11 @@ export function bubbleError(
   const { view } = o;
   action.onclick = () => {
     if (view.reason === "screenPermission") {
-      void invoke("screen_preferences");
+      void openPermissionSettings("screen");
+      return;
+    }
+    if (view.reason === "screenPermissionOff") {
+      void openAppPermissionsPage();
       return;
     }
     if (view.mode === "vision" && view.reason !== "vision") {
@@ -30,7 +38,11 @@ export function bubbleError(
       return;
     }
     if (view.reason === "permission") {
-      void invoke("selection_preferences");
+      void openPermissionSettings("accessibility");
+      return;
+    }
+    if (view.reason === "permissionOff") {
+      void openAppPermissionsPage();
       return;
     }
     if (view.reason === "clipboard") {
@@ -52,9 +64,12 @@ export function bubbleError(
     o.reply.paint();
     o.state("error");
     action.textContent =
-      ["screenPermission", "permission"].includes(code) ||
-      SETTINGS.includes(code)
-        ? t("bubble.toSettings")
-        : t("common.retry");
+      code === "screenPermission" || code === "permission"
+        ? t("settings.openSystemSettings")
+        : code === "screenPermissionOff" || code === "permissionOff"
+          ? t("perm.openAppSettings")
+          : SETTINGS.includes(code)
+            ? t("bubble.toSettings")
+            : t("common.retry");
   };
 }

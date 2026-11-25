@@ -199,6 +199,14 @@ export async function mountChatView(
     },
     newTopic,
     focus: composer.focus,
+    attachSnip(snip: { data: string; preview: string; draftText?: string }) {
+      root.dataset.topics = "closed";
+      composer.attachPrepared(
+        { data: snip.data, preview: snip.preview },
+        snip.draftText,
+      );
+    },
+    setSnipPreview: composer.setSnipPreview,
     isDirty: () =>
       Boolean(
         token || composer.hasDraft() || main.querySelector("[data-question-id]"),

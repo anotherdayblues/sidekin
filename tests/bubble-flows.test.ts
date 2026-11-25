@@ -256,8 +256,16 @@ test("出错：网络错误点“再试一次”重发同一句；Key 错误点�
   // The host can also report an error by opening the bubble with it.
   await b.event("bubble-open", { mode: "error", reason: "permission", at: 5 });
   await b.cardState("error");
+  assert.equal(await b.page.locator("[data-action]").textContent(), "去系统设置");
   await b.page.locator("[data-action]").click();
-  await b.waitCall("selection_preferences");
+  await b.waitCall("open_permission_settings");
+  assert.equal(b.called("open_permission_settings")[0][1].kind, "accessibility");
+  await b.event("bubble-open", { mode: "error", reason: "permissionOff", at: 6 });
+  await b.cardState("error");
+  assert.equal(await b.page.locator("[data-action]").textContent(), "去权限设置");
+  await b.page.locator("[data-action]").click();
+  await b.waitCall("open_companion_page", 2);
+  assert.equal(b.called("open_companion_page")[1][1].section, "access");
   await b.page.close();
 });
 

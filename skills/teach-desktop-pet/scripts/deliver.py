@@ -19,10 +19,10 @@ class Refused(Exception):
 
 
 def data_dir():
-    """Sidekin's data folder (Tauri app data dir for app.sidekin.desktop)."""
+    """Suiby's data folder (Tauri app data dir for app.suiby.desktop)."""
     if os.environ.get("PET_STUDIO_DATA"):
         return Path(os.environ["PET_STUDIO_DATA"]).expanduser()
-    name = "app.sidekin.desktop"
+    name = "app.suiby.desktop"
     if sys.platform == "darwin":
         return Path.home() / "Library/Application Support" / name
     if sys.platform == "win32":

@@ -70,7 +70,7 @@
     10px/1.4 ui-monospace,
     "SF Mono",
     Menlo,
-    "PingFang SC",
+    var(--font-sans),
     monospace;
   text-align: center;
 }
@@ -91,7 +91,7 @@
     10px/1.4 ui-monospace,
     "SF Mono",
     Menlo,
-    "PingFang SC",
+    var(--font-sans),
     monospace;
   text-align: center;
 }
@@ -226,10 +226,7 @@
   text-anchor: middle;
 }
 .dial-caption {
-  font:
-    13px -apple-system,
-    "PingFang SC",
-    sans-serif;
+  font: 13px var(--font-sans);
   fill: var(--ink-3);
   text-anchor: middle;
 }

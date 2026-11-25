@@ -414,6 +414,10 @@ pub async fn clip_paste(app: AppHandle, session: u64, id: i64) -> Result<(), Str
             .set_focus()
             .map_err(|_| failed())?;
     }
+    #[cfg(target_os = "macos")]
+    if local.is_none() && !crate::permissions::is_enabled(&app, "accessibility") {
+        return Err(crate::locale::t("clip.permissionOff").into());
+    }
     #[cfg(feature = "acceptance")]
     {
         return Err(crate::locale::t("clip.pasteFailed").into());

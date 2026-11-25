@@ -553,6 +553,15 @@
   --tint: var(--nl-tint-chat);
   --glyph: var(--nl-glyph-chat);
 }
+/* 用量小票: the thermal paper itself is the card; keep overflow visible so
+   its torn serrated bottom edge is never clipped. */
+:root[data-skin="native"] .widget[data-widget="usage"],
+:root[data-skin="studio"] .widget[data-widget="usage"] {
+  overflow: visible;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+}
 :root[data-skin="native"] .cards-pop {
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);

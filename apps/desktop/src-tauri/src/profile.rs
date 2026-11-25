@@ -8,21 +8,21 @@ compile_error!("试玩版与自动验收版必须分别构建");
 compile_error!("文件中转集成小样使用独立构建配置");
 
 use std::path::Path;
-pub const TRIAL_ID: &str = "app.sidekin.desktop.trial";
-pub const FILE_LAB_ID: &str = "app.sidekin.desktop";
+pub const TRIAL_ID: &str = "app.suiby.desktop.trial";
+pub const FILE_LAB_ID: &str = "app.suiby.desktop";
 pub const MODEL_KEYS: &str = if cfg!(feature = "file-transfer-lab") {
-    "app.sidekin.desktop.models"
+    "app.suiby.desktop.models"
 } else if cfg!(feature = "trial") {
-    "app.sidekin.desktop.trial.models"
+    "app.suiby.desktop.trial.models"
 } else {
-    "app.sidekin.desktop.models"
+    "app.suiby.desktop.models"
 };
 pub const PROBE_KEYS: &str = if cfg!(feature = "file-transfer-lab") {
-    "app.sidekin.desktop.probe"
+    "app.suiby.desktop.probe"
 } else if cfg!(feature = "trial") {
-    "app.sidekin.desktop.trial.probe"
+    "app.suiby.desktop.trial.probe"
 } else {
-    "app.sidekin.desktop.probe"
+    "app.suiby.desktop.probe"
 };
 
 #[cfg(all(test, feature = "file-transfer-lab"))]

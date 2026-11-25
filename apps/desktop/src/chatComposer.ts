@@ -6,6 +6,12 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { native } from "./bridge.ts";
 import { mountGlobe } from "./globe.ts";
 import { glyphs } from "./icons.ts";
+import { errorText } from "./errorText.ts";
+import {
+  openAppPermissionsPage,
+  openPermissionSettings,
+} from "./permissionsView.ts";
+import { snipTooltip, watchChatSnip } from "./snipTool.ts";
 export interface Attached {
   data: string;
   preview: string;
@@ -63,7 +69,7 @@ export function chatComposer(
   box.innerHTML = `<div class="chat-attached" hidden><img alt="${t("chat.imageToSend")}"><button type="button" data-unattach aria-label="${t("chat.removeImage")}">×</button></div>
 <div class="chat-files" hidden></div>
 <textarea rows="1" placeholder="${t("chat.placeholder")}" aria-label="${t("chat.message")}"></textarea>
-<div class="chat-tools"><button type="button" data-globe aria-label="${t("chat.globe")}" aria-pressed="false">${glyphs.globe}</button><button type="button" data-image aria-label="${t("chat.sendImage")}" title="${t("chat.sendImage")}">${glyphs.image}</button><button type="button" data-file aria-label="${t("chat.attach")}" title="${t("chat.attachHint")}">${glyphs.clip}</button><input type="file" data-pick-image accept="image/*" hidden><input type="file" data-pick-file accept=".txt,.md,.pdf,.docx,.html" multiple hidden><span class="chat-status" role="status"></span><button type="submit" data-send aria-label="${t("chat.send")}"><i>${glyphs.arrow}</i><span>${t("chat.send")}</span></button><button type="button" data-stop aria-label="${t("chat.stop")}" hidden><i>${glyphs.square}</i><span>${t("chat.stop")}</span></button></div>`;
+<div class="chat-tools"><button type="button" data-globe aria-label="${t("chat.globe")}" aria-pressed="false">${glyphs.globe}</button><button type="button" data-snip aria-label="${t("chat.snip")}" title="${t("chat.snip")}">${glyphs.snip}</button><button type="button" data-image aria-label="${t("chat.sendImage")}" title="${t("chat.sendImage")}">${glyphs.image}</button><button type="button" data-file aria-label="${t("chat.attach")}" title="${t("chat.attachHint")}">${glyphs.clip}</button><input type="file" data-pick-image accept="image/*" hidden><input type="file" data-pick-file accept=".txt,.md,.pdf,.docx,.html" multiple hidden><span class="chat-status" role="status"></span><button type="submit" data-send aria-label="${t("chat.send")}"><i>${glyphs.arrow}</i><span>${t("chat.send")}</span></button><button type="button" data-stop aria-label="${t("chat.stop")}" hidden><i>${glyphs.square}</i><span>${t("chat.stop")}</span></button></div>`;
   root.append(box);
   const q = <T extends HTMLElement>(s: string) => box.querySelector<T>(s)!;
   const input = q<HTMLTextAreaElement>("textarea"),
@@ -72,12 +78,25 @@ export function chatComposer(
     status = q(".chat-status"),
     send = q<HTMLButtonElement>("[data-send]"),
     stop = q<HTMLButtonElement>("[data-stop]"),
+    snipBtn = q<HTMLButtonElement>("[data-snip]"),
     pickImage = q<HTMLInputElement>("[data-pick-image]"),
     pickFile = q<HTMLInputElement>("[data-pick-file]");
   let image: Attached | undefined;
   let files: PendingFile[] = [];
   let busy = false;
   const globe = mountGlobe(q("[data-globe]"));
+  const snipWatch = watchChatSnip((avail) => {
+    const visible = avail.state === "ready" || avail.state === "no-vision-model";
+    snipBtn.hidden = !visible;
+    const tip = snipTooltip(avail);
+    snipBtn.title = tip;
+    snipBtn.setAttribute("aria-label", tip);
+    if (avail.state === "no-vision-model") {
+      snipBtn.setAttribute("aria-disabled", "true");
+    } else {
+      snipBtn.removeAttribute("aria-disabled");
+    }
+  });
 
   const grow = () => {
     input.style.height = "auto";
@@ -85,6 +104,27 @@ export function chatComposer(
   };
   const say = (text: string) => {
     status.textContent = text;
+  };
+  const sayWithAction = (text: string, actionLabel: string, fn: () => void) => {
+    status.replaceChildren(document.createTextNode(text + " "));
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "chat-status-link";
+    btn.textContent = actionLabel;
+    btn.onclick = fn;
+    status.append(btn);
+  };
+  const attachPrepared = (prepared: Attached, draftText?: string) => {
+    image = prepared;
+    attached.querySelector<HTMLImageElement>("img")!.src = prepared.preview;
+    attached.hidden = false;
+    if (draftText?.trim() && !input.value.trim()) {
+      input.value = draftText;
+      grow();
+    }
+    say("");
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
   };
   function renderFiles() {
     filesBox.replaceChildren();
@@ -253,6 +293,41 @@ export function chatComposer(
     image = undefined;
     attached.hidden = true;
   };
+  snipBtn.onclick = async () => {
+    const avail = snipWatch.get();
+    if (avail.state === "no-vision-model") {
+      say(t("chat.snipNeedsVision"));
+      return;
+    }
+    if (avail.state !== "ready") return;
+    if (busy) {
+      say(t("chat.stopFirst"));
+      return;
+    }
+    if (!native) return;
+    try {
+      await invoke("start_chat_snip", { draftText: null });
+    } catch (e) {
+      const code = String(e).replace(/^Error:\s*/, "");
+      if (code === "screenPermission") {
+        sayWithAction(
+          errorText.screenPermission ?? code,
+          t("settings.openSystemSettings"),
+          () => void openPermissionSettings("screen"),
+        );
+      } else if (code === "screenPermissionOff") {
+        sayWithAction(
+          errorText.screenPermissionOff ?? code,
+          t("perm.openAppSettings"),
+          () => void openAppPermissionsPage(),
+        );
+      } else if (code === "vision") {
+        say(t("chat.snipNeedsVision"));
+      } else {
+        say(errorText[code] ?? code);
+      }
+    }
+  };
   q("[data-image]").onclick = () => pickImage.click();
   q("[data-file]").onclick = () => pickFile.click();
   pickImage.onchange = () => {
@@ -315,6 +390,8 @@ export function chatComposer(
   return {
     focus: () => input.focus(),
     say,
+    attachPrepared,
+    setSnipPreview: snipWatch.setPreview,
     hasDraft: () => Boolean(input.value.trim() || image || files.length),
     setBusy(on: boolean) {
       busy = on;

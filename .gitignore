@@ -28,6 +28,7 @@ apps/desktop/src-tauri/binaries/
 .claude/
 .codex/
 .ryugi/
+docs/ryugi/
 
 # Standalone build output.
 releases/

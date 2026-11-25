@@ -1,12 +1,12 @@
 // Which cards the pet page shows and in what order (plan/35). Kept apart
 // from homeWidgets.ts so the rule can be checked without a page.
 
-export const WIDGETS = ["today", "focus", "memory", "chats"] as const;
+export const WIDGETS = ["today", "focus", "memory", "chats", "usage"] as const;
 export type WidgetId = (typeof WIDGETS)[number];
 /** Before the user has changed anything. */
 export const DEFAULT_CARDS: readonly WidgetId[] = ["today", "focus", "memory"];
 /** Shown only while 伙伴大脑 is on. */
-export const NEEDS_BRAIN: readonly WidgetId[] = ["memory", "chats"];
+export const NEEDS_BRAIN: readonly WidgetId[] = ["memory", "chats", "usage"];
 
 const known = (id: string): id is WidgetId =>
   (WIDGETS as readonly string[]).includes(id);

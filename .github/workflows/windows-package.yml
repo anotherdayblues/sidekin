@@ -26,13 +26,13 @@ jobs:
       - name: Verify portable directory
         shell: pwsh
         run: |
-          $files = @("Sidekin.exe", "companion-brain.exe", "skills/make-desktop-pet/SKILL.md", "skills/teach-desktop-pet/SKILL.md", "skills/find-pet-tool/SKILL.md")
+          $files = @("Suiby.exe", "companion-brain.exe", "skills/make-desktop-pet/SKILL.md", "skills/teach-desktop-pet/SKILL.md", "skills/find-pet-tool/SKILL.md")
           foreach ($file in $files) { if (!(Test-Path (Join-Path releases/Windows $file))) { throw "Missing $file" } }
           foreach ($src in (Get-ChildItem skills -Recurse -File)) {
             $rel = [IO.Path]::GetRelativePath($PWD.Path, $src.FullName)
             if ((Get-FileHash $src.FullName).Hash -ne (Get-FileHash (Join-Path releases/Windows $rel)).Hash) { throw "Skill resource mismatch: $rel" }
           }
-          $app = Start-Process (Resolve-Path 'releases/Windows/Sidekin.exe') -PassThru
+          $app = Start-Process (Resolve-Path 'releases/Windows/Suiby.exe') -PassThru
           try {
             Start-Sleep 8
             if ($app.HasExited) { throw "Packaged app exited with $($app.ExitCode)" }
@@ -41,6 +41,6 @@ jobs:
           }
       - uses: actions/upload-artifact@v4
         with:
-          name: Sidekin-Windows-x64
+          name: Suiby-Windows-x64
           path: releases/Windows/
           if-no-files-found: error

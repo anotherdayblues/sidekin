@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Sidekin",
-  "version": "1.0.0",
-  "identifier": "app.sidekin.desktop",
+  "productName": "Suiby",
+  "version": "1.1.0",
+  "identifier": "app.suiby.desktop",
   "build": {
     "beforeDevCommand": "npm run dev -- --port 1449 --strictPort",
     "devUrl": "http://127.0.0.1:1449",
@@ -15,7 +15,7 @@
       {
         "label": "studio",
         "create": false,
-        "title": "随伴 · Sidekin",
+        "title": "Suiby",
         "width": 1080,
         "height": 840,
         "minWidth": 860,
@@ -28,7 +28,7 @@
       {
         "label": "pet",
         "acceptFirstMouse": true,
-        "title": "随伴",
+        "title": "Suiby",
         "url": "index.html?pet",
         "width": 192,
         "height": 208,
@@ -64,6 +64,27 @@
     "shortDescription": "住在桌面角落的伙伴 · A quiet companion in your desktop's corner",
     "externalBin": [
       "binaries/companion-brain"
-    ]
+    ],
+    "macOS": {
+      "files": {
+        "Resources/zh-Hans.lproj/InfoPlist.strings": "macos/zh-Hans.lproj/InfoPlist.strings",
+        "Resources/en.lproj/InfoPlist.strings": "macos/en.lproj/InfoPlist.strings",
+        "Resources/zh-Hant.lproj/InfoPlist.strings": "macos/zh-Hant.lproj/InfoPlist.strings",
+        "Resources/ja.lproj/InfoPlist.strings": "macos/ja.lproj/InfoPlist.strings",
+        "Resources/ko.lproj/InfoPlist.strings": "macos/ko.lproj/InfoPlist.strings"
+      }
+    },
+    "windows": {
+      "nsis": {
+        "languages": [
+          "English",
+          "SimpChinese",
+          "TradChinese",
+          "Japanese",
+          "Korean"
+        ],
+        "displayLanguageSelector": false
+      }
+    }
   }
 }

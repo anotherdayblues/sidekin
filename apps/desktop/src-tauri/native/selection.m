@@ -92,6 +92,8 @@ static NSArray *snapshot(NSPasteboard *pb) {
   }
   return result;
 }
+static bool activate_target(intptr_t target);
+
 char *companion_selection(intptr_t target, int *status) {
   @autoreleasepool {
     *status = 0;
@@ -105,11 +107,24 @@ char *companion_selection(intptr_t target, int *status) {
     NSString *selection = ax_text((pid_t)target, &secure);
     if (secure)
       return NULL;
-    if (selection && !selection.length)
-      return NULL;
     if (selection.length) {
       *status = 1;
       return strdup(selection.UTF8String);
+    }
+    // When invoked from Suiby's own UI (e.g. the pet right-click menu),
+    // Suiby is frontmost; briefly yield focus back to the prior app so AX
+    // or Cmd+C can read its selection (matching Windows SetForegroundWindow).
+    pid_t me = NSProcessInfo.processInfo.processIdentifier;
+    if (companion_target() != target) {
+      if (companion_target() != me || !activate_target(target))
+        return NULL;
+      selection = ax_text((pid_t)target, &secure);
+      if (secure)
+        return NULL;
+      if (selection.length) {
+        *status = 1;
+        return strdup(selection.UTF8String);
+      }
     }
     NSPasteboard *pb = NSPasteboard.generalPasteboard;
     if (companion_target() != target)
@@ -136,7 +151,7 @@ char *companion_selection(intptr_t target, int *status) {
     CGEventPostToPid((pid_t)target, up);
     CFRelease(down);
     CFRelease(up);
-    for (int i = 0; i < 80 && pb.changeCount == before; i++)
+    for (int i = 0; i < 40 && pb.changeCount == before; i++)
       [NSThread sleepForTimeInterval:.01];
     NSInteger copied = pb.changeCount;
     if (copied == before)

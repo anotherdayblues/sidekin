@@ -1,5 +1,6 @@
 import { fill, text } from "./texts.ts";
-import { english } from "./locale.ts";
+import { currentLocale, t } from "./locale.ts";
+import { defaultPersonaPrompt, languageBlock } from "./localePrompts.ts";
 import { attachedText, type AttachedFile } from "./attachments.ts";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { Model, Api, Message } from "@earendil-works/pi-ai";
@@ -32,14 +33,10 @@ export function instructions(
   zone = Intl.DateTimeFormat().resolvedOptions().timeZone,
   hasTools = false,
 ) {
+  const locale = currentLocale();
   const persona =
     pet.personality ??
-    [
-      pet.description,
-      text(english() ? "persona-default.en" : "persona-default"),
-    ]
-      .filter(Boolean)
-      .join("\n");
+    [pet.description, defaultPersonaPrompt(locale)].filter(Boolean).join("\n");
   let core = text("core");
   const guidance: string[] = [];
   if (webSearch) guidance.push(text("web-guidance"));
@@ -55,9 +52,10 @@ export function instructions(
       () => "\n" + guidance.join("\n\n") + "\n\n<关于你>\n",
     );
   // Chinese stays word for word; other languages add one block at the end.
-  if (english()) core += "\n\n" + text("language.en");
+  const langRule = languageBlock(locale);
+  if (langRule) core += "\n\n" + langRule;
   return fill(core, {
-    宠物名: pet.displayName || "随伴",
+    宠物名: pet.displayName || t("app.name"),
     性格: Array.from(persona).slice(0, 1500).join(""),
     我写的: sections.profile ?? "",
     关于你: sections.user ?? "",

@@ -33,6 +33,7 @@ mod memory;
 mod migrate;
 mod model_setup;
 mod ocr;
+mod permissions;
 mod persona;
 mod pet_action;
 mod pet_position;
@@ -258,7 +259,7 @@ fn known_skin(skin: &str) -> &str {
 struct HomeCard {
     id: String,
 }
-const CARDS: [&str; 4] = ["today", "focus", "memory", "chats"];
+const CARDS: [&str; 5] = ["today", "focus", "memory", "chats", "usage"];
 /// Cards this build knows, each once, in the order given; one from a newer
 /// build is dropped. A size saved by an older build is ignored.
 fn known_cards(list: Vec<HomeCard>) -> Vec<HomeCard> {
@@ -506,9 +507,27 @@ fn remove_pet(app: tauri::AppHandle, id: String) -> Result<(), String> {
     })?;
     refresh(&app)
 }
+pub(crate) fn refresh_window_titles(app: &tauri::AppHandle) {
+    let titles = [
+        ("studio", t("host.studioTitle")),
+        ("pet", t("app.name")),
+        ("bubble", t("host.titleChat")),
+        ("chat", t("host.titleChatWindow")),
+        ("snipcard", t("host.titleSnipCard")),
+    ];
+    for (label, title) in titles {
+        if let Some(w) = app.get_webview_window(label) {
+            let _ = w.set_title(&title);
+        }
+    }
+}
 fn settings_failed(app: &tauri::AppHandle, error: String) {
     let _ = open_studio(app.clone());
-    studio_window::emit_all(app, "settings-error", format!("设置保存失败：{error}"));
+    studio_window::emit_all(
+        app,
+        "settings-error",
+        format!("{}: {error}", t("host.settingsSave")),
+    );
 }
 fn main() {
     app_runtime::run();

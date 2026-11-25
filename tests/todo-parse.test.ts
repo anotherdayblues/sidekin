@@ -154,6 +154,201 @@ test("英文", () => {
   });
 });
 
+test("繁體中文：哪天、幾點、重複、相對時間", () => {
+  assert.deepEqual(p("明天下午3點交報告"), {
+    title: "交報告",
+    day: "2026-11-17",
+    time: "15:00",
+    repeat: undefined,
+  });
+  assert.deepEqual(p("後天上午10點 體檢"), {
+    title: "體檢",
+    day: "2026-11-18",
+    time: "10:00",
+    repeat: undefined,
+  });
+  assert.deepEqual(p("每週三交週報"), {
+    title: "交週報",
+    day: "2026-11-18",
+    time: undefined,
+    repeat: "weekly",
+  });
+  assert.deepEqual(p("週一到週五 9:00 站會"), {
+    title: "站會",
+    day: "2026-11-16",
+    time: "09:00",
+    repeat: "weekdays",
+  });
+  assert.deepEqual(p("一週後交報告"), {
+    title: "交報告",
+    day: "2026-11-23",
+    time: undefined,
+    repeat: undefined,
+  });
+  assert.deepEqual(p("兩小時後開會"), {
+    title: "開會",
+    day: "2026-11-16",
+    time: "12:00",
+    repeat: undefined,
+  });
+  assert.deepEqual(p("下個月5號還款"), {
+    title: "還款",
+    day: "2026-12-05",
+    time: undefined,
+    repeat: undefined,
+  });
+});
+
+test("日本語：日付・時刻・繰り返し・相対時間", () => {
+  assert.deepEqual(p("明日午後3時にレポート提出"), {
+    title: "レポート提出",
+    day: "2026-11-17",
+    time: "15:00",
+    repeat: undefined,
+  });
+  assert.deepEqual(p("明日午後3時までにレポート提出"), {
+    title: "レポート提出",
+    day: "2026-11-17",
+    time: "15:00",
+    repeat: undefined,
+  });
+  assert.deepEqual(p("明後日午前10時 健診"), {
+    title: "健診",
+    day: "2026-11-18",
+    time: "10:00",
+    repeat: undefined,
+  });
+  assert.deepEqual(p("毎日9時に水を飲む"), {
+    title: "水を飲む",
+    day: "2026-11-16",
+    time: "09:00",
+    repeat: "daily",
+  });
+  assert.deepEqual(p("平日朝8時に出勤"), {
+    title: "出勤",
+    day: "2026-11-16",
+    time: "08:00",
+    repeat: "weekdays",
+  });
+  assert.deepEqual(p("毎週水曜日に週報を出す"), {
+    title: "週報を出す",
+    day: "2026-11-18",
+    time: undefined,
+    repeat: "weekly",
+  });
+  assert.deepEqual(p("金曜夜8時半 映画を見る"), {
+    title: "映画を見る",
+    day: "2026-11-20",
+    time: "20:30",
+    repeat: undefined,
+  });
+  assert.deepEqual(p("来週月曜 9:15 定例"), {
+    title: "定例",
+    day: "2026-11-23",
+    time: "09:15",
+    repeat: undefined,
+  });
+  assert.deepEqual(p("1週間後にレポート提出"), {
+    title: "レポート提出",
+    day: "2026-11-23",
+    time: undefined,
+    repeat: undefined,
+  });
+  assert.deepEqual(p("2時間後に会議"), {
+    title: "会議",
+    day: "2026-11-16",
+    time: "12:00",
+    repeat: undefined,
+  });
+  assert.deepEqual(p("来月5日に支払い"), {
+    title: "支払い",
+    day: "2026-12-05",
+    time: undefined,
+    repeat: undefined,
+  });
+});
+
+test("한국어：날짜・시간・반복・상대 시간", () => {
+  assert.deepEqual(p("내일 오후 3시 보고서 제출"), {
+    title: "보고서 제출",
+    day: "2026-11-17",
+    time: "15:00",
+    repeat: undefined,
+  });
+  assert.deepEqual(p("내일 오후 3시까지 보고서 제출"), {
+    title: "보고서 제출",
+    day: "2026-11-17",
+    time: "15:00",
+    repeat: undefined,
+  });
+  assert.deepEqual(p("모레 오전 10시 건강검진"), {
+    title: "건강검진",
+    day: "2026-11-18",
+    time: "10:00",
+    repeat: undefined,
+  });
+  assert.deepEqual(p("매일 9시 물 마시기"), {
+    title: "물 마시기",
+    day: "2026-11-16",
+    time: "09:00",
+    repeat: "daily",
+  });
+  assert.deepEqual(p("평일 아침 8시 출근"), {
+    title: "출근",
+    day: "2026-11-16",
+    time: "08:00",
+    repeat: "weekdays",
+  });
+  assert.deepEqual(p("매주 수요일 주간보고"), {
+    title: "주간보고",
+    day: "2026-11-18",
+    time: undefined,
+    repeat: "weekly",
+  });
+  assert.deepEqual(p("금요일 저녁 8시 반 영화 보기"), {
+    title: "영화 보기",
+    day: "2026-11-20",
+    time: "20:30",
+    repeat: undefined,
+  });
+  assert.deepEqual(p("다음 주 월요일 9:15 회의"), {
+    title: "회의",
+    day: "2026-11-23",
+    time: "09:15",
+    repeat: undefined,
+  });
+  assert.deepEqual(p("3일 후 보고서 제출"), {
+    title: "보고서 제출",
+    day: "2026-11-19",
+    time: undefined,
+    repeat: undefined,
+  });
+  assert.deepEqual(p("1주일 뒤 보고서 제출"), {
+    title: "보고서 제출",
+    day: "2026-11-23",
+    time: undefined,
+    repeat: undefined,
+  });
+  assert.deepEqual(p("2시간 후 회의"), {
+    title: "회의",
+    day: "2026-11-16",
+    time: "12:00",
+    repeat: undefined,
+  });
+  assert.deepEqual(p("다음 달 5일 카드 결제"), {
+    title: "카드 결제",
+    day: "2026-12-05",
+    time: undefined,
+    repeat: undefined,
+  });
+  assert.deepEqual(p("12월 3일 책 반납"), {
+    title: "책 반납",
+    day: "2026-12-03",
+    time: undefined,
+    repeat: undefined,
+  });
+});
+
 test("没说时间就原样，认出的位置可以高亮", () => {
   assert.deepEqual(p("整理照片"), {
     title: "整理照片",

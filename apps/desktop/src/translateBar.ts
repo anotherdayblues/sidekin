@@ -7,24 +7,17 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { native } from "./bridge.ts";
 import { lang, t, type Key } from "./i18n.ts";
+import {
+  normalizeTranslationTarget,
+  ownTranslationLabel,
+  resolvePartnerBar,
+} from "./translateLang.ts";
 import "./styles/translate.css";
 
 export type Tone = "auto" | "formal" | "casual";
 const TONES: Tone[] = ["auto", "formal", "casual"];
 const TONE_KEY = "suiban.translationTone";
-// The other side's language, in the reader's words; the brain reads either.
-const LANGUAGES: Key[] = [
-  "lang.english",
-  "lang.chinese",
-  "lang.japanese",
-  "lang.korean",
-  "lang.french",
-  "lang.german",
-  "lang.spanish",
-];
-const own = t(lang === "en" ? "lang.english" : "lang.chinese");
-/** 对方语言 when none was picked: English for a Chinese reader, and back. */
-const fallback = t(lang === "en" ? "lang.chinese" : "lang.english");
+const own = ownTranslationLabel(lang, t);
 
 function savedTone(): Tone {
   try {
@@ -38,10 +31,22 @@ function savedTone(): Tone {
 export interface TranslateBar {
   el: HTMLElement;
   tone(): Tone;
-  /** 对方语言 as saved: "auto" or a language name. */
+  /** 对方语言 as saved: "auto", a canonical code ("en", "ja", ...), or a custom name. */
   partner(): string;
   /** Called after either choice changes and is saved. */
   onChange(fn: () => void): void;
+}
+
+/** Reads plain text currently on the system clipboard without touching clipboard history. */
+export async function readClipboardText(): Promise<string> {
+  if (native) {
+    return (await invoke<string>("read_clipboard_text").catch(() => "")) ?? "";
+  }
+  try {
+    return (await navigator.clipboard?.readText()) ?? "";
+  } catch {
+    return "";
+  }
 }
 
 export function translateBar(): TranslateBar {
@@ -57,14 +62,15 @@ export function translateBar(): TranslateBar {
   let saved = "auto";
   const listeners: (() => void)[] = [];
 
-  /** Lists the languages, with a saved one not in the list kept too. */
+  /** Lists the languages with canonical option values and localized labels,
+   * normalizing any legacy saved localized name cleanly. */
   function fill(value: string) {
-    saved = value || "auto";
-    const shown = saved === "auto" ? fallback : saved;
-    const names = LANGUAGES.map((k) => t(k)).filter((n) => n !== own);
-    if (!names.includes(shown)) names.unshift(shown);
-    partner.replaceChildren(...names.map((n) => new Option(n, n)));
-    partner.value = shown;
+    const resolved = resolvePartnerBar(value, lang, t);
+    saved = resolved.normalized;
+    partner.replaceChildren(
+      ...resolved.options.map((o) => new Option(o.label, o.value)),
+    );
+    partner.value = resolved.selected;
   }
   fill("auto");
   if (native) {
@@ -76,7 +82,7 @@ export function translateBar(): TranslateBar {
     );
   }
   partner.onchange = async () => {
-    saved = partner.value;
+    saved = normalizeTranslationTarget(partner.value);
     if (native)
       await invoke("set_translation_partner", { target: saved }).catch(
         () => {},

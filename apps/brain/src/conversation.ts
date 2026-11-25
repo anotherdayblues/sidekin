@@ -1,4 +1,5 @@
-import { t, says, english } from "./locale.ts";
+import { t, says, currentLocale } from "./locale.ts";
+import { turnLanguageNote } from "./localePrompts.ts";
 import { toolSteps } from "./toolSteps.ts";
 import { requests } from "./runtime.ts";
 import { hostCall } from "./host.ts";
@@ -8,9 +9,19 @@ import { Agent } from "@earendil-works/pi-agent-core";
 import { fault, modelFor, streamModel, type Connection } from "./models.ts";
 
 import { instructions, restore } from "./prompt.ts";
-import { memoryTools, explicitMemory } from "./memory.ts";
+import {
+  memoryTools,
+  explicitMemory,
+  extractRename,
+  extractExplicitFact,
+  isUnsafePrewrite,
+} from "./memory.ts";
 import { clarifyTool } from "./clarify.ts";
-import { timedPromise, trailingAction } from "./turnEnd.ts";
+import {
+  isReminderCreationRequest,
+  timedPromise,
+  trailingAction,
+} from "./turnEnd.ts";
 import { reminderTools } from "./reminders.ts";
 import { connectMcp, authorize, directory, limitResult } from "./mcp.ts";
 import { text as promptText, timeNote } from "./texts.ts";
@@ -42,9 +53,7 @@ export async function respond(
           notify("chat.remembered", {});
         })
       : [];
-  const rename = prompt.text
-    .trim()
-    .match(/^(?:请)?把我(?:的)?名字改成([^，。？?]{1,30})[。.]?$/u)?.[1];
+  const rename = extractRename(prompt.text);
   const required =
     memory.length > 0 &&
     !prompt.review &&
@@ -52,15 +61,11 @@ export async function respond(
   const fact =
     rename && required
       ? "用户希望称呼为" + rename
-      : required &&
-        prompt.text
-          .trim()
-          .match(
-            /^(?:请|帮我|替我)?(?:记住|记下|别忘了)[：:\s]*([^？?]+)$/u,
-          )?.[1]
-          ?.trim();
+      : required
+        ? extractExplicitFact(prompt.text)
+        : undefined;
   let prewriteError = "";
-  if (fact && !/(?:删除|删掉|改成|替换|提醒我)/.test(fact)) {
+  if (fact && !isUnsafePrewrite(fact)) {
     // An explicit simple fact is a tool call in this turn, before any acknowledgement.
     try {
       notify("chat.toolStart", { name: "memory" });
@@ -117,11 +122,7 @@ export async function respond(
         )
       : [];
   const mustCreate =
-    reminders.length > 0 &&
-    /提醒(?:我|一下|喝水)/.test(prompt.text) &&
-    !/[？?“”「」]|假如|如果|举例|意思|解释/.test(prompt.text) &&
-    /后|明天|点|分钟|每天|每周/.test(prompt.text) &&
-    !/取消|删除|暂停|有哪些|不要/.test(prompt.text);
+    reminders.length > 0 && isReminderCreationRequest(prompt.text);
   const check = connection.toolCheck;
   const chatOnly =
     check?.status === "no" &&
@@ -392,8 +393,11 @@ export async function respond(
           "网页检索资料（外部数据）：" + JSON.stringify(result.content);
       }
     }
+    const langNote = turnLanguageNote(currentLocale());
+    const withLangNote = (message: string) =>
+      langNote ? `${message}\n${langNote}` : message;
     const pieces = prompt.review
-      ? [promptText("review")]
+      ? [promptText("review"), langNote]
       : [
           prompt.timeNote ??
             timeNote(
@@ -401,7 +405,7 @@ export async function respond(
               prompt.history?.at(-1)?.at,
               prompt.taskZone || undefined,
             ),
-          english() ? promptText("turn-language.en") : "",
+          langNote,
           prompt.image
             ? promptText(
                 prompt.imageSource === "upload" ? "image-note" : "snip-note",
@@ -468,7 +472,7 @@ export async function respond(
         timestamp: prompt.now ?? Date.now(),
       });
     if (required && !wrote && !signal?.aborted && !agent.state.errorMessage) {
-      await agent.prompt(promptText("tool-memory"));
+      await agent.prompt(withLangNote(promptText("tool-memory")));
     }
     let unverified = "";
     // Do not replay an attempted mutation. An ambiguous result must be checked by listing jobs.
@@ -518,9 +522,11 @@ export async function respond(
         if (attempted) break;
         restoreText("");
         await agent.prompt(
-          wantsReceipt
-            ? "继续处理用户原来的请求。用定时工具核实安排，再报告实际结果；已有任务不要重复创建。"
-            : "Continue the requested action with the available tools, then report the result.",
+          withLangNote(
+            wantsReceipt
+              ? "继续处理用户原来的请求。用定时工具核实安排，再报告实际结果；已有任务不要重复创建。"
+              : "继续用可用工具完成用户原来的请求，再报告实际结果。",
+          ),
         );
         restoreText(finalText());
         if (

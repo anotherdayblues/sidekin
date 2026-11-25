@@ -98,7 +98,7 @@ if (win) {
   mkdirSync(out, { recursive: true });
   copyFileSync(
     path.join(env.CARGO_TARGET_DIR, triple, "release/pet-studio.exe"),
-    path.join(out, "Sidekin.exe"),
+    path.join(out, "Suiby.exe"),
   );
   copyFileSync(brain, path.join(out, "companion-brain.exe"));
   cpSync(path.join(root, "skills"), path.join(out, "skills"), {
@@ -118,11 +118,11 @@ if (win) {
     ],
     desktop,
   );
-  const out = outputPath("Sidekin.app");
+  const out = outputPath("Suiby.app");
   run("/usr/bin/ditto", [
     path.join(
       env.CARGO_TARGET_DIR,
-      "release/bundle/macos/Sidekin.app",
+      "release/bundle/macos/Suiby.app",
     ),
     out,
   ]);

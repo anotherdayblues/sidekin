@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{LazyLock, Mutex};
 use tauri::{AppHandle, Emitter, Manager};
 
 /// Everything the pet can teach, in the skill book's order. Each id names a
@@ -214,6 +214,36 @@ pub struct Turn<'a> {
     pub search_ready: bool,
 }
 
+static PHONE_TIP: LazyLock<regex::Regex> = LazyLock::new(|| {
+    regex::Regex::new(concat!(
+        r"(?:手机|手機).*(?:照片|图片|圖片|文件|檔案|传|傳)",
+        r"|(?:照片|图片|圖片|文件|檔案).*(?:手机|手機)",
+        r"|from (?:my )?phone",
+        r"|(?:スマホ|携帯|iphone|android).*(?:写真|画像|ファイル|送|転送)",
+        r"|(?:写真|画像|ファイル).*(?:スマホ|携帯)",
+        r"|(?:폰|휴대폰|핸드폰|스마트폰).*(?:사진|이미지|파일|전송|보내)",
+        r"|(?:사진|이미지|파일).*(?:폰|휴대폰|핸드폰|스마트폰)",
+    ))
+    .unwrap()
+});
+
+static FOCUS_TIP: LazyLock<regex::Regex> = LazyLock::new(|| {
+    regex::Regex::new(
+        r"专注|專注|学习|學習|复习|複習|写作业|寫作業|赶稿|趕稿|deadline|focus|study|集中|勉強|復習|課題|締切|締め切り|집중|공부|복습|과제|숙제|마감",
+    )
+    .unwrap()
+});
+
+static WEB_TIP: LazyLock<regex::Regex> = LazyLock::new(|| {
+    regex::Regex::new(concat!(
+        r"天气|天氣|新闻|新聞|最新|今天.*(?:发生|發生|消息)",
+        r"|weather|news|latest",
+        r"|天気|ニュース|今日.*(?:ニュース|出来事)",
+        r"|날씨|뉴스|최신|오늘.*(?:소식|뉴스)",
+    ))
+    .unwrap()
+});
+
 /// The tips a finished turn could lead to, most specific first.
 pub fn candidates(turn: &Turn, noticed: &[&'static str], again: bool) -> Vec<&'static str> {
     let mut out: Vec<&'static str> = noticed.to_vec();
@@ -227,23 +257,23 @@ pub fn candidates(turn: &Turn, noticed: &[&'static str], again: bool) -> Vec<&'s
         out.push("file-transfer");
     }
     let lower = turn.text.to_lowercase();
-    if lower.contains("翻译") || lower.contains("translat") {
+    if lower.contains("翻译")
+        || lower.contains("翻譯")
+        || lower.contains("translat")
+        || lower.contains("翻訳")
+        || lower.contains("번역")
+    {
         out.push("copy-translate");
     }
     // Photos or files on the phone: 从手机传 is worth a mention.
-    let phone =
-        regex::Regex::new(r"手机.*(照片|图片|文件|传)|(照片|图片|文件).*手机|from (my )?phone")
-            .unwrap();
-    if phone.is_match(&lower) {
+    if PHONE_TIP.is_match(&lower) {
         out.push("phone");
     }
     // Work or study coming up: the timer is worth a mention.
-    let busy = regex::Regex::new(r"专注|学习|复习|写作业|赶稿|deadline|focus|study").unwrap();
-    if busy.is_match(&lower) {
+    if FOCUS_TIP.is_match(&lower) {
         out.push("focus");
     }
-    let fresh = regex::Regex::new(r"天气|新闻|最新|今天.*(发生|消息)|weather|news|latest").unwrap();
-    if !turn.search_ready && fresh.is_match(&lower) {
+    if !turn.search_ready && WEB_TIP.is_match(&lower) {
         out.push("web");
     }
     out.extend([
@@ -554,6 +584,32 @@ mod tests {
             search_ready: true,
         };
         assert!(!candidates(&ready, &[], false).contains(&"web"));
+    }
+
+    #[test]
+    fn turn_tip_heuristics_work_across_zh_tw_ja_and_ko() {
+        let turn = |text| Turn {
+            text,
+            image: false,
+            files: &[],
+            search_ready: false,
+        };
+        for (text, expected) in [
+            ("幫我翻譯這段文字", "copy-translate"),
+            ("この文章を翻訳して", "copy-translate"),
+            ("이 문장 번역해 줘", "copy-translate"),
+            ("手機裡的照片怎麼傳到電腦", "phone"),
+            ("スマホの写真をパソコンに送りたい", "phone"),
+            ("휴대폰 사진 옮기고 싶어", "phone"),
+            ("下午要專注複習", "focus"),
+            ("今から試験勉強に集中する", "focus"),
+            ("오늘 과제 마감이라 집중해야 해", "focus"),
+            ("今天天氣怎麼樣", "web"),
+            ("今日のニュース教えて", "web"),
+            ("오늘 날씨 어때", "web"),
+        ] {
+            assert_eq!(candidates(&turn(text), &[], false)[0], expected, "{text}");
+        }
     }
     #[test]
     fn the_record_survives_a_round_trip() {

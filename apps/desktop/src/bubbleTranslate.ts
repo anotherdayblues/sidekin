@@ -4,7 +4,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { native } from "./bridge.ts";
 import { t } from "./i18n.ts";
-import { translateBar } from "./translateBar.ts";
+import { readClipboardText, translateBar } from "./translateBar.ts";
+import { formatIntoLang } from "./translateLang.ts";
 import type { BubbleView } from "./bubbleView.ts";
 
 export function bubbleTranslate(
@@ -30,6 +31,8 @@ export function bubbleTranslate(
   pick("[data-selection-tabs]").before(bar.el);
   const into = pick("[data-into]");
   const replace = pick("[data-replace]");
+  const paste = pick<HTMLButtonElement>("[data-paste]");
+  let emptyHintTimer = 0;
   bar.onChange(() => {
     if (view.mode === "translate" && view.selectionAction === "translate")
       o.rerun();
@@ -42,9 +45,10 @@ export function bubbleTranslate(
     bar.el.hidden =
       !plain ||
       !["input", "thinking", "streaming", "answer", "error"].includes(state);
+    paste.hidden = !translating;
     into.hidden = !plain || state !== "answer" || !view.into;
     into.textContent = view.into
-      ? t("translate.into", { lang: view.into })
+      ? t("translate.into", { lang: formatIntoLang(view.into, t) })
       : "";
     // Only a selection has a place to go back to.
     replace.hidden = o.copy.hidden || !view.replaceTarget || view.typed;
@@ -56,6 +60,23 @@ export function bubbleTranslate(
       );
     if (translating) o.input.placeholder = t("translate.placeholder");
   }
+  paste.onclick = async () => {
+    const text = (await readClipboardText()).trim();
+    if (!text) {
+      clearTimeout(emptyHintTimer);
+      o.input.placeholder = t("translate.clipboardEmpty");
+      emptyHintTimer = window.setTimeout(() => {
+        if (view.mode === "translate")
+          o.input.placeholder = t("translate.placeholder");
+      }, 1800);
+      return;
+    }
+    if (native) void invoke("focus_bubble");
+    o.input.value = text;
+    o.input.dispatchEvent(new Event("input"));
+    o.input.focus();
+    o.input.setSelectionRange(text.length, text.length);
+  };
   replace.onclick = async () => {
     const text = o.result();
     if (!text) return;

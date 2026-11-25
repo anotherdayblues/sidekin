@@ -522,29 +522,61 @@
 }
 /* Settings read like System Settings: one scrolling column of groups,
    without a second list of contents beside the sidebar. */
+:root[data-skin="native"] .block[data-for="settings"],
+:root[data-skin="native"][data-platform="win"] .block[data-for="settings"] {
+  padding-top: 0;
+}
 :root[data-skin="native"] .block[data-for="settings"] .companion-page {
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;
+  padding-top: 0;
 }
 :root[data-skin="native"] .block[data-for="settings"] .companion-page > * {
   width: 100%;
   max-width: 640px;
 }
-:root[data-skin="native"] .set-toc {
-  display: none;
+:root[data-skin="native"] .set-tabs {
+  background: var(--nl-content);
+  border-bottom: 0.5px solid var(--line);
+  padding: 14px 0 10px;
 }
-:root[data-skin="native"] .set-group {
-  padding: 4px 16px 6px;
+:root[data-skin="native"] .set-tabs button {
+  border-radius: 9px;
+  font-size: 11.5px;
+  padding: 6px 12px;
+  min-width: 72px;
+  box-shadow: none;
+}
+:root[data-skin="native"] .set-tabs button[aria-selected="true"] {
+  background: rgba(118, 118, 128, 0.13);
+  color: var(--accent);
+  box-shadow: none;
+}
+:root[data-skin="native"][data-theme="night"]
+  .set-tabs
+  button[aria-selected="true"] {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--accent);
+  box-shadow: none;
+}
+:root[data-skin="native"][data-platform="win"] .set-tabs {
+  background: transparent;
+}
+:root[data-skin="native"][data-platform="win"] .set-tabs button {
+  border-radius: 6px;
+}
+:root[data-skin="native"] .set-card {
+  padding: 2px 16px;
   border-radius: 10px;
   background: var(--nl-group);
   box-shadow: none;
 }
-:root[data-skin="native"][data-platform="win"] .set-group {
+:root[data-skin="native"][data-platform="win"] .set-card {
   border-radius: 8px;
   box-shadow: var(--surface-edge);
 }
 :root[data-skin="native"] .set-title {
-  margin: 10px 0 4px;
+  margin: 0 0 6px;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;

@@ -6,6 +6,7 @@ import { disclosure, stepSummary, stepList } from "./toolSteps.ts";
 // left, a tail only on the last of a run, and a time line after a long gap.
 import { sourceLinks } from "./sourceLinks.ts";
 import { renderText } from "./richText.ts";
+import { parseMediaPrefix } from "./topicMedia.ts";
 import type { Turn } from "./chatBackend.ts";
 
 export interface ChatMessage {
@@ -26,22 +27,14 @@ export interface ChatMessage {
   streaming?: boolean;
   error?: boolean;
 }
-const IMAGE_MARK = "［图片］";
-const FILE_RE = /^［文件：([^］]+)］/;
 const GAP = 10 * 60_000;
 
 export function fromTurns(turns: Turn[]): ChatMessage[] {
   return turns.flatMap((t) => {
-    let rest = t.question;
-    if (t.thumbnail && rest.startsWith("［截图］"))
-      rest = rest.slice("［截图］".length);
-    const hadImage = rest.startsWith(IMAGE_MARK);
-    if (hadImage) rest = rest.slice(IMAGE_MARK.length);
-    const fileMatch = rest.match(FILE_RE);
-    const files = fileMatch
-      ? fileMatch[1].split("、").filter(Boolean)
-      : undefined;
-    if (fileMatch) rest = rest.slice(fileMatch[0].length);
+    const { hadImage, files, rest } = parseMediaPrefix(
+      t.question,
+      Boolean(t.thumbnail),
+    );
     const user: ChatMessage = {
       role: "user",
       text: rest,

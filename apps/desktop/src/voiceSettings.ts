@@ -41,23 +41,30 @@ export function mountVoice(group: HTMLElement) {
   group.insertAdjacentHTML(
     "beforeend",
     `<div class="switch-row"><span>${t("voice.on")}</span><input data-voice-on class="slide-switch" type="checkbox" role="switch" aria-label="${t("voice.on")}"></div>
-    <label>${t("voice.provider")}<select data-voice-provider><option value="">${t("voice.none")}</option>${options}</select></label>
-    <p class="set-note" data-voice-note></p>
-    <div class="search-key-actions"><label for="voice-key">Key</label><input id="voice-key" data-voice-key type="password" autocomplete="off" placeholder="${t("online.keyHidden")}"><button type="button" data-voice-save-key>${t("model.saveKey")}</button></div>
-    <label>${t("voice.voice")}<select data-voice-select aria-label="${t("voice.voice")}"></select></label>
-    <div class="voice-actions"><button type="button" data-voice-list>${t("voice.fetch")}</button></div>
-    <details class="set-more"><summary>${t("common.more")}</summary><div class="set-more-body">
-      <label>${t("voice.manualId")}<input data-voice-name maxlength="200" spellcheck="false"></label>
-      <label>${t("model.baseUrl")}<input data-voice-url type="url" spellcheck="false"></label>
-      <label>${t("voice.model")}<input data-voice-model spellcheck="false"></label>
-      <label data-only="volcengine">${t("voice.resource")}<input data-voice-resource placeholder="seed-tts-2.0" spellcheck="false"></label>
-      <label data-only="volcengine">${t("voice.appId")}<input data-voice-app spellcheck="false"></label>
-      <label data-only="openai">${t("voice.style")}<input data-voice-style maxlength="500" placeholder="${t("voice.styleHint")}"></label>
-    </div></details>
-    <div class="voice-actions"><button type="button" data-voice-save>${t("common.save")}</button><button type="button" data-voice-test>${t("voice.test")}</button></div>
-    <output data-voice-status aria-live="polite"></output>`,
+    <details class="set-more" data-voice-config><summary>${t("voice.configMore")}</summary><div class="set-more-body">
+      <label>${t("voice.provider")}<select data-voice-provider><option value="">${t("voice.none")}</option>${options}</select></label>
+      <p class="set-note" data-voice-note></p>
+      <div class="search-key-actions"><label for="voice-key">Key</label><input id="voice-key" data-voice-key type="password" autocomplete="off" placeholder="${t("online.keyHidden")}"><button type="button" data-voice-save-key>${t("model.saveKey")}</button></div>
+      <label>${t("voice.voice")}<select data-voice-select aria-label="${t("voice.voice")}"></select></label>
+      <div class="voice-actions"><button type="button" data-voice-list>${t("voice.fetch")}</button></div>
+      <details class="set-more"><summary>${t("common.more")}</summary><div class="set-more-body">
+        <label>${t("voice.manualId")}<input data-voice-name maxlength="200" spellcheck="false"></label>
+        <label>${t("model.baseUrl")}<input data-voice-url type="url" spellcheck="false"></label>
+        <label>${t("voice.model")}<input data-voice-model spellcheck="false"></label>
+        <label data-only="volcengine">${t("voice.resource")}<input data-voice-resource placeholder="seed-tts-2.0" spellcheck="false"></label>
+        <label data-only="volcengine">${t("voice.appId")}<input data-voice-app spellcheck="false"></label>
+        <label data-only="openai">${t("voice.style")}<input data-voice-style maxlength="500" placeholder="${t("voice.styleHint")}"></label>
+      </div></details>
+      <div class="voice-actions"><button type="button" data-voice-save>${t("common.save")}</button><button type="button" data-voice-test>${t("voice.test")}</button></div>
+      <output data-voice-status aria-live="polite"></output>
+    </div></details>`,
   );
   const $ = <T extends HTMLElement>(s: string) => group.querySelector<T>(s)!;
+  const configFold = $<HTMLDetailsElement>("[data-voice-config]");
+  let userTouchedConfig = false;
+  configFold.addEventListener("toggle", () => {
+    userTouchedConfig = true;
+  });
   const on = $<HTMLInputElement>("[data-voice-on]"),
     provider = $<HTMLSelectElement>("[data-voice-provider]"),
     name = $<HTMLInputElement>("[data-voice-name]"),
@@ -134,6 +141,7 @@ export function mountVoice(group: HTMLElement) {
     saved = v;
     on.checked = v.enabled;
     on.disabled = !v.ready && !v.enabled;
+    if (!userTouchedConfig) configFold.open = v.enabled;
     provider.value = v.provider;
     name.value = v.voice;
     url.value = v.baseUrl;

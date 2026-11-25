@@ -21,11 +21,13 @@ export function mountPhoneSettings(group: HTMLElement) {
   group.insertAdjacentHTML(
     "beforeend",
     `<div class="phone-folder"><span>${t("phone.settings.folder")}</span><code data-phone-folder></code><span class="phone-folder-acts"><button type="button" data-phone-open>${t("phone.settings.open")}</button><button type="button" data-phone-choose>${t("phone.settings.change")}</button><button type="button" data-phone-default>${t("phone.settings.reset")}</button></span></div>
-    <label>${t("phone.settings.max")}<select data-phone-max>${SIZES.map((mb) => `<option value="${mb}">${mb < 1024 ? `${mb} MB` : `${mb / 1024} GB`}</option>`).join("")}</select></label>
-    <label>${t("phone.settings.discard")}<select data-phone-discard><option value="keep">${t("phone.settings.discard.keep")}</option><option value="trash">${t(/Mac/.test(navigator.platform || navigator.userAgent) ? "phone.settings.discard.trash" : "phone.settings.discard.trashWin")}</option></select></label>
-    <p class="set-note">${t("phone.settings.discardNote")}</p>
-    <div class="phone-trusted"><span>${t("phone.settings.trusted")}</span><ul data-phone-trusted></ul></div>
-    <div class="phone-renew"><button type="button" data-phone-renew>${t("phone.settings.renew")}</button><p class="set-note" data-phone-renew-note>${t("phone.settings.renewNote")}</p></div>`,
+    <details class="set-more"><summary>${t("phone.settings.more")}</summary><div class="set-more-body">
+      <label>${t("phone.settings.max")}<select data-phone-max>${SIZES.map((mb) => `<option value="${mb}">${mb < 1024 ? `${mb} MB` : `${mb / 1024} GB`}</option>`).join("")}</select></label>
+      <label>${t("phone.settings.discard")}<select data-phone-discard><option value="keep">${t("phone.settings.discard.keep")}</option><option value="trash">${t(/Mac/.test(navigator.platform || navigator.userAgent) ? "phone.settings.discard.trash" : "phone.settings.discard.trashWin")}</option></select></label>
+      <p class="set-note">${t("phone.settings.discardNote")}</p>
+      <div class="phone-trusted"><span>${t("phone.settings.trusted")}</span><ul data-phone-trusted></ul></div>
+      <div class="phone-renew"><button type="button" data-phone-renew>${t("phone.settings.renew")}</button><p class="set-note" data-phone-renew-note>${t("phone.settings.renewNote")}</p></div>
+    </div></details>`,
   );
   const get = <T extends HTMLElement>(q: string) => group.querySelector<T>(q)!;
   let current: Settings | null = null;
@@ -120,6 +122,6 @@ export function mountPhoneSettings(group: HTMLElement) {
         trusted: [{ id: "a", name: "iPhone", seen: Date.now() - 3_600_000 }],
         explained: false,
       },
-      folder: "~/Downloads/随伴",
+      folder: `~/Downloads/${t("app.name")}`,
     });
 }

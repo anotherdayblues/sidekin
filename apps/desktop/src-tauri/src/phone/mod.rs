@@ -276,6 +276,15 @@ pub fn phone_start(app: AppHandle) -> Result<Value, String> {
     start(&app)
 }
 fn start(app: &AppHandle) -> Result<Value, String> {
+    if !crate::permissions::is_enabled(app, "localNetwork") {
+        let out = json!({"running": false, "permissionOff": true});
+        let _ = crate::chat::show(
+            app,
+            json!({"mode": "phone", "phone": out, "at": now()}),
+            false,
+        );
+        return Ok(out);
+    }
     let app = app.clone();
     let mut first = false;
     {

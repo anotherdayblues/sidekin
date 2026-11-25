@@ -19,7 +19,7 @@ import { sealSkills } from "./seal-skills.mjs";
 const trialMode = process.argv.includes("--trial");
 const distributionIdentity = trialMode
   ? undefined
-  : process.env.SIDEKIN_MAC_SIGN_IDENTITY;
+  : process.env.SUIBY_MAC_SIGN_IDENTITY;
 const kind = trialMode ? "试玩版" : distributionIdentity ? "公开版" : "正式版";
 if (process.platform !== "darwin") throw Error(kind + "需要在 macOS 构建");
 const root = fileURLToPath(new URL("../", import.meta.url));

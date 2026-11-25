@@ -64,6 +64,69 @@ test("只收整段的服务：攒够一句才送，太短的并进下一句，�
   assert.equal(s.flush(), "再去湖边看看日落和晚霞吧");
 });
 
+test("多语言断句与标题停顿：支持英文/韩文句点、小数、网址、省略号、日文顿号与空格回退", () => {
+  // English & Korean headings/lists use ASCII period (with space between lines), while Han/Kana use 。
+  assert.equal(
+    say(["## Today's Plan", "- Buy milk", "1. Run 3.5 km"].join("\n"), 4),
+    "Today's Plan. Buy milk. Run 3.5 km.",
+  );
+  assert.equal(
+    say(["## 오늘의 일정", "- 커피 마시기", "- 산책하기"].join("\n"), 3),
+    "오늘의 일정. 커피 마시기. 산책하기.",
+  );
+  assert.equal(
+    say(["## 今日の予定", "- 買い物", "- カタカナ"].join("\n"), 3),
+    "今日の予定。買い物。カタカナ。",
+  );
+
+  // English sentences split on ASCII '.' followed by whitespace or EOS, keeping decimals, URLs, and ellipses intact
+  const en = sentences(6, 200);
+  assert.deepEqual(
+    en.push(
+      "Version 3.5 is out. Visit example.com today. Wait... let me check.",
+    ),
+    ["Version 3.5 is out.", "Visit example.com today.", "Wait... let me check."],
+  );
+  assert.equal(en.flush(), "");
+
+  // Decimals right before sentence end and ellipses mid-stream
+  const en2 = sentences(6, 200);
+  assert.deepEqual(en2.push("It costs $3.5. "), ["It costs $3.5."]);
+  assert.deepEqual(en2.push("Wait... "), []);
+  assert.deepEqual(en2.push("really?"), ["Wait... really?"]);
+
+  // Korean sentences split on ASCII '.'
+  const ko = sentences(6, 200);
+  assert.deepEqual(ko.push("안녕하세요. 반갑습니다."), [
+    "안녕하세요.",
+    "반갑습니다.",
+  ]);
+  assert.equal(ko.flush(), "");
+
+  // Japanese long run without 。 cuts at 、
+  const ja = sentences(6, 20);
+  assert.deepEqual(
+    ja.push("今日は朝からとても良い天気で、近くの公園まで歩いて行きました"),
+    ["今日は朝からとても良い天気で、"],
+  );
+  assert.equal(ja.flush(), "近くの公園まで歩いて行きました");
+
+  // Long English & Korean runs without commas cut at whitespace instead of splitting words
+  const longEn = sentences(6, 24);
+  assert.deepEqual(
+    longEn.push("This is a very long sentence without any punctuation at all"),
+    ["This is a very long", "sentence without any"],
+  );
+  assert.equal(longEn.flush(), "punctuation at all");
+
+  const longKo = sentences(6, 20);
+  assert.deepEqual(
+    longKo.push("오늘은 날씨가 정말 좋아서 공원에 산책하러 가고 싶어요"),
+    ["오늘은 날씨가 정말 좋아서 공원에"],
+  );
+  assert.equal(longKo.flush(), "산책하러 가고 싶어요");
+});
+
 test("火山引擎二进制帧：请求带事件号和会话号，服务端的音频和事件能读出来", () => {
   const start = encode(Event.StartSession, { a: 1 }, "s1");
   assert.deepEqual([...start.subarray(0, 4)], [0x11, 0x14, 0x10, 0x00]);

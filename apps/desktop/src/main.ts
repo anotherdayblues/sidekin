@@ -1,4 +1,7 @@
 import "./style.css";
+import { syncDocumentLocale } from "./i18n.ts";
+
+syncDocumentLocale();
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 // Skins and the desktop widgets follow the host system's conventions.
@@ -15,7 +18,11 @@ if (route.has("files")) {
   await mountSnipCard(app);
 } else if (route.has("snip")) {
   const { mountSnip } = await import("./snip.ts");
-  mountSnip(app, Number(route.get("snip")));
+  mountSnip(
+    app,
+    Number(route.get("snip")),
+    route.get("mode") === "chat" ? "chat" : "card",
+  );
 } else if (route.has("clock")) {
   // The 番茄钟 clock's own window beside the pet (plan/19 §9.3).
   await (await import("./clockWindow.ts")).mountClockWindow(app);

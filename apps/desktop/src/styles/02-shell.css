@@ -146,15 +146,10 @@
   color: var(--ink-2);
 }
 
-/* 设置 · 外观: three skins, chosen by a small picture of each. */
-.skin-picker {
-  display: grid;
-  gap: 10px;
-  max-width: 760px;
-  margin: 0 0 18px;
-  padding: 18px 20px;
-  border-radius: 14px;
-  background: var(--panel);
+/* 设置 · 外观: three skins, chosen by a small picture of each. The group
+   itself is a settings group (settingsGroup.ts); the cards sit in its card. */
+.skin-picker .set-card {
+  padding-block: 12px;
 }
 .skin-cards {
   display: grid;

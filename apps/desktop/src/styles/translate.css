@@ -122,6 +122,25 @@
   font-size: 12.5px;
   cursor: pointer;
 }
+.tr-compose-foot .tr-paste {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 26px;
+  padding: 0;
+  background: transparent;
+  color: var(--ink-3);
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+.tr-compose-foot .tr-paste:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+.tr-compose:not(:has(textarea:placeholder-shown)) .tr-paste {
+  display: none;
+}
 .tr-search {
   margin: 10px 18px 0;
   height: 28px;

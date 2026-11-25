@@ -1,4 +1,4 @@
-import { t } from "./i18n.ts";
+import { dateLocale, t } from "./i18n.ts";
 import "./styles/usage-receipt.css";
 // Fixed reference rate keeps this estimate available offline.
 // https://api.frankfurter.dev/v1/2026-11-06?base=USD&symbols=CNY
@@ -48,7 +48,7 @@ export function usageTable(summary?: UsageSummary) {
           key === "costUsd" ? t("usage.noPrice") : t("usage.notReported");
         continue;
       }
-      let label = value.toLocaleString("zh-CN");
+      let label = value.toLocaleString(dateLocale);
       if (key === "costUsd") {
         const yuan = value * yuanPerDollar;
         label =

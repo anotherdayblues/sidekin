@@ -131,6 +131,14 @@
   margin: 0;
   padding-inline-start: 1.2em;
 }
+.phone-help-act {
+  margin-top: 6px;
+}
+.bubble-card [data-phone] .phone-perm-btn {
+  background: var(--primary);
+  color: var(--primary-ink);
+  border-color: var(--primary);
+}
 .phone-head {
   color: var(--bubble-muted);
   font-size: calc(var(--bubble-type) - 2px);

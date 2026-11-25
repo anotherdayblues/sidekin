@@ -104,18 +104,14 @@ fn handle(app: &AppHandle, mut request: Request, code: &str, last: &AtomicI64) {
             let config = json!({
                 "t": crate::locale::starting_with("phone.page."),
                 "pet": pet,
-                "lang": if crate::locale::english() { "en" } else { "zh" },
+                "lang": crate::locale::current(),
+                "dateLocale": crate::locale::date_locale(),
             });
             // The config is JSON inside a script tag: no "</" can end it early.
             let config = config.to_string().replace("</", "<\\/");
-            let html = PAGE.replace("__CONFIG__", &config).replace(
-                "__LANG__",
-                if crate::locale::english() {
-                    "en"
-                } else {
-                    "zh-CN"
-                },
-            );
+            let html = PAGE
+                .replace("__CONFIG__", &config)
+                .replace("__LANG__", crate::locale::html_lang());
             send(request, 200, "text/html; charset=utf-8", html.into_bytes());
         }
         (Method::Get, ["app.js"]) => send(

@@ -8,7 +8,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { native } from "./bridge.ts";
 import type { StudioContext } from "./studioContext.ts";
 import type { Block } from "./studioNavigation.ts";
-import { t, tn, type Key } from "./i18n.ts";
+import { lang, t, tn, type Key } from "./i18n.ts";
 import {
   clock,
   focusCommand,
@@ -24,6 +24,11 @@ import { topicTime } from "./chatTopics.ts";
 import type { Topic } from "./chatBackend.ts";
 import { mountTodayNote } from "./todo/note.ts";
 import {
+  usageReceipt,
+  usageTable,
+  type UsageSummary,
+} from "./usageTable.ts";
+import {
   NEEDS_BRAIN,
   cardList,
   moved,
@@ -36,20 +41,77 @@ import "./styles/home-widgets.css";
 const MEMORY_LINES = 2;
 
 // Outside the app (previews, screenshots): sample lines.
-const PREVIEW_MEMORY = [
-  "喝咖啡不加糖。",
-  "在准备 12 月去大阪的旅行。",
-  "周三下午固定开组会，开完会比较累。",
-];
+const PREVIEW_DATA: Record<string, { memory: string[]; topic: string }> = {
+  zh: {
+    memory: [
+      "喝咖啡不加糖。",
+      "在准备 12 月去大阪的旅行。",
+      "周三下午固定开组会，开完会比较累。",
+    ],
+    topic: "大阪三天怎么排",
+  },
+  en: {
+    memory: [
+      "Drinks coffee without sugar.",
+      "Planning a trip to Osaka in December.",
+      "Weekly team meeting every Wednesday afternoon.",
+    ],
+    topic: "3-day Osaka itinerary",
+  },
+  "zh-TW": {
+    memory: [
+      "喝咖啡不加糖。",
+      "正在準備 12 月去大阪的旅行。",
+      "週三下午固定開週會，開完會比較累。",
+    ],
+    topic: "大阪三天行程怎麼排",
+  },
+  ja: {
+    memory: [
+      "コーヒーは無糖派。",
+      "12 月の大阪旅行を計画中。",
+      "水曜午後は定例ミーティングで少し疲れやすい。",
+    ],
+    topic: "大阪 3 日間の回り方",
+  },
+  ko: {
+    memory: [
+      "커피는 무설탕으로 마심.",
+      "12월 오사카 여행을 준비 중.",
+      "수요일 오후 정기 회의가 끝나면 좀 피곤함.",
+    ],
+    topic: "오사카 3일 일정 짜기",
+  },
+};
+const previewCopy = PREVIEW_DATA[lang] ?? PREVIEW_DATA.zh;
+const PREVIEW_MEMORY = previewCopy.memory;
 const PREVIEW_TOPICS: Topic[] = [
   {
     id: 3,
-    title: "大阪三天怎么排",
+    title: previewCopy.topic,
     lastAt: Date.now() - 864e5,
     turns: 8,
     pet: "lizi",
   },
 ];
+const PREVIEW_USAGE: UsageSummary = {
+  today: {
+    tokens: 12480,
+    cacheRead: 4210,
+    costUsd: 0.0045,
+    missingTokens: false,
+    missingCache: false,
+    missingCost: false,
+  },
+  month: {
+    tokens: 318902,
+    cacheRead: 97330,
+    costUsd: 0.1064,
+    missingTokens: false,
+    missingCache: false,
+    missingCost: false,
+  },
+};
 
 const el = <K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -108,6 +170,12 @@ export function mountHomeWidgets(
     focus: focusCard(() => o.go("focus")),
     memory: memoryCard(() => o.go("memory")),
     chats: chatsCard(),
+    usage: usageCard(c, () => {
+      o.go("settings");
+      c.app.dispatchEvent(
+        new CustomEvent("settings-reveal", { detail: "usage" }),
+      );
+    }),
   };
   const wrappers = new Map<WidgetId, HTMLElement>();
   const wrapper = (id: WidgetId) => {
@@ -115,15 +183,25 @@ export function mountHomeWidgets(
     if (w) return w;
     w = el("section", "widget");
     w.dataset.widget = id;
-    const label = el("header", "hc-label");
-    const title = el("h3", "hc-title", nameOf(id));
-    title.id = `hc-${id}`;
-    w.setAttribute("aria-labelledby", title.id);
-    label.append(title, cards[id].meta);
-    if (cards[id].tool) label.append(cards[id].tool!);
-    const group = el("div", "hc-group");
-    group.append(cards[id].body);
-    w.append(label, group);
+    if (id === "usage") {
+      // The mini thermal receipt is its own paper surface, with its own header.
+      const heading = cards[id].body.querySelector("h3");
+      if (heading) {
+        heading.id = `hc-${id}`;
+        w.setAttribute("aria-labelledby", heading.id);
+      }
+      w.append(cards[id].body);
+    } else {
+      const label = el("header", "hc-label");
+      const title = el("h3", "hc-title", nameOf(id));
+      title.id = `hc-${id}`;
+      w.setAttribute("aria-labelledby", title.id);
+      label.append(title, cards[id].meta);
+      if (cards[id].tool) label.append(cards[id].tool!);
+      const group = el("div", "hc-group");
+      group.append(cards[id].body);
+      w.append(label, group);
+    }
     wrappers.set(id, w);
     // A card shown later reads its data when it first shows.
     cards[id].refresh();
@@ -280,10 +358,10 @@ export function mountHomeWidgets(
     void import("@tauri-apps/api/event").then(({ listen }) =>
       listen("companion-settings", () => void refreshBrain()),
     );
-  // What it remembered and the chats change elsewhere: read again when the
-  // window comes back.
+  // What it remembered, the chats, and usage change elsewhere: read again when
+  // the window comes back.
   addEventListener("focus", () => {
-    for (const id of ["memory", "chats"] as const)
+    for (const id of ["memory", "chats", "usage"] as const)
       if (shows(id)) cards[id].refresh();
   });
 }
@@ -491,6 +569,7 @@ function memoryCard(go: () => void): CardView {
   return { body, meta, refresh: () => void refresh() };
 }
 
+
 // ------------------------------------------------------------------ 聊天
 function chatsCard(): CardView {
   const body = el("div", "hc-chats");
@@ -531,4 +610,56 @@ function chatsCard(): CardView {
     draw();
   }
   return { body, meta, refresh: () => void refresh() };
+}
+
+// ------------------------------------------------------------------ 用量小票
+/** Mini thermal receipt in the home column: shares usageReceipt()/usageTable()
+ * with Settings so numbers, formatting, and pet portrait stay one source of
+ * truth. */
+function usageCard(c: StudioContext, go: () => void): CardView {
+  const receipt = usageReceipt();
+  receipt.dataset.compact = "";
+  const tableSlot = el("div", "hc-usage-table");
+  const foot = act(t("settings.usage"), go);
+  receipt.append(tableSlot, foot);
+  const meta = el("span", "hc-meta");
+  const portrait = receipt.querySelector<HTMLCanvasElement>(".receipt-pet")!;
+  let petRev = 0;
+
+  function syncPet() {
+    const rev = ++petRev;
+    const active = c.state.snapshot.pets.find(
+      (p) => p.id === c.state.snapshot.settings.activeId,
+    );
+    portrait.hidden = true;
+    if (!active) return;
+    void c
+      .thumb(active)
+      .then((image) => {
+        if (rev !== petRev) return;
+        c.drawCell(portrait, image, 0, 0);
+        portrait.setAttribute("aria-label", active.displayName);
+        portrait.hidden = false;
+      })
+      .catch(() => {});
+  }
+
+  async function refresh() {
+    receipt.querySelector("time")!.textContent = new Date()
+      .toISOString()
+      .slice(0, 10)
+      .replaceAll("-", " / ");
+    syncPet();
+    try {
+      const summary = native
+        ? await invoke<UsageSummary>("companion_usage")
+        : PREVIEW_USAGE;
+      tableSlot.replaceChildren(usageTable(summary));
+    } catch {
+      tableSlot.replaceChildren(
+        el("p", "hc-empty hc-usage-err", t("usage.unreadable")),
+      );
+    }
+  }
+  return { body: receipt, meta, refresh: () => void refresh() };
 }

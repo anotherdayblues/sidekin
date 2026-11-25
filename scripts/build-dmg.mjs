@@ -224,7 +224,7 @@ function buildBackgroundHtml(liziDataUri) {
 
     <div class="top-bar">
       <div class="clock-pill"><b>08:30</b><span>新伙伴报到</span></div>
-      <div class="brand-mark">随伴 · Sidekin</div>
+      <div class="brand-mark">随伴 · Suiby</div>
     </div>
 
     <div class="pad pad-left"></div>
@@ -352,7 +352,7 @@ function applyFinderLayout(mountPoint, appName) {
 export async function createPrettyDmg({
   appPath,
   outPath,
-  volumeName = "Sidekin",
+  volumeName = "Suiby",
 }) {
   if (!existsSync(appPath)) {
     throw new Error(`找不到应用包：${appPath}`);
@@ -460,11 +460,11 @@ export async function createPrettyDmg({
   }
 }
 
-// 支持独立命令行测试：node scripts/build-dmg.mjs <Sidekin.app> <output.dmg>
+// 支持独立命令行测试：node scripts/build-dmg.mjs <Suiby.app> <output.dmg>
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const [appPath, outPath] = process.argv.slice(2);
   if (!appPath || !outPath) {
-    console.error("用法：node scripts/build-dmg.mjs <Sidekin.app> <output.dmg>");
+    console.error("用法：node scripts/build-dmg.mjs <Suiby.app> <output.dmg>");
     process.exit(1);
   }
   await createPrettyDmg({

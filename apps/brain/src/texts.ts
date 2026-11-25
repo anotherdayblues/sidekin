@@ -1,6 +1,6 @@
 // The packaged sidecar embeds these same files at build time. Source-mode tests
 // load only the named application assets, never a path supplied by a tool.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 declare const __COMPANION_TEXTS__: Record<string, string>;
 const names = [
   "core",
@@ -56,6 +56,20 @@ const source: Record<string, string> =
       );
 export function text(name: Name) {
   return source[name].trimEnd();
+}
+/**
+ * Load an optional per-locale overlay prompt (e.g. `language.ja`, `persona-default.zh-TW`).
+ * In packaged builds, scripts/build-brain.mjs embeds every *.md in apps/brain/prompts.
+ */
+export function optionalText(name: string): string | undefined {
+  if (!/^[a-z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(name)) return undefined;
+  if (Object.hasOwn(source, name)) return source[name].trimEnd();
+  if (typeof __COMPANION_TEXTS__ !== "undefined") return undefined;
+  const url = new URL("../prompts/" + name + ".md", import.meta.url);
+  if (!existsSync(url)) return undefined;
+  const content = readFileSync(url, "utf8");
+  source[name] = content;
+  return content.trimEnd();
 }
 export function fill(template: string, values: Record<string, string>) {
   return template.replace(/\{\{([^{}]+)\}\}/g, (original, k) =>

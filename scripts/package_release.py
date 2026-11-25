@@ -11,7 +11,7 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 output = root / "dist"
 output.mkdir(exist_ok=True)
-app = root / "apps/desktop/src-tauri/target/release/bundle/macos/Sidekin.app"
+app = root / "apps/desktop/src-tauri/target/release/bundle/macos/Suiby.app"
 if not app.is_dir():
     raise SystemExit("Build the macOS application first: npm run build:desktop")
 shutil.copytree(app, output / app.name, dirs_exist_ok=True, symlinks=True)

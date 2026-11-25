@@ -332,12 +332,13 @@
     if (!at) return "";
     const d = new Date(at), now = new Date();
     if (now - d < 120_000) return t("justNow");
-    const time = d.toLocaleTimeString(config.lang === "en" ? "en" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
+    const dateLocale = config.dateLocale || (config.lang === "en" ? "en" : "zh-CN");
+    const time = d.toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" });
     const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
     const back = Math.round((day(now) - day(d)) / 86_400_000);
     if (back === 0) return t("today", { time });
     if (back === 1) return t("yesterday", { time });
-    return `${d.toLocaleDateString(config.lang === "en" ? "en" : "zh-CN", { month: "short", day: "numeric" })} ${time}`;
+    return `${d.toLocaleDateString(dateLocale, { month: "short", day: "numeric" })} ${time}`;
   };
   /** Files sent together, newest first: pictures as a grid, then files and
    *  texts as rows. */

@@ -1,5 +1,5 @@
 /* ---------- 第一次使用 ---------- */
-.companion-page[data-guiding="true"] > .set-toc,
+.companion-page[data-guiding="true"] > .set-tabs,
 .companion-page[data-guiding="true"] > form {
   display: none;
 }
@@ -67,12 +67,28 @@
   padding: 10px 0;
   border-top: 1px solid var(--line);
 }
-.onboard-row span {
+.onboard-row-copy {
   display: flex;
   flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.onboard-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 .onboard-row small {
   color: var(--ink-3);
+  font-size: 12px;
+}
+.onboard-perm-all {
+  margin: 6px 0 8px;
+  font-size: 12px;
+}
+.onboard-perm-all button.link {
+  padding: 0;
   font-size: 12px;
 }
 .onboard-row kbd {
@@ -154,4 +170,61 @@
 }
 .onboard-explore button {
   margin-top: 4px;
+}
+
+/* 没配完时: one line under the tabs (onboarding.ts); 继续设置 opens the steps. */
+.onboard-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 7px 8px 7px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--panel));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.onboard-banner[hidden] {
+  display: none;
+}
+.onboard-banner-copy {
+  min-width: 0;
+}
+.onboard-banner-copy b {
+  font-weight: 600;
+}
+.onboard-banner-copy span {
+  color: var(--ink-2);
+}
+.onboard-ring {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--accent) calc(var(--done, 0) * 360deg),
+    var(--well) 0
+  );
+  mask: radial-gradient(circle, transparent 4.5px, #000 5px);
+}
+.companion-page .onboard-banner button.primary {
+  margin-left: auto;
+  min-height: 0;
+  padding: 4px 12px;
+  border: 0;
+  background: var(--primary);
+  color: var(--primary-ink);
+}
+.companion-page .onboard-banner .onboard-banner-close {
+  min-height: 0;
+  padding: 2px 6px;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--ink-3);
+  font-size: 16px;
+  line-height: 1;
 }

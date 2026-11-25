@@ -10,6 +10,9 @@ use std::{
     path::{Component, Path},
 };
 const MAX_IMAGE: u64 = 20 * 1024 * 1024;
+pub const LIZI_ID: &str = "lizi";
+pub const LIZI_DEFAULT_NAME: &str = "栗子";
+pub const LIZI_DEFAULT_DESC: &str = "一只温暖的原创橘白小猫，安静陪伴，也会好奇地四处走走。";
 pub const ACTIONS: [&str; 9] = [
     "idle",
     "running-right",
@@ -42,6 +45,30 @@ pub struct Pet {
 }
 fn v1() -> u8 {
     1
+}
+pub fn localize_lizi_name(id: &str, name: &str, locale_id: &str) -> String {
+    if id == LIZI_ID && name == LIZI_DEFAULT_NAME {
+        crate::locale::t_in(locale_id, "pet.lizi.name")
+    } else {
+        name.to_owned()
+    }
+}
+pub fn localize_lizi_desc(id: &str, desc: &str, locale_id: &str) -> String {
+    if id == LIZI_ID && desc == LIZI_DEFAULT_DESC {
+        crate::locale::t_in(locale_id, "pet.lizi.desc")
+    } else {
+        desc.to_owned()
+    }
+}
+impl Pet {
+    pub fn localized_in(mut self, locale_id: &str) -> Self {
+        self.display_name = localize_lizi_name(&self.id, &self.display_name, locale_id);
+        self.description = localize_lizi_desc(&self.id, &self.description, locale_id);
+        self
+    }
+    pub fn localized(self) -> Self {
+        self.localized_in(crate::locale::current())
+    }
 }
 #[derive(Serialize, Debug)]
 pub struct ImportResult {
@@ -104,7 +131,7 @@ fn publish_json<T: Serialize>(path: &Path, value: &T, new: bool) -> Result<(), S
     }
     Ok(())
 }
-pub fn pet(root: &Path, id: &str) -> Result<Pet, String> {
+fn read_pet(root: &Path, id: &str) -> Result<Pet, String> {
     if !valid_id(id) {
         return Err(t("host.petIdBad").into());
     }
@@ -119,11 +146,14 @@ pub fn pet(root: &Path, id: &str) -> Result<Pet, String> {
     }
     Ok(p)
 }
+pub fn pet(root: &Path, id: &str) -> Result<Pet, String> {
+    read_pet(root, id).map(Pet::localized)
+}
 /// Permanently delete a pet: its package, taught actions and history.
 pub fn remove(root: &Path, id: &str) -> Result<Pet, String> {
-    let p = pet(root, id)?;
+    let p = read_pet(root, id)?;
     fs::remove_dir_all(root.join("pets").join(id)).map_err(|e| e.to_string())?;
-    Ok(p)
+    Ok(p.localized())
 }
 pub fn list(root: &Path) -> Result<Vec<Pet>, String> {
     let mut result = Vec::new();
@@ -323,7 +353,7 @@ fn cache_thumbnail(path: &Path, cell: &image::RgbaImage) -> Result<(), String> {
 }
 
 pub fn thumbnail(root: &Path, id: &str) -> Result<std::path::PathBuf, String> {
-    let pet = pet(root, id)?;
+    let pet = read_pet(root, id)?;
     let dir = root.join("pets").join(id);
     let path = thumbnail_path(&dir, &pet);
     if !path.is_file() {
@@ -340,7 +370,7 @@ pub fn import(root: &Path, path: &Path) -> Result<ImportResult, String> {
 /// Exports an installed pet as a clean portable `.zip` package that `import`
 /// can load directly on any machine.
 pub fn export(root: &Path, id: &str, dest: &Path) -> Result<(), String> {
-    let mut p = pet(root, id)?;
+    let mut p = read_pet(root, id)?;
     let dir = root.join("pets").join(&p.id);
     let sheet_bytes = bounded(&dir.join(&p.spritesheet_path), MAX_IMAGE)?;
     let sheet_ext = Path::new(&p.spritesheet_path)
@@ -428,12 +458,15 @@ fn store_pet(
     let _ = cache_thumbnail(&thumbnail_path(&dir, &p), &cell);
     // Keep the previous manifest alongside content-addressed sheets before updating.
     if updated {
-        if let Ok(prev) = pet(root, &p.id) {
+        if let Ok(prev) = read_pet(root, &p.id) {
             let _ = write_json(&dir.join("pet.prev.json"), &prev);
         }
     }
     write_json(&dir.join("pet.json"), &p)?;
-    Ok(ImportResult { pet: p, updated })
+    Ok(ImportResult {
+        pet: p.localized(),
+        updated,
+    })
 }
 /// The longest name a pet can have: it has to fit the title, the list tile
 /// and the chat panel's header (plan/29).
@@ -446,10 +479,10 @@ pub fn clean_name(name: &str) -> Result<String, String> {
     Ok(n.into())
 }
 pub fn rename(root: &Path, id: &str, name: &str) -> Result<Pet, String> {
-    let mut p = pet(root, id)?;
+    let mut p = read_pet(root, id)?;
     p.display_name = clean_name(name)?;
     write_json(&root.join("pets").join(id).join("pet.json"), &p)?;
-    Ok(p)
+    Ok(p.localized())
 }
 #[cfg(test)]
 #[path = "library_name_tests.rs"]
@@ -601,5 +634,42 @@ mod tests {
         let mika_back = import(root_b.path(), &zip_plain).unwrap().pet;
         assert_eq!(mika_back.id, mika.id);
         assert!(mika_back.sleep_strip.is_none());
+    }
+
+    #[test]
+    fn default_lizi_localizes_while_preserving_user_customizations() {
+        let root = tempfile::tempdir().unwrap();
+        let lizi_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../examples/lizi");
+        import(root.path(), &lizi_dir).unwrap();
+        let raw = read_pet(root.path(), LIZI_ID).unwrap();
+        assert_eq!(raw.display_name, LIZI_DEFAULT_NAME);
+        assert_eq!(raw.description, LIZI_DEFAULT_DESC);
+
+        for (loc, expected_name) in [
+            ("zh", "栗子"),
+            ("en", "Lizi"),
+            ("zh-TW", "栗子"),
+            ("ja", "くり"),
+            ("ko", "밤톨이"),
+        ] {
+            let p = raw.clone().localized_in(loc);
+            assert_eq!(p.display_name, expected_name, "{loc}");
+            assert_eq!(p.description, crate::locale::t_in(loc, "pet.lizi.desc"), "{loc}");
+        }
+
+        // Renaming lizi preserves the custom name verbatim and keeps the raw description on disk.
+        rename(root.path(), LIZI_ID, "Mochi").unwrap();
+        let renamed_raw = read_pet(root.path(), LIZI_ID).unwrap();
+        assert_eq!(renamed_raw.display_name, "Mochi");
+        assert_eq!(renamed_raw.description, LIZI_DEFAULT_DESC);
+        let en = renamed_raw.clone().localized_in("en");
+        assert_eq!(en.display_name, "Mochi");
+        assert_eq!(en.description, crate::locale::t_in("en", "pet.lizi.desc"));
+
+        // Custom description is preserved verbatim, and non-lizi pets named "栗子" are untouched.
+        let mut custom_desc = renamed_raw;
+        custom_desc.description = "My custom kitten".into();
+        assert_eq!(custom_desc.localized_in("en").description, "My custom kitten");
+        assert_eq!(localize_lizi_name("mika", LIZI_DEFAULT_NAME, "en"), LIZI_DEFAULT_NAME);
     }
 }

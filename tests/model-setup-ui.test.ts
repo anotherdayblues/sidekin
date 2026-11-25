@@ -159,6 +159,8 @@ async function fixture() {
     });
     await page.goto(url);
     await page.locator('#blocks [data-block="settings"]').click();
+    // With the brain off the guide waits as a one-line banner; open its steps.
+    await page.locator('.onboard-banner [data-banner="go"]').click();
     await page.locator("[data-onboard-model]").waitFor();
     const choose = async (service: string) => {
       await page.locator("[data-onboard-model]").click();

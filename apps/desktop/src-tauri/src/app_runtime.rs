@@ -54,6 +54,7 @@ pub fn run() {
         .manage(focus_clock::Full::default())
         .manage(studio_window::Studio::default())
         .manage(phone::Phone::default())
+        .manage(permissions::Permissions::default())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .setup(app_setup::run)
@@ -67,6 +68,7 @@ pub fn run() {
             file_transfer::outgoing::lab_drag,
             file_transfer::lab_pet_shape,
             file_transfer::lab_expand,
+            file_transfer::lab_discard_staged,
             file_transfer::lab_preview,
             file_transfer::lab_existing,
             file_transfer::lab_describe,
@@ -124,6 +126,9 @@ pub fn run() {
             snip::cancel_snip,
             snip::screen_access,
             snip::screen_preferences,
+            permissions::permissions_status,
+            permissions::set_permission_enabled,
+            permissions::open_permission_settings,
             snip_card::snip_card,
             snip_card::snip_card_close,
             snip_card::size_snip_card,
@@ -161,6 +166,7 @@ pub fn run() {
             selection::retry_selection,
             selection::translate_selection,
             selection::open_translate_input,
+            selection::read_clipboard_text,
             selection::replace_with_translation,
             chat::focus_bubble,
             companion::set_translation_partner,
@@ -202,6 +208,9 @@ pub fn run() {
             chat_window::open_chat_window,
             chat_window::open_chat_turn,
             chat_window::take_chat_turn,
+            chat_window::take_pending_snip_image,
+            snip::chat_snip_status,
+            snip::start_chat_snip,
             selection::translate_selection_from_menu,
             chat_window::hide_chat_window,
             chat_window::chat_window_release,

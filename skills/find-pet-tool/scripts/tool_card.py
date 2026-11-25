@@ -18,7 +18,7 @@ def inbox_path():
         base = Path(os.environ["APPDATA"])
     else:
         base = Path(os.getenv("XDG_DATA_HOME", Path.home() / ".local/share"))
-    return base / "app.sidekin.desktop/inbox"
+    return base / "app.suiby.desktop/inbox"
 
 def receipt(inbox, ticket):
     if not re.fullmatch(r"tool-[a-f0-9]{32}", ticket):

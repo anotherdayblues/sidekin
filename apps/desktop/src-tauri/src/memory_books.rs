@@ -239,7 +239,28 @@ impl Books {
     }
 }
 static THREAT: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?is)(忽略|无视|绕过|覆盖).{0,30}(指令|系统提示|安全规则)|(ignore|override|disregard)\s+(?:\w+\s+){0,6}(instructions?|system\s+prompt)|system\s+prompt\s+override|<\s*/?\s*(system|developer)\b|(?:do\s+not|never)\s+tell\s+the\s+user|(?:泄露|窃取|上传).{0,18}(密钥|密码)|\$\{?\w*(?:API_KEY|SECRET|PASSWORD|TOKEN)\b").unwrap()
+    Regex::new(concat!(
+        r"(?is)",
+        r"(?:忽略|无视|無視|绕过|繞過|覆盖|覆蓋).{0,30}(?:指令|系统提示|系統提示|安全规则|安全規則)",
+        r"|(?:ignore|override|disregard)\s+(?:\w+\s+){0,6}(?:instructions?|system\s+prompt)",
+        r"|system\s+prompt\s+override",
+        r"|(?:システムプロンプト|指示|安全ルール).{0,24}(?:無視|上書き|回避)",
+        r"|(?:無視|上書き|回避).{0,24}(?:システムプロンプト|指示|安全ルール)",
+        r"|(?:시스템\s*프롬프트|지시|지침|보안\s*규칙).{0,24}(?:무시|덮어쓰|우회)",
+        r"|(?:무시|덮어쓰|우회).{0,24}(?:시스템\s*프롬프트|지시|지침|보안\s*규칙)",
+        r"|<\s*/?\s*(?:system|developer)\b",
+        r"|(?:do\s+not|never)\s+tell\s+the\s+user",
+        r"|(?:不要|别|別).{0,8}(?:告诉|告訴)(?:用户|使用者)",
+        r"|ユーザーに.{0,12}(?:伝え|教え|言わ)ない",
+        r"|사용자에게.{0,12}(?:알리지|말하지)\s*마",
+        r"|(?:泄露|洩漏|窃取|竊取|上传|上傳).{0,18}(?:密钥|密鑰|金鑰|密码|密碼)",
+        r"|(?:APIキー|シークレット|パスワード|トークン|認証情報).{0,18}(?:漏洩|流出|送信|盗)",
+        r"|(?:漏洩|流出|送信|盗).{0,18}(?:APIキー|シークレット|パスワード|トークン|認証情報)",
+        r"|(?:API\s*키|비밀번호|토큰|인증\s*정보|시크릿).{0,18}(?:유출|전송|탈취|훔)",
+        r"|(?:유출|전송|탈취|훔).{0,18}(?:API\s*키|비밀번호|토큰|인증\s*정보|시크릿)",
+        r"|\$\{?\w*(?:API_KEY|SECRET|PASSWORD|TOKEN)\b",
+    ))
+    .unwrap()
 });
 fn check(value: &str) -> Result<(), String> {
     let normalized: String = value.nfkc().collect();

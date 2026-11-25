@@ -124,6 +124,17 @@ export async function mountChatWindow(app: HTMLElement) {
     });
     await listen("chat-window-close", () => void collapse());
     await listen("chat-translations", () => void showTranslations());
+    const consumePendingSnip = async () => {
+      const snip = await invoke<{
+        data: string;
+        preview: string;
+        draftText?: string;
+      } | null>("take_pending_snip_image").catch(() => null);
+      if (!snip) return false;
+      translations.hide();
+      view.attachSnip(snip);
+      return true;
+    };
     const requestedTr = await invoke<boolean>("take_translations_request");
     const openPanel = async (restoreTr = false) => {
       enter();
@@ -136,8 +147,9 @@ export async function mountChatWindow(app: HTMLElement) {
       } else {
         await view.reload();
       }
-      view.focus();
+      if (!(await consumePendingSnip())) view.focus();
     };
+    await listen("chat-snip-attached", () => void consumePendingSnip());
     await listen("chat-window-open", () => void openPanel(false));
     await openPanel(requestedTr || saved.translations);
   } else {
@@ -145,6 +157,15 @@ export async function mountChatWindow(app: HTMLElement) {
       __studio: {
         translations: (records: TranslationRecord[]) =>
           translations.preview(records),
+        attachSnip: (snip: {
+          data: string;
+          preview: string;
+          draftText?: string;
+        }) => {
+          translations.hide();
+          view.attachSnip(snip);
+        },
+        setSnipPreview: view.setSnipPreview,
         chat: async (
           name: string,
           theme = "day",

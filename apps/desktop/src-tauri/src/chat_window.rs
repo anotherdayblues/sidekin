@@ -49,11 +49,39 @@ impl Default for Place {
         }
     }
 }
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct PendingSnip {
+    pub data: String,
+    pub preview: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub draft_text: Option<String>,
+}
+impl PendingSnip {
+    pub fn from_image(
+        image: image::RgbaImage,
+        draft_text: Option<String>,
+    ) -> Result<Self, String> {
+        let png = crate::capture_image::png(image)?;
+        let data = STANDARD.encode(&png);
+        let preview = format!("data:image/png;base64,{data}");
+        let draft_text = draft_text.and_then(|t| {
+            let trimmed = t.trim();
+            (!trimmed.is_empty()).then(|| t)
+        });
+        Ok(Self {
+            data,
+            preview,
+            draft_text,
+        })
+    }
+}
 pub struct ChatWindow {
     place: Mutex<Option<(Place, Option<Instant>)>>,
     moves: AtomicU64,
     release: IdleRelease,
     focus_turn: Mutex<Option<(i64, i64)>>,
+    pending_snip: Mutex<Option<PendingSnip>>,
     /// Set when the panel should open on 翻译记录 rather than chat.
     translations: AtomicBool,
     /// Last view shown inside the panel within this session.
@@ -68,10 +96,51 @@ impl Default for ChatWindow {
             moves: AtomicU64::new(0),
             release: IdleRelease::default(),
             focus_turn: Mutex::new(None),
+            pending_snip: Mutex::new(None),
             translations: AtomicBool::new(false),
             last_translations: AtomicBool::new(false),
             pinned: AtomicBool::new(true),
         }
+    }
+}
+/// Stage a captured snip for the chat composer, open/focus the sidebar, and notify it.
+pub fn attach_snip(
+    app: &AppHandle,
+    image: image::RgbaImage,
+    draft_text: Option<String>,
+) -> Result<(), String> {
+    let pending = PendingSnip::from_image(image, draft_text)?;
+    let s = app.state::<ChatWindow>();
+    *s.pending_snip.lock().unwrap() = Some(pending);
+    s.translations.store(false, Ordering::SeqCst);
+    s.last_translations.store(false, Ordering::SeqCst);
+    open_chat_window(app.clone())?;
+    let _ = app.emit_to(LABEL, "chat-snip-attached", ());
+    Ok(())
+}
+/// Atomically consume any snip image waiting for the chat composer (cold-start & warm safe).
+#[tauri::command]
+pub fn take_pending_snip_image(app: AppHandle) -> Option<PendingSnip> {
+    app.state::<ChatWindow>().pending_snip.lock().unwrap().take()
+}
+/// Hide the chat panel temporarily during screen capture without scheduling idle WebView release.
+pub fn hide_temporarily(app: &AppHandle) -> bool {
+    let Some(w) = app.get_webview_window(LABEL) else {
+        return false;
+    };
+    if w.is_visible().unwrap_or(false) && w.hide().is_ok() {
+        app.state::<ChatWindow>().release.cancel();
+        return true;
+    }
+    false
+}
+/// Restore the chat panel after a cancelled screen capture, preserving any draft.
+pub fn restore_temporarily(app: &AppHandle) {
+    app.state::<ChatWindow>().release.cancel();
+    if let Some(w) = app.get_webview_window(LABEL) {
+        let _ = w.show();
+        crate::window_memory::shown(&w);
+        let _ = w.set_focus();
     }
 }
 /// Open the panel on its 翻译记录 page.
@@ -450,5 +519,18 @@ mod tests {
         let img = image::load_from_memory(&png).unwrap();
         assert_eq!((img.width(), img.height()), (1568, 522));
         assert!(attached_picture(&STANDARD.encode(b"not an image")).is_err());
+    }
+    #[test]
+    fn pending_snip_shrinks_image_and_filters_blank_draft() {
+        let img = image::RgbaImage::new(2400, 1200);
+        let blank = PendingSnip::from_image(img.clone(), Some("   \n ".into())).unwrap();
+        assert!(blank.draft_text.is_none());
+        assert!(blank.preview.starts_with("data:image/png;base64,"));
+        assert_eq!(blank.preview, format!("data:image/png;base64,{}", blank.data));
+        let decoded = image::load_from_memory(&STANDARD.decode(&blank.data).unwrap()).unwrap();
+        assert_eq!((decoded.width(), decoded.height()), (1568, 784));
+
+        let with_draft = PendingSnip::from_image(img, Some("这个报错什么意思".into())).unwrap();
+        assert_eq!(with_draft.draft_text.as_deref(), Some("这个报错什么意思"));
     }
 }

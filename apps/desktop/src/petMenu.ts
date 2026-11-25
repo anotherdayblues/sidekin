@@ -132,14 +132,8 @@ export function petMenus(
               action: () => void invoke("translate_selection_from_menu"),
             },
             {
-              id: `pet-translate-input-${n}`,
-              text: t("menu.translateInput"),
-              enabled: enabled && translation,
-              action: () => void invoke("open_translate_input"),
-            },
-            {
               id: `pet-translations-${n}`,
-              text: t("chat.translations"),
+              text: t("menu.translatePanel"),
               action: () => void invoke("open_translations"),
             },
           ],

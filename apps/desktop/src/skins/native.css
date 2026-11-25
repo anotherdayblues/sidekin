@@ -37,7 +37,7 @@
   --pet-shadow: rgba(0, 0, 0, 0.16);
   --dial-night: rgba(0, 0, 0, 0.05);
   --native-font:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif;
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-sans);
   /* Liquid Glass: a translucent fill, a bright rim that catches light at the
      top and a softer one below, and a light lift off what is behind. */
   --glass: rgba(255, 255, 255, 0.5);
@@ -227,9 +227,7 @@
    Surfaces
    ===================================================================== */
 /* Content areas: quieter, nearly solid surfaces under the glass. */
-:root[data-skin="native"] .skin-picker,
-:root[data-skin="native"] .set-group,
-:root[data-skin="native"] .block[data-for="settings"] .companion-page {
+:root[data-skin="native"] .set-card {
   border: 0;
   border-radius: var(--native-radius);
   background: var(--surface);

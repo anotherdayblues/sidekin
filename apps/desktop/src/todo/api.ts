@@ -4,7 +4,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { native } from "../bridge.ts";
-import { t, dateLocale, type Key } from "../i18n.ts";
+import { lang, t, dateLocale, type Key } from "../i18n.ts";
 
 /** 今天 and 以后 (plan/30); one from an earlier day carries on in 今天. */
 export type Group = "today" | "later" | "done";
@@ -119,11 +119,69 @@ function sample(): Todo[] {
     repeat: null,
     carried: false,
   };
+  const titles =
+    (
+      {
+        zh: [
+          "回复设计稿的意见",
+          "写周报",
+          "开会",
+          "喝水",
+          "交报告",
+          "整理照片",
+          "订机票",
+        ],
+        en: [
+          "Reply to design feedback",
+          "Write weekly report",
+          "Team meeting",
+          "Drink water",
+          "Send project report",
+          "Sort photos",
+          "Book flights",
+        ],
+        "zh-TW": [
+          "回覆設計稿的意見",
+          "寫週報",
+          "開會",
+          "喝水",
+          "交報告",
+          "整理照片",
+          "訂機票",
+        ],
+        ja: [
+          "デザイン案への返信",
+          "週報を書く",
+          "ミーティング",
+          "水を飲む",
+          "レポートを提出",
+          "写真を整理",
+          "航空券を予約",
+        ],
+        ko: [
+          "디자인 시안 피드백 회신",
+          "주간 보고서 작성",
+          "팀 회의",
+          "물 마시기",
+          "보고서 제출",
+          "사진 정리",
+          "항공권 예매",
+        ],
+      } as Record<string, string[]>
+    )[lang] ?? [
+      "回复设计稿的意见",
+      "写周报",
+      "开会",
+      "喝水",
+      "交报告",
+      "整理照片",
+      "订机票",
+    ];
   samples = [
     {
       ...base,
       id: 1,
-      title: "回复设计稿的意见",
+      title: titles[0],
       day: today(-1),
       time: null,
       group: "today",
@@ -132,7 +190,7 @@ function sample(): Todo[] {
     {
       ...base,
       id: 2,
-      title: "写周报",
+      title: titles[1],
       day: today(),
       time: null,
       tomatoes: 2,
@@ -141,7 +199,7 @@ function sample(): Todo[] {
     {
       ...base,
       id: 3,
-      title: "开会",
+      title: titles[2],
       day: today(),
       time: "15:00",
       group: "today",
@@ -149,7 +207,7 @@ function sample(): Todo[] {
     {
       ...base,
       id: 4,
-      title: "喝水",
+      title: titles[3],
       day: today(),
       time: "16:30",
       repeat: "daily",
@@ -158,7 +216,7 @@ function sample(): Todo[] {
     {
       ...base,
       id: 5,
-      title: "交报告",
+      title: titles[4],
       day: today(2),
       time: null,
       group: "later",
@@ -166,7 +224,7 @@ function sample(): Todo[] {
     {
       ...base,
       id: 6,
-      title: "整理照片",
+      title: titles[5],
       day: null,
       time: null,
       group: "later",
@@ -174,7 +232,7 @@ function sample(): Todo[] {
     {
       ...base,
       id: 7,
-      title: "订机票",
+      title: titles[6],
       day: today(),
       time: null,
       doneAt: Date.now(),

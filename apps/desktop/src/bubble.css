@@ -444,6 +444,35 @@ body.bubble-window,
   box-shadow: none;
   line-height: 22px;
 }
+.bubble-card .bubble-compose :is([data-paste], [data-snip]) {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-3);
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    transform 120ms ease;
+}
+.bubble-card .bubble-compose :is([data-paste], [data-snip]):hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+.bubble-card .bubble-compose :is([data-paste], [data-snip]):active {
+  transform: scale(0.92);
+}
+.bubble-card .bubble-compose :is([data-paste], [data-snip])[hidden],
+.bubble-compose:not(:has(textarea:placeholder-shown)) [data-paste] {
+  display: none;
+}
 .bubble-card .bubble-compose [data-send] {
   flex: none;
   display: grid;

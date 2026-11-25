@@ -51,10 +51,11 @@ fn home_cards_keep_known_ones_once_in_order() {
         card("weather"),
         card("memory"),
         card("chats"),
+        card("usage"),
     ];
     assert_eq!(
         known_cards(given),
-        [card("memory"), card("today"), card("chats")]
+        [card("memory"), card("today"), card("chats"), card("usage")]
     );
     assert!(known_cards(vec![]).is_empty());
 }

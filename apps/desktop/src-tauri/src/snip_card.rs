@@ -278,7 +278,7 @@ pub fn chat_input(
         .as_ref()
         .filter(|r| !r.text.trim().is_empty())
         .map(|r| crate::attachments::AttachedFile {
-            name: "截图文字".into(),
+            name: t("host.snipTextLabel"),
             text: r.text.clone(),
         })
         .into_iter()

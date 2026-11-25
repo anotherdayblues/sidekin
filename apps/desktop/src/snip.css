@@ -37,6 +37,33 @@ html.snip-window,
 .snip-surface[data-selecting] {
   background: transparent;
 }
+.snip-guide-x,
+.snip-guide-y {
+  position: fixed;
+  pointer-events: none;
+  opacity: 0;
+  background: rgba(255, 255, 255, 0.34);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.22);
+  transition: opacity 90ms ease;
+}
+.snip-guide-x {
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+}
+.snip-guide-y {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+}
+.snip-surface[data-aiming]:not([data-selecting]):not([data-over-hint])
+  .snip-guide-x,
+.snip-surface[data-aiming]:not([data-selecting]):not([data-over-hint])
+  .snip-guide-y {
+  opacity: 1;
+}
 .snip-surface span {
   left: 50%;
   transform: translateX(-50%);
@@ -47,6 +74,11 @@ html.snip-window,
     0 0 0 1px var(--line-strong),
     0 6px 20px rgba(0, 0, 0, 0.25);
   white-space: nowrap;
+  transition: opacity 120ms ease;
+}
+.snip-surface[data-selecting] > span {
+  opacity: 0;
+  pointer-events: none;
 }
 .snip-surface i {
   outline: 1px solid rgba(255, 255, 255, 0.55);
@@ -93,6 +125,10 @@ html.snip-window,
     monospace;
   font-style: normal;
   letter-spacing: 0.08em;
+}
+.snip-size[data-inside="true"] {
+  right: 8px;
+  bottom: 8px;
 }
 .snip-surface span {
   z-index: 2;

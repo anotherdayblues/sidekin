@@ -1,6 +1,7 @@
 // Browser-preview stand-in for the host: a few fixed topics and an answer
 // that streams back, so screenshots can show every chat state.
 import type { BrainEvent, ChatBackend, Topic, Turn } from "./chatBackend.ts";
+import { t } from "./i18n.ts";
 
 const MIN = 60_000;
 const base = new Date("2026-11-05T14:00:00").getTime();
@@ -75,7 +76,9 @@ export function previewBackend(): ChatBackend & { use(name: string): void } {
     send: (token, text, image, _forceSearch, files) =>
       new Promise((resolve, reject) => {
         const fileMark = files?.length
-          ? `［文件：${files.map((f) => f.name).join("、")}］`
+          ? t("host.topicMedia.file", {
+              name: files.map((f) => f.name).join("、"),
+            })
           : "";
         const reply = `（预览）收到${image ? "一张图片和" : ""}${files?.length ? `${files.length}个文件和` : ""}：${text.slice(0, 40)}`;
         let i = 0;
@@ -84,7 +87,7 @@ export function previewBackend(): ChatBackend & { use(name: string): void } {
             timers.delete(token);
             stops.delete(token);
             turns.push({
-              question: (image ? "［图片］" : "") + fileMark + text,
+              question: (image ? t("host.topicMedia.image") : "") + fileMark + text,
               answer: reply,
               at: Date.now(),
             });

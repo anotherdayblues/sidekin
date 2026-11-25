@@ -322,7 +322,7 @@ mod tests {
         let folder = resources.join("skills/future-tool");
         std::fs::create_dir_all(&folder).unwrap();
         std::fs::write(folder.join("SKILL.md"), "fixture").unwrap();
-        for profile in ["app.sidekin.desktop", "app.sidekin.desktop.trial"] {
+        for profile in ["app.suiby.desktop", "app.suiby.desktop.trial"] {
             let data = tmp.path().join(profile);
             let paths = locate(&resources, &data, "future-tool").unwrap();
             assert_eq!(paths.manifest, folder.join("SKILL.md"));

@@ -13,6 +13,8 @@ export interface PhoneStatus {
   running: boolean;
   /** Receiving, but the computer is on no local network yet. */
   noNetwork?: boolean;
+  /** User turned off the localNetwork permission toggle in Suiby. */
+  permissionOff?: boolean;
   qr?: string;
   url?: string;
   firstTime?: boolean;
@@ -67,7 +69,7 @@ export function bubblePhone(
       mac ? "phone.help.firewallMac" : "phone.help.firewallWin",
       "phone.help.hotspot",
     ] as const;
-    return `<div class="phone-help" data-phone-help hidden><p>${t("phone.help")}</p><ul>${tips.map((k) => `<li>${t(k)}</li>`).join("")}</ul></div>`;
+    return `<div class="phone-help" data-phone-help hidden><p>${t("phone.help")}</p><ul>${tips.map((k) => `<li>${t(k)}</li>`).join("")}</ul><div class="phone-help-act"><button type="button" data-phone-act="perm-os">${t("settings.openSystemSettings")}</button></div></div>`;
   };
   const clear = () => {
     clearTimeout(nudgeTimer);
@@ -94,6 +96,13 @@ export function bubblePhone(
   let phones: string[] = [];
   let last: PhoneStatus | null = null;
   function qr(s: PhoneStatus) {
+    if (s.permissionOff) {
+      clearTimeout(nudgeTimer);
+      return show(
+        "qr",
+        `<p>${t(mac ? "phone.permOffMac" : "phone.permOffWin")}</p><span class="phone-perm-foot"><button type="button" class="phone-perm-btn" data-phone-act="perm-app">${t("perm.openAppSettings")}</button><button type="button" data-phone-act="hide">${t("phone.hide")}</button></span>`,
+      );
+    }
     if (!s.running) return done();
     const fresh = showing !== "qr";
     if (fresh) phones = [];
@@ -185,6 +194,17 @@ export function bubblePhone(
       case "stop":
         if (native) void invoke("phone_stop");
         return done();
+      case "perm-app":
+        if (native)
+          void invoke("open_companion_page", {
+            history: false,
+            section: "access",
+          });
+        return done();
+      case "perm-os":
+        if (native)
+          void invoke("open_permission_settings", { kind: "localNetwork" });
+        return;
       case "copy":
         void navigator.clipboard?.writeText(text);
         act.textContent = t("phone.copied");
