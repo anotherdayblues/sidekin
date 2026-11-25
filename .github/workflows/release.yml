@@ -5,7 +5,7 @@ on:
     tags: ['v*']
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   windows:
@@ -39,3 +39,14 @@ jobs:
           path: releases/Suiby-Windows-x64.exe
           if-no-files-found: error
           retention-days: 7
+      - name: Upload Windows installer to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --verify-tag --draft --title $tag --generate-notes
+          }
+          gh release upload $tag releases/Suiby-Windows-x64.exe --clobber

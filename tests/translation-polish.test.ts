@@ -40,6 +40,38 @@ test("翻译页和翻译气泡", async () => {
         ]),
       now,
     );
+    // Main minimalist stage is shown by default with unified single header (chat header hidden).
+    assert.ok(await page.locator("[data-tr-stage]").isVisible());
+    assert.ok(!(await page.locator("[data-tr-history-pane]").isVisible()));
+    assert.ok(!(await page.locator(".chat-window > header").isVisible()));
+    // The header language pair: your language, then theirs.
+    assert.equal(
+      await page.locator(".chat-translation .tb-mine").innerText(),
+      "中文",
+    );
+    assert.equal(
+      await page.inputValue(".chat-translation .tb-partner"),
+      "en",
+    );
+    assert.equal(
+      await page
+        .locator(".chat-translation .tb-partner option:checked")
+        .textContent(),
+      "英文",
+    );
+    assert.ok(
+      await page.locator("[data-tr-paste]").isVisible(),
+      "paste button shows when translate panel input is empty",
+    );
+    assert.ok(
+      !(await page.locator("[data-tr-clear-input]").isVisible()),
+      "clear input button hides when empty",
+    );
+
+    // Open history drawer via top-right clock icon.
+    await page.locator("[data-tr-history]").click();
+    assert.ok(await page.locator("[data-tr-history-pane]").isVisible());
+    assert.ok(!(await page.locator("[data-tr-stage]").isVisible()));
     const items = page.locator(".tr-item");
     await items.nth(1).waitFor();
     assert.match(
@@ -61,34 +93,32 @@ test("翻译页和翻译气泡", async () => {
     );
     await page.fill(".tr-search", "");
     assert.equal(await items.count(), 2);
-    // A click on the record, not its buttons, puts its original in the box.
-    assert.ok(
-      await page.locator("[data-tr-paste]").isVisible(),
-      "paste button shows when translate panel input is empty",
-    );
+    // Clicking copy on a history item does NOT close history or overwrite the input.
+    await items.nth(0).hover();
+    await items.nth(0).locator(".tr-copy").click();
+    assert.ok(await page.locator("[data-tr-history-pane]").isVisible());
+    // Clicking a history record restores its original & result into the stage and closes history.
     await items.nth(1).locator(".tr-when").click();
+    assert.ok(await page.locator("[data-tr-stage]").isVisible());
     assert.equal(await page.inputValue(".tr-compose textarea"), "Hello");
+    assert.equal(await page.locator("[data-tr-live-text]").innerText(), "你好");
     assert.ok(
       !(await page.locator("[data-tr-paste]").isVisible()),
       "paste button hides once text is in the box",
     );
-    await items.nth(0).locator(".tr-copy").click();
-    assert.equal(await page.inputValue(".tr-compose textarea"), "Hello");
-    // The bar: your language, then theirs, then 语气.
-    assert.equal(
-      await page.locator(".chat-translation .tb-mine").innerText(),
-      "中文",
+    assert.ok(
+      await page.locator("[data-tr-clear-input]").isVisible(),
+      "clear input button shows once text is in the box",
     );
-    assert.equal(
-      await page.inputValue(".chat-translation .tb-partner"),
-      "en",
-    );
-    assert.equal(
-      await page
-        .locator(".chat-translation .tb-partner option:checked")
-        .textContent(),
-      "英文",
-    );
+    // Clicking clear resets input & result back to empty state.
+    await page.locator("[data-tr-clear-input]").click();
+    assert.equal(await page.inputValue(".tr-compose textarea"), "");
+    assert.ok(await page.locator("[data-tr-paste]").isVisible());
+    // Opening history and pressing Escape returns to stage (keeps translation panel open).
+    await page.locator("[data-tr-history]").click();
+    assert.ok(await page.locator("[data-tr-history-pane]").isVisible());
+    await page.keyboard.press("Escape");
+    assert.ok(await page.locator("[data-tr-stage]").isVisible());
     await page.close();
 
     const bubble = await browser.newPage({
@@ -110,6 +140,14 @@ test("翻译页和翻译气泡", async () => {
       await visible(".bubble-compose"),
       "the next sentence is typed right there",
     );
+    // Native skin must not clip multi-line bubble textarea into a 999px capsule.
+    await bubble.evaluate(() => {
+      document.documentElement.dataset.skin = "native";
+    });
+    const nativeRadius = await bubble
+      .locator(".bubble-compose textarea")
+      .evaluate((el) => getComputedStyle(el).borderRadius);
+    assert.equal(nativeRadius, "0px");
     // Typing: no selection tabs, no 替换为译文, the translation placeholder.
     await bubble.evaluate(() =>
       (window as any).__studio.bubble("translation-typing"),

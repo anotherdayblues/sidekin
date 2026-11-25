@@ -30,11 +30,36 @@ export async function mountChatWindow(app: HTMLElement) {
   };
   const q = <T extends HTMLElement>(s: string) => app.querySelector<T>(s)!;
   // 翻译记录 shares the window with the chat page.
-  const translations = translationLog(shell, (shown) => {
-    if (native)
-      void invoke("chat_window_remember_view", { translations: shown }).catch(
-        () => {},
-      );
+  let leaving = false;
+  const collapse = async (returnToBubble = false) => {
+    if (leaving) return;
+    leaving = true;
+    delete shell.dataset.entering;
+    shell.dataset.leaving = "";
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    await new Promise((r) => setTimeout(r, still ? 0 : 180));
+    if (native) await invoke("hide_chat_window", { returnToBubble });
+    delete shell.dataset.leaving;
+    leaving = false;
+  };
+  const pin = q("[data-pin]");
+  const togglePin = () => {
+    const on = pin.getAttribute("aria-pressed") !== "true";
+    pin.setAttribute("aria-pressed", String(on));
+    translations.syncPin(on);
+    if (native) void invoke("pin_chat_window", { on });
+    return on;
+  };
+  const translations = translationLog(shell, {
+    onVisibilityChange: (shown) => {
+      if (native)
+        void invoke("chat_window_remember_view", { translations: shown }).catch(
+          () => {},
+        );
+    },
+    onTogglePin: togglePin,
+    onCollapse: () => void collapse(false),
+    initialPinned: true,
   });
   const showTranslations = async () => {
     if (native && !(await invoke<boolean>("take_translations_request"))) return;
@@ -67,8 +92,7 @@ export async function mountChatWindow(app: HTMLElement) {
   };
   void api.state().then(showPet);
   void api.changes(showPet);
-  const topics = q("[data-topics]"),
-    pin = q("[data-pin]");
+  const topics = q("[data-topics]");
   topics.onclick = () => {
     translations.hide();
     view.toggleTopics();
@@ -81,27 +105,13 @@ export async function mountChatWindow(app: HTMLElement) {
     translations.hide();
     void view.newTopic();
   };
-  pin.onclick = () => {
-    const on = pin.getAttribute("aria-pressed") !== "true";
-    pin.setAttribute("aria-pressed", String(on));
-    if (native) void invoke("pin_chat_window", { on });
-  };
-  // Play the skin's closing motion, then hide the window.
-  let leaving = false;
-  const collapse = async (returnToBubble = false) => {
-    if (leaving) return;
-    leaving = true;
-    delete shell.dataset.entering;
-    shell.dataset.leaving = "";
-    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    await new Promise((r) => setTimeout(r, still ? 0 : 180));
-    if (native) await invoke("hide_chat_window", { returnToBubble });
-    delete shell.dataset.leaving;
-    leaving = false;
-  };
+  pin.onclick = () => void togglePin();
   q("[data-collapse]").onclick = () => void collapse(false);
   addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !e.defaultPrevented) void collapse();
+    if (e.key === "Escape" && !e.defaultPrevented) {
+      if (translations.handleEscape()) return;
+      void collapse();
+    }
   });
   if (native) {
     // Typing here, the desktop pet looks over at the caret.
@@ -118,6 +128,7 @@ export async function mountChatWindow(app: HTMLElement) {
       "chat_window_state",
     ).catch(() => ({ pinned: true, translations: false }));
     pin.setAttribute("aria-pressed", String(saved.pinned));
+    translations.syncPin(saved.pinned);
     await listen("chat-release-check", () => {
       if (!leaving && !view.isDirty() && !translations.isDirty())
         void invoke("chat_window_release");
@@ -155,8 +166,8 @@ export async function mountChatWindow(app: HTMLElement) {
   } else {
     Object.assign(window, {
       __studio: {
-        translations: (records: TranslationRecord[]) =>
-          translations.preview(records),
+        translations: (records: TranslationRecord[], openHistory = false) =>
+          translations.preview(records, openHistory),
         attachSnip: (snip: {
           data: string;
           preview: string;

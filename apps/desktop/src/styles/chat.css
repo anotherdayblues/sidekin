@@ -767,6 +767,7 @@ body.chat-window-host,
 .chat-window {
   position: relative;
 }
+.chat-window:has(> .chat-translation:not([hidden])) > header,
 .chat-window:has(> .chat-translation:not([hidden])) > .chat-body {
   display: none;
 }

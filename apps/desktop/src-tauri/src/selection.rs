@@ -116,18 +116,14 @@ pub fn read_clipboard_text() -> String {
         String::new()
     }
 }
-/// The translation shortcut (plan/41): the selection, as from the menu; with
-/// nothing selected, an empty translation bubble to type into.
+/// The translation shortcut (⌃⇧3): toggle the side translation panel directly
+/// without requiring Accessibility permission (double-copy covers selection).
 pub fn translate_shortcut(app: AppHandle) {
     if !enabled(&app) {
         return;
     }
     crate::tips::used(&app, "menu-translate");
-    #[cfg(any(windows, target_os = "macos"))]
-    let target = unsafe { companion_previous_target() };
-    #[cfg(not(any(windows, target_os = "macos")))]
-    let target = 0;
-    translate_from(app, target, true);
+    let _ = crate::chat_window::toggle_translations(&app);
 }
 /// 输入要翻译的话 in the pet's menu: the translation bubble, ready to type.
 #[tauri::command]

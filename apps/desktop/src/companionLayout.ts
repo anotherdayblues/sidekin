@@ -169,11 +169,11 @@ export function arrangeCompanion(ctx: LayoutContext) {
   card(shortcuts).append(
     keyRow("chatShortcut", "keys.chat", "keys.chatNote"),
     keyRow("panelShortcut", "keys.panel", "keys.panelNote"),
+    keyRow("translationShortcut", "keys.translate", "keys.translateNote"),
     keyRow("clipboardShortcut", "keys.clipboard", "keys.clipboardNote"),
   );
   const selectionKeys = group("shortcuts-selection", t("settings.keysSelection"));
   card(selectionKeys).append(
-    keyRow("translationShortcut", "keys.translate", "keys.translateNote"),
     keyRow("visionShortcut", "keys.vision", "keys.visionNote"),
     keyRow("chatSnipShortcut", "keys.chatSnip", "keys.chatSnipNote"),
   );

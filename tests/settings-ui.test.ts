@@ -883,8 +883,12 @@ test(
         ),
       );
       assert.deepEqual(groups, [
-        { title: "打开窗口", names: ["聊天", "聊天侧边栏", "剪贴板历史"], descs: 3 },
-        { title: "对选中的内容", names: ["翻译", "截屏识图", "圈屏提问"], descs: 3 },
+        {
+          title: "打开窗口",
+          names: ["聊天", "聊天侧边栏", "翻译面板", "剪贴板历史"],
+          descs: 4,
+        },
+        { title: "对选中的内容", names: ["截屏识图", "圈屏提问"], descs: 2 },
       ]);
       assert.equal(
         await f.page.locator('[name="chatShortcut"]').getAttribute("placeholder"),

@@ -29,11 +29,14 @@ test("翻译记录：删一条、取消、全部清除", async () => {
     const now = Date.now();
     await page.evaluate(
       (now) =>
-        (window as any).__studio.translations([
-          { id: 3, source: "Thanks", result: "谢谢", at: now },
-          { id: 2, source: "Good night", result: "晚安", at: now - 60_000 },
-          { id: 1, source: "Hello", result: "你好", at: now - 120_000 },
-        ]),
+        (window as any).__studio.translations(
+          [
+            { id: 3, source: "Thanks", result: "谢谢", at: now },
+            { id: 2, source: "Good night", result: "晚安", at: now - 60_000 },
+            { id: 1, source: "Hello", result: "你好", at: now - 120_000 },
+          ],
+          true,
+        ),
       now,
     );
     const items = page.locator(".tr-item");
@@ -41,8 +44,13 @@ test("翻译记录：删一条、取消、全部清除", async () => {
     const clear = page.locator("[data-tr-clear]");
     assert.equal(await clear.isVisible(), true);
 
-    // 删 asks in place; 取消 brings the keys back.
+    // Hover reveals the trash icon; clicking asks in place; 取消 brings the icons back.
     const second = items.nth(1);
+    await second.hover();
+    assert.ok(
+      (await second.locator(".tr-delete svg").count()) === 1,
+      "delete action uses a trash glyph icon",
+    );
     await second.locator(".tr-delete").click();
     await second.getByText("删掉这条翻译？").waitFor();
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/tr-ask-one.png` });
@@ -51,6 +59,7 @@ test("翻译记录：删一条、取消、全部清除", async () => {
     assert.equal(await items.count(), 3);
 
     // 确认删除: that one is gone, the others stay.
+    await second.hover();
     await second.locator(".tr-delete").click();
     await second.getByRole("button", { name: "确认删除" }).click();
     await page.waitForFunction(

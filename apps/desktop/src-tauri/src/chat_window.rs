@@ -152,6 +152,20 @@ pub fn show_translations(app: &AppHandle) -> Result<(), String> {
     let _ = app.emit_to(LABEL, "chat-translations", ());
     Ok(())
 }
+/// Toggle the side panel directly on its translation view (⌃⇧3).
+pub fn toggle_translations(app: &AppHandle) -> Result<(), String> {
+    let s = app.state::<ChatWindow>();
+    if s.last_translations.load(Ordering::SeqCst) {
+        if let Some(w) = app.get_webview_window(LABEL) {
+            if w.is_visible().unwrap_or(false) && w.is_focused().unwrap_or(false) {
+                return app
+                    .emit_to(LABEL, "chat-window-close", ())
+                    .map_err(|e| e.to_string());
+            }
+        }
+    }
+    show_translations(app)
+}
 /// The panel asks once whether to show 翻译记录 when it opens.
 #[tauri::command]
 pub fn take_translations_request(app: AppHandle) -> bool {

@@ -470,7 +470,7 @@
   border-radius: 4px;
 }
 :root[data-skin="native"] .chat-composer textarea {
-  border-radius: 18px;
+  border-radius: 14px;
 }
 :root[data-skin="native"][data-platform="win"] .chat-composer textarea {
   border-radius: 4px;
@@ -502,9 +502,12 @@
     0 0 0 0.5px rgba(255, 255, 255, 0.12),
     0 4px 14px rgba(0, 0, 0, 0.28);
 }
-:root[data-skin="native"] .bubble-card button,
-:root[data-skin="native"] .bubble-card textarea {
+:root[data-skin="native"] .bubble-card button {
   border-radius: 999px;
+}
+/* Never clip multi-line bubble textareas into a giant oval capsule. */
+:root[data-skin="native"] .bubble-card .bubble-compose textarea {
+  border-radius: 0;
 }
 :root[data-skin="native"][data-platform="win"] .bubble-shell {
   --bubble-radius: 8px;
