@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="apps/website/public/app-icon.png" width="76" height="76" alt="随伴图标" />
+  <img src="apps/desktop/src-tauri/icons/icon.png" width="76" height="76" alt="随伴图标" />
 </p>
 
 <h1 align="center">随伴 · Suiby</h1>
@@ -102,7 +102,7 @@
 - **macOS（Apple 芯片）**：`Suiby-Mac-arm64.dmg`
 - **Windows（x64）**：`Suiby-Windows-x64.exe`
 
-目前体验版暂未购买 Apple 年度公证与 Windows 代码签名证书，首次打开时系统会例行提示：
+目前 macOS 安装包尚未经过 Apple 公证，Windows 安装包尚未签名。首次打开时，系统可能会显示安全提示。
 
 - **macOS**：将 `Suiby.app` 拖进 `Applications` 后双击，遇到「无法验证」弹窗点 **完成**，再到 **系统设置 → 隐私与安全性** 滑到底部点 **仍要打开** 即可（放行一次后永久正常打开）。
 - **Windows**：SmartScreen 蓝色窗口点 **更多信息 → 仍要运行**。
@@ -131,14 +131,8 @@ npm run desktop
 # 构建桌面端前端
 npm run build
 
-# 运行 TypeScript、大脑与官网测试
+# 运行 TypeScript 和大脑模块测试
 npm test
-
-# 本地预览官网（http://127.0.0.1:4340/）
-npm run site
-
-# 构建官网静态产物（输出到 apps/website/dist/）
-npm run build:site
 
 # 运行 Rust 宿主单元测试
 cd apps/desktop/src-tauri && cargo test
@@ -153,7 +147,6 @@ cd apps/desktop/src-tauri && cargo test
 | `apps/desktop/` | 桌面端本体（TypeScript/CSS 界面 `src/` + Rust/Tauri 宿主 `src-tauri/`） |
 | `apps/brain/` | AI 伙伴大脑 sidecar（Bun + TypeScript）与系统提示词 |
 | `apps/shared/` | 桌面端与大脑共用的类型、模型目录与中英文文案 |
-| `apps/website/` | 官方网站与交互演示源码（部署于 `suiby.ajulyroom.com`） |
 | `skills/` | 内置造宠、教新动作与找工具 Skills |
 | `examples/` | 示例宠物包（`lizi`、`mika`）与示范动作包 |
 | `docs/` | 收件箱协议与相关文档 |
