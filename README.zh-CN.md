@@ -93,14 +93,35 @@
 | 按需开启的 AI 对话、划词翻译、截屏识图 | **从本机直连你填写的模型服务商**（接入 Ollama 等本地模型时彻底零出网） |
 | 后台服务器 / 统计埋点 | **无。** 随伴没有后台服务器，不收集任何用户行为数据。 |
 
+### 系统权限与透明说明
+
+每一项系统权限均为**按需可选**，不授权也能正常使用其余全部功能：
+
+| 系统权限 | 具体用途 | 不给会怎样 |
+| --- | --- | --- |
+| **输入监控（macOS）** | **不需要。** 双击复制翻译采用零权限剪贴板变化检测，不监听全局键盘按键（见 [`clipboard/`](apps/desktop/src-tauri/src/clipboard/)）。 | 无需授权即可使用 |
+| **辅助功能** | 剪贴板历史回车直接粘贴到目标输入框，以及划词翻译的「替换为译文」。 | 剪贴板历史会自动降级为复制到系统剪贴板，其它功能不受影响 |
+| **屏幕录制** | 主动触发截屏圈选后发给 AI 提问。 | 仅截屏识图功能不可用 |
+| **本地网络** | 手机扫码局域网互传（开启临时局域网 HTTP 服务，带 24 位随机访问码，闲置 10 分钟自动关闭——请仅在受信任的家庭/办公 Wi-Fi 下使用）。 | 仅手机互传不可用 |
+
+- **密钥与敏感剪贴板保护**：AI API Key 存于系统钥匙串 / Windows 凭据管理器（[`credentials.rs`](apps/desktop/src-tauri/src/credentials.rs)）；密码管理器（如 1Password）标记为敏感的剪贴板条目会被自动跳过。完整安全模型与漏洞反馈通道见 [SECURITY.md](SECURITY.md)。
+
 ---
 
-## 下载与首次打开说明
+## 下载、校验与首次打开说明
 
 预编译安装包可在 [官网](https://suiby.ajulyroom.com/#download) 或 [GitHub Releases](https://github.com/anotherdayblues/suiby/releases) 下载：
 
 - **macOS（Apple 芯片）**：`Suiby-Mac-arm64.dmg`
 - **Windows（x64）**：`Suiby-Windows-x64.exe`
+
+**可验证的公开 CI 构建**：macOS 与 Windows 正式安装包均通过本仓库公开的 GitHub Actions 流水线（[`.github/workflows/release.yml`](.github/workflows/release.yml)）从源码直接编译上传，附带 `SHA256SUMS.txt` 与 GitHub 构建出处证明（SLSA Attestation）：
+
+```bash
+# 验证下载的安装包确实由本仓库 GitHub Actions 从公开源码构建
+gh attestation verify Suiby-Mac-arm64.dmg --repo anotherdayblues/suiby
+gh attestation verify Suiby-Windows-x64.exe --repo anotherdayblues/suiby
+```
 
 目前 macOS 安装包尚未经过 Apple 公证，Windows 安装包尚未签名。首次打开时，系统可能会显示安全提示：
 

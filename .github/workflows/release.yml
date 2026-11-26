@@ -3,11 +3,66 @@ name: Release packages
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
+  macos:
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Check release version
+        if: github.event_name == 'push'
+        run: |
+          version=$(node -p "JSON.parse(require('fs').readFileSync('apps/desktop/src-tauri/tauri.conf.json','utf8')).version")
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "Tag $GITHUB_REF_NAME must match desktop version v$version"
+            exit 1
+          fi
+      - run: npm ci
+      - name: Build macOS Apple Silicon app
+        env:
+          TRIAL_SIGN_IDENTITY: '-'
+          SUIBY_MAC_SIGN_IDENTITY: ''
+        run: node scripts/build-mac.mjs
+      - name: Package & verify macOS DMG
+        run: |
+          rev12=$(git rev-parse HEAD | cut -c1-12)
+          app_path="exports/正式版/$rev12/Suiby.app"
+          codesign --verify --deep --strict "$app_path"
+          mkdir -p releases
+          node scripts/build-dmg.mjs "$app_path" releases/Suiby-Mac-arm64.dmg
+          hdiutil verify releases/Suiby-Mac-arm64.dmg
+      - name: Attest macOS build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: releases/Suiby-Mac-arm64.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Suiby-Mac-arm64
+          path: releases/Suiby-Mac-arm64.dmg
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload macOS DMG to GitHub Release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="$GITHUB_REF_NAME"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --verify-tag --draft --title "$tag" --generate-notes || true
+          fi
+          gh release upload "$tag" releases/Suiby-Mac-arm64.dmg --clobber
+
   windows:
     runs-on: windows-latest
     timeout-minutes: 60
@@ -18,6 +73,7 @@ jobs:
           node-version: 24
           cache: npm
       - name: Check release version
+        if: github.event_name == 'push'
         shell: pwsh
         run: |
           $version = (Get-Content apps/desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
@@ -31,8 +87,12 @@ jobs:
         run: |
           $installers = @(Get-ChildItem apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis -Filter '*.exe')
           if ($installers.Count -ne 1) { throw "Expected one NSIS installer" }
-          New-Item -ItemType Directory -Path releases | Out-Null
+          New-Item -ItemType Directory -Path releases -Force | Out-Null
           Copy-Item $installers[0].FullName releases/Suiby-Windows-x64.exe
+      - name: Attest Windows build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: releases/Suiby-Windows-x64.exe
       - uses: actions/upload-artifact@v4
         with:
           name: Suiby-Windows-x64
@@ -40,6 +100,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - name: Upload Windows installer to GitHub Release
+        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
@@ -50,3 +111,34 @@ jobs:
             gh release create $tag --verify-tag --draft --title $tag --generate-notes
           }
           gh release upload $tag releases/Suiby-Windows-x64.exe --clobber
+
+  checksums:
+    needs: [macos, windows]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Generate SHA256SUMS.txt
+        working-directory: artifacts
+        run: |
+          sha256sum Suiby-Mac-arm64.dmg Suiby-Windows-x64.exe > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: Attest SHA256SUMS.txt provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: artifacts/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SHA256SUMS
+          path: artifacts/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload SHA256SUMS.txt to GitHub Release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$GITHUB_REF_NAME" artifacts/SHA256SUMS.txt --clobber

@@ -268,13 +268,26 @@ function buildBackgroundHtml(liziDataUri) {
  * 确保 Finder 按精确 640×400 逻辑点排版且在 Retina 屏下保持高清。
  */
 export async function renderDmgBackground(outTiffPath, workDir) {
-  const liziPath = path.join(root, "apps/website/public/pets/lizi-sleep.webp");
-  const liziDataUri = `data:image/webp;base64,${readFileSync(liziPath).toString("base64")}`;
+  const liziCandidates = [
+    [path.join(root, "examples/lizi-sleep/actions/sleep.png"), "image/png"],
+    [path.join(root, "apps/website/public/pets/lizi-sleep.webp"), "image/webp"],
+  ];
+  const found = liziCandidates.find(([p]) => existsSync(p));
+  if (!found) {
+    throw new Error("找不到 DMG 背景宠物素材（examples/lizi-sleep/actions/sleep.png）");
+  }
+  const [liziPath, liziMime] = found;
+  const liziDataUri = `data:${liziMime};base64,${readFileSync(liziPath).toString("base64")}`;
   const html = buildBackgroundHtml(liziDataUri);
   const bg1x = path.join(workDir, "bg-1x.png");
   const bg2x = path.join(workDir, "bg-2x.png");
 
-  const browser = await chromium.launch({ channel: "chrome" });
+  let browser;
+  try {
+    browser = await chromium.launch({ channel: "chrome" });
+  } catch {
+    browser = await chromium.launch();
+  }
   try {
     for (const [scale, file] of [
       [1, bg1x],
@@ -343,7 +356,7 @@ function applyFinderLayout(mountPoint, appName) {
     end tell
   `;
 
-  run("osascript", ["-e", script]);
+  run("osascript", ["-e", script], { timeout: 30_000 });
 }
 
 /**
@@ -424,7 +437,18 @@ export async function createPrettyDmg({
       }
     }
 
-    applyFinderLayout(mountPoint, appName);
+    try {
+      applyFinderLayout(mountPoint, appName);
+    } catch (err) {
+      if (process.env.CI) {
+        console.warn(
+          "CI 环境下 Finder 窗口排版跳过（不影响安装包完整性）：",
+          err instanceof Error ? err.message : String(err),
+        );
+      } else {
+        throw err;
+      }
+    }
 
     run("sync", []);
     // 给 Finder 一点落盘 .DS_Store 的时间再安全卸载

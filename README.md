@@ -93,14 +93,35 @@ Let your imagination run wild — turn a photo of your own cat or dog, a favorit
 | Optional AI chat, translation, vision | Sent **directly from your computer** to the model provider you configure — or stays **100% offline** with local models like Ollama |
 | Telemetry / backend servers | **None.** Suiby runs no backend server and collects zero analytics. |
 
+### System Permissions &amp; Transparency
+
+Every OS permission is optional and only requested when you use the corresponding feature:
+
+| Permission | What it is used for | If you don't grant it |
+| --- | --- | --- |
+| **Input Monitoring (macOS)** | **Not required.** Double-copy translate watches clipboard changes without global keystroke logging ([`clipboard/`](apps/desktop/src-tauri/src/clipboard/)). | Always works without it |
+| **Accessibility** | Direct Enter-to-paste from clipboard history and reading selected text for replace-with-translation. | Clipboard history automatically falls back to copying to your system clipboard |
+| **Screen Recording** | Region screenshot capture for AI vision questions. | Only screenshot-to-AI is unavailable |
+| **Local Network** | Phone-to-computer QR transfer (ephemeral LAN HTTP server with a 24-character access token, auto-closes after 10 min idle — use on trusted Wi-Fi only). | Only phone LAN transfer is unavailable |
+
+- **Credentials &amp; sensitive clipboard data:** API keys are stored in macOS Keychain / Windows Credential Manager ([`credentials.rs`](apps/desktop/src-tauri/src/credentials.rs)). Concealed/password-manager clipboard items (such as 1Password) are skipped automatically. See [SECURITY.md](SECURITY.md) for the full security model.
+
 ---
 
-## Download &amp; First-Launch Note
+## Download, Verification &amp; First-Launch Note
 
 Prebuilt installers are available on the [website](https://suiby.ajulyroom.com/en/#download) and [GitHub Releases](https://github.com/anotherdayblues/suiby/releases):
 
 - **macOS (Apple Silicon):** `Suiby-Mac-arm64.dmg`
 - **Windows (x64):** `Suiby-Windows-x64.exe`
+
+**Verifiable public CI builds:** Both macOS and Windows release packages are compiled publicly from this repository via GitHub Actions ([`.github/workflows/release.yml`](.github/workflows/release.yml)) with `SHA256SUMS.txt` and GitHub Build Provenance Attestations:
+
+```bash
+# Verify downloaded installer provenance against this repository
+gh attestation verify Suiby-Mac-arm64.dmg --repo anotherdayblues/suiby
+gh attestation verify Suiby-Windows-x64.exe --repo anotherdayblues/suiby
+```
 
 The macOS installer has not been notarized by Apple, and the Windows installer is unsigned. Your OS may show a warning on first launch:
 
