@@ -2,6 +2,7 @@ import { t, tn } from "./i18n.ts";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { native } from "./bridge.ts";
+import { dropEventPoint } from "./dropPoint.ts";
 const MAX = 20 * 1024 * 1024;
 const EMPTY_PDF_ERR = t("library.pdfImages");
 const EMPTY_DOC_ERR = t("library.noText");
@@ -258,10 +259,8 @@ export function documentsPage(form: HTMLElement) {
       if (e.payload.type === "leave") over(false);
       if (e.payload.type !== "drop" || !section.offsetParent) return;
       over(false);
-      const hit = document.elementFromPoint(
-        e.payload.position.x / devicePixelRatio,
-        e.payload.position.y / devicePixelRatio,
-      );
+      const pt = dropEventPoint(e.payload.position);
+      const hit = document.elementFromPoint(pt.x, pt.y);
       if (!hit || !zone().contains(hit)) return;
       try {
         for (const path of e.payload.paths) {

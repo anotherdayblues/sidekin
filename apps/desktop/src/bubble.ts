@@ -457,10 +457,25 @@ export async function mountBubble(root: HTMLElement) {
       clip = clipboardPanel(v);
     };
     await listen<{ id: number }>("clip-open", (e) => void openClip(e.payload));
-    await listen<{ session: number; text: string }>(
+    await listen<{ session: number; id?: number; text: string }>(
       "clip-insert",
       async ({ payload }) => {
         if (clip?.id !== payload.session) return;
+        const fallbackCopy = async () => {
+          if (typeof payload.id === "number") {
+            try {
+              await invoke("clip_copy", {
+                session: payload.session,
+                id: payload.id,
+              });
+              return;
+            } catch (e) {
+              clip?.error(String(e));
+              return;
+            }
+          }
+          clip?.error(t("clip.pasteFailed"));
+        };
         const dest = priorFocus;
         if (
           !(
@@ -470,13 +485,13 @@ export async function mountBubble(root: HTMLElement) {
           dest.readOnly ||
           dest.disabled
         ) {
-          clip.error(t("clip.pasteFailed"));
+          await fallbackCopy();
           return;
         }
         const start = dest.selectionStart,
           end = dest.selectionEnd;
         if (start === null || end === null) {
-          clip.error(t("clip.pasteFailed"));
+          await fallbackCopy();
           return;
         }
         dest.setRangeText(payload.text, start, end, "end");

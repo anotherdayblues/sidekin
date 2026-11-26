@@ -15,7 +15,12 @@ import {
   type Geometry,
 } from "./pileLayout.ts";
 import type { FileMeta } from "./fileTypes.ts";
-import { fileMenu, sendToPhone } from "./fileMenu.ts";
+import {
+  fileMenu,
+  sendPetLabel,
+  sendToPet,
+  sendToPhone,
+} from "./fileMenu.ts";
 import {
   buildPanel,
   buildPile,
@@ -35,7 +40,14 @@ const empty: View = {
   layoutVersion: 2,
 };
 
-export async function mountPiles(root: HTMLElement) {
+export interface PilesOptions {
+  petChat?: () => { enabled: boolean; petName: string };
+}
+
+export async function mountPiles(
+  root: HTMLElement,
+  options: PilesOptions = {},
+) {
   document.body.classList.add("files-page");
   let view = (await call<View>("lab_load")) ?? structuredClone(empty);
   let positions = view.positions ?? {},
@@ -370,11 +382,20 @@ export async function mountPiles(root: HTMLElement) {
         held?: () => boolean,
       ) => drag(event, item, paths, held);
       const send = (paths: string[]) => void sendToPhone(paths, say);
-      const menu = (event: MouseEvent, paths: string[]) =>
+      const sendPet = (paths: string[]) => void sendToPet(paths, say);
+      const menu = (event: MouseEvent, paths: string[]) => {
+        const chat = options.petChat?.();
         void fileMenu(event, paths, {
           send: () => send(paths),
+          sendPet: chat?.enabled
+            ? {
+                label: sendPetLabel(chat.petName),
+                action: () => sendPet(paths),
+              }
+            : undefined,
           remove: () => remove(paths),
         }).catch(console.error);
+      };
       const group = buildPile(item, metadata, click, {
         toggle: () => {
           expanded = expanded === item.id ? null : item.id;

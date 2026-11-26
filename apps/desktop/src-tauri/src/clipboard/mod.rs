@@ -636,6 +636,14 @@ pub fn clip_delete_batch(app: AppHandle, ids: Vec<i64>) -> Result<(), String> {
     notify_views(&app, "clip-updated");
     Ok(())
 }
+pub(super) fn touch_entry(app: &AppHandle, id: i64) {
+    let file = &app.state::<Clipboard>().file;
+    if let Ok(db) = store::open(file) {
+        if store::touch(&db, id, chat::now() as i64).unwrap_or(0) > 0 {
+            notify_views(app, "clip-updated");
+        }
+    }
+}
 pub(super) fn payload(app: &AppHandle, id: i64) -> Result<store::ClipPayload, String> {
     let file = &app.state::<Clipboard>().file;
     let db = store::open(file).map_err(|_| failed())?;

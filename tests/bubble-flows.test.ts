@@ -452,6 +452,33 @@ test("剪贴板复用气泡，鼠标和回车直接粘贴，输入法选字和�
   await b.page.close();
 });
 
+test("剪贴板在无焦点输入框触发 clip-insert 时自动降级调用 clip_copy", async () => {
+  const b = await bubble({
+    clip_preferences: () => ({ enabled: true, excluded: "" }),
+    clip_search: () => [
+      {
+        id: 42,
+        preview: "需要兜底复制的内容",
+        source: "Notes",
+        at: Date.now(),
+        pinned: false,
+        link: false,
+      },
+    ],
+    clip_copy: () => true,
+  });
+  await b.event("clip-open", { id: 12 });
+  await b.page.locator(".clipboard-panel [role=option]").first().waitFor();
+  await b.event("clip-insert", {
+    session: 12,
+    id: 42,
+    text: "需要兜底复制的内容",
+  });
+  await b.waitCall("clip_copy");
+  assert.deepEqual(b.called("clip_copy")[0][1], { session: 12, id: 42 });
+  await b.page.close();
+});
+
 for (const [platform, modifier, shortcut] of [
   ["mac", "Meta", "⌘+↵"],
   ["win", "Control", "Ctrl+↵"],

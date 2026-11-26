@@ -29,6 +29,8 @@ const MARGIN: f64 = 8.;
 /// Images over this size are refused before decoding.
 const MAX_IMAGE: usize = 15 * 1024 * 1024;
 
+const IMAGE_EXTS: [&str; 6] = ["png", "jpg", "jpeg", "webp", "gif", "bmp"];
+
 /// Where the panel lives. Without a saved spot it opens tall against the
 /// right edge; once the user drags it, it stays where it was dropped.
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
@@ -48,6 +50,22 @@ impl Default for Place {
             pos: None,
         }
     }
+}
+impl Place {
+    fn approx_eq(&self, other: &Self) -> bool {
+        let same_height = match (self.height, other.height) {
+            (Some(a), Some(b)) => (a - b).abs() < 0.5,
+            (None, None) => true,
+            _ => false,
+        };
+        self.pos == other.pos && (self.width - other.width).abs() < 0.5 && same_height
+    }
+}
+#[derive(Clone, Debug)]
+struct PlaceState {
+    place: Place,
+    last_write: Option<Instant>,
+    dirty: bool,
 }
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -77,11 +95,12 @@ impl PendingSnip {
     }
 }
 pub struct ChatWindow {
-    place: Mutex<Option<(Place, Option<Instant>)>>,
+    place: Mutex<Option<PlaceState>>,
     moves: AtomicU64,
     release: IdleRelease,
     focus_turn: Mutex<Option<(i64, i64)>>,
     pending_snip: Mutex<Option<PendingSnip>>,
+    pending_files: Mutex<Vec<String>>,
     /// Set when the panel should open on 翻译记录 rather than chat.
     translations: AtomicBool,
     /// Last view shown inside the panel within this session.
@@ -97,11 +116,68 @@ impl Default for ChatWindow {
             release: IdleRelease::default(),
             focus_turn: Mutex::new(None),
             pending_snip: Mutex::new(None),
+            pending_files: Mutex::new(Vec::new()),
             translations: AtomicBool::new(false),
             last_translations: AtomicBool::new(false),
             pinned: AtomicBool::new(true),
         }
     }
+}
+impl ChatWindow {
+    fn has_pending(&self) -> bool {
+        self.focus_turn.lock().unwrap().is_some()
+            || self.pending_snip.lock().unwrap().is_some()
+            || !self.pending_files.lock().unwrap().is_empty()
+    }
+
+    fn clear_transient_on_release(&self) {
+        self.translations.store(false, Ordering::SeqCst);
+        self.last_translations.store(false, Ordering::SeqCst);
+        self.focus_turn.lock().unwrap().take();
+        self.pending_snip.lock().unwrap().take();
+        self.pending_files.lock().unwrap().clear();
+    }
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ToggleAction {
+    Close,
+    Open,
+}
+fn toggle_chat_action(visible: bool, focused: bool, last_translations: bool) -> ToggleAction {
+    if visible && focused && !last_translations {
+        ToggleAction::Close
+    } else {
+        ToggleAction::Open
+    }
+}
+fn toggle_translations_action(
+    visible: bool,
+    focused: bool,
+    last_translations: bool,
+) -> ToggleAction {
+    if visible && focused && last_translations {
+        ToggleAction::Close
+    } else {
+        ToggleAction::Open
+    }
+}
+fn validate_staged_chat_files(
+    paths: Vec<String>,
+    staged: &[String],
+) -> Result<Vec<String>, String> {
+    if paths.is_empty() {
+        return Err(t("host.noFileName").into());
+    }
+    let mut accepted = Vec::with_capacity(paths.len());
+    for path in paths {
+        if !staged.iter().any(|s| s == &path) {
+            return Err(t("host.fileBad").into());
+        }
+        if !accepted.contains(&path) {
+            accepted.push(path);
+        }
+    }
+    Ok(accepted)
 }
 /// Stage a captured snip for the chat composer, open/focus the sidebar, and notify it.
 pub fn attach_snip(
@@ -111,9 +187,8 @@ pub fn attach_snip(
 ) -> Result<(), String> {
     let pending = PendingSnip::from_image(image, draft_text)?;
     let s = app.state::<ChatWindow>();
+    s.release.cancel();
     *s.pending_snip.lock().unwrap() = Some(pending);
-    s.translations.store(false, Ordering::SeqCst);
-    s.last_translations.store(false, Ordering::SeqCst);
     open_chat_window(app.clone())?;
     let _ = app.emit_to(LABEL, "chat-snip-attached", ());
     Ok(())
@@ -122,6 +197,67 @@ pub fn attach_snip(
 #[tauri::command]
 pub fn take_pending_snip_image(app: AppHandle) -> Option<PendingSnip> {
     app.state::<ChatWindow>().pending_snip.lock().unwrap().take()
+}
+/// Stage shelf files for the chat composer, open/focus the sidebar, and notify it.
+#[tauri::command]
+pub fn attach_files_to_chat(app: AppHandle, paths: Vec<String>) -> Result<(), String> {
+    if !app.state::<Companion>().settings.lock().unwrap().enabled {
+        return Err("disabled".into());
+    }
+    let staged = crate::file_transfer::staged_paths(&app);
+    let accepted = validate_staged_chat_files(paths, &staged)?;
+    let s = app.state::<ChatWindow>();
+    s.release.cancel();
+    {
+        let mut slot = s.pending_files.lock().unwrap();
+        for path in accepted {
+            if !slot.contains(&path) {
+                slot.push(path);
+            }
+        }
+    }
+    s.translations.store(false, Ordering::SeqCst);
+    s.last_translations.store(false, Ordering::SeqCst);
+    open_chat_window(app.clone())?;
+    let _ = app.emit_to(LABEL, "chat-files-attached", ());
+    Ok(())
+}
+/// Atomically consume any shelf file paths waiting for the chat composer (cold-start & warm safe).
+#[tauri::command]
+pub fn take_pending_chat_files(app: AppHandle) -> Vec<String> {
+    std::mem::take(&mut *app.state::<ChatWindow>().pending_files.lock().unwrap())
+}
+fn read_chat_image_source(path: &std::path::Path) -> Result<String, String> {
+    let name = path
+        .file_name()
+        .and_then(|s| s.to_str())
+        .ok_or_else(|| t("host.noFileName"))?;
+    if name.is_empty() || name.contains('\0') {
+        return Err(t("host.imageBad").into());
+    }
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    if !IMAGE_EXTS.contains(&ext.as_str()) {
+        return Err(t("host.imageBad").into());
+    }
+    if path.is_dir() {
+        return Err(t("host.imageBad").into());
+    }
+    let bytes = crate::library::bounded(path, MAX_IMAGE as u64)?;
+    Ok(STANDARD.encode(bytes))
+}
+/// Read a dropped local image file for the chat composer (base64, capped at 15 MiB).
+#[tauri::command]
+pub async fn chat_image_source(window: WebviewWindow, path: String) -> Result<String, String> {
+    if !["studio", "chat"].contains(&window.label()) {
+        return Err(t("host.docWhere").into());
+    }
+    tauri::async_runtime::spawn_blocking(move || read_chat_image_source(std::path::Path::new(&path)))
+        .await
+        .map_err(|e| e.to_string())?
 }
 /// Hide the chat panel temporarily during screen capture without scheduling idle WebView release.
 pub fn hide_temporarily(app: &AppHandle) -> bool {
@@ -146,23 +282,31 @@ pub fn restore_temporarily(app: &AppHandle) {
 /// Open the panel on its 翻译记录 page.
 pub fn show_translations(app: &AppHandle) -> Result<(), String> {
     let s = app.state::<ChatWindow>();
+    s.release.cancel();
     s.translations.store(true, Ordering::SeqCst);
     s.last_translations.store(true, Ordering::SeqCst);
-    open_chat_window(app.clone())?;
+    show_panel_window(app)?;
     let _ = app.emit_to(LABEL, "chat-translations", ());
     Ok(())
 }
 /// Toggle the side panel directly on its translation view (⌃⇧3).
 pub fn toggle_translations(app: &AppHandle) -> Result<(), String> {
     let s = app.state::<ChatWindow>();
-    if s.last_translations.load(Ordering::SeqCst) {
-        if let Some(w) = app.get_webview_window(LABEL) {
-            if w.is_visible().unwrap_or(false) && w.is_focused().unwrap_or(false) {
-                return app
-                    .emit_to(LABEL, "chat-window-close", ())
-                    .map_err(|e| e.to_string());
-            }
-        }
+    let (visible, focused) = app
+        .get_webview_window(LABEL)
+        .map(|w| {
+            (
+                w.is_visible().unwrap_or(false),
+                w.is_focused().unwrap_or(false),
+            )
+        })
+        .unwrap_or((false, false));
+    if toggle_translations_action(visible, focused, s.last_translations.load(Ordering::SeqCst))
+        == ToggleAction::Close
+    {
+        return app
+            .emit_to(LABEL, "chat-window-close", ())
+            .map_err(|e| e.to_string());
     }
     show_translations(app)
 }
@@ -176,7 +320,9 @@ pub fn take_translations_request(app: AppHandle) -> bool {
 
 #[tauri::command]
 pub fn open_chat_turn(app: AppHandle, topic: i64, turn: i64) -> Result<(), String> {
-    *app.state::<ChatWindow>().focus_turn.lock().unwrap() = Some((topic, turn));
+    let s = app.state::<ChatWindow>();
+    s.release.cancel();
+    *s.focus_turn.lock().unwrap() = Some((topic, turn));
     open_chat_window(app)
 }
 #[tauri::command]
@@ -188,14 +334,21 @@ fn file(app: &AppHandle) -> std::path::PathBuf {
     app.state::<State>().root.join("chat-window.json")
 }
 fn place(app: &AppHandle) -> Place {
-    if let Some((p, _)) = app.state::<ChatWindow>().place.lock().unwrap().clone() {
-        return p;
+    let state = app.state::<ChatWindow>();
+    let mut slot = state.place.lock().unwrap();
+    if let Some(cached) = slot.as_ref() {
+        return cached.place.clone();
     }
     let mut p: Place = std::fs::read(file(app))
         .ok()
         .and_then(|b| serde_json::from_slice(&b).ok())
         .unwrap_or_default();
     p.width = p.width.clamp(MIN_WIDTH, MAX_WIDTH);
+    *slot = Some(PlaceState {
+        place: p.clone(),
+        last_write: None,
+        dirty: false,
+    });
     p
 }
 /// A tall panel against the right edge of the work area: (x, y, width, height).
@@ -294,45 +447,78 @@ fn window(app: &AppHandle) -> Result<WebviewWindow, String> {
         .build()
         .map_err(|e| e.to_string())
 }
-#[tauri::command]
-pub fn open_chat_window(app: AppHandle) -> Result<(), String> {
+fn show_panel_window(app: &AppHandle) -> Result<(), String> {
     app.state::<ChatWindow>().release.cancel();
-    let w = window(&app)?;
-    dock(&app, &w)?;
+    let w = window(app)?;
+    if !w.is_visible().unwrap_or(false) {
+        dock(app, &w)?;
+    }
     chat::hide_bubble(app.clone())?;
     let _ = app.emit_to("bubble", "bubble-panel-open", ());
     w.show().map_err(|e| e.to_string())?;
     crate::window_memory::shown(&w);
-    w.set_focus().map_err(|e| e.to_string())?;
+    w.set_focus().map_err(|e| e.to_string())
+}
+#[tauri::command]
+pub fn open_chat_window(app: AppHandle) -> Result<(), String> {
+    let s = app.state::<ChatWindow>();
+    s.release.cancel();
+    s.translations.store(false, Ordering::SeqCst);
+    s.last_translations.store(false, Ordering::SeqCst);
+    show_panel_window(&app)?;
     app.emit_to(LABEL, "chat-window-open", ())
         .map_err(|e| e.to_string())
 }
-/// The side-panel shortcut: open it, bring it forward, or put it away.
+/// The side-panel shortcut: open it, bring it forward, switch from translations
+/// back to chat, or put it away when already focused on chat.
 pub fn toggle(app: &AppHandle) -> Result<(), String> {
-    match app.get_webview_window(LABEL) {
-        Some(w) if w.is_visible().unwrap_or(false) && w.is_focused().unwrap_or(false) => app
+    let s = app.state::<ChatWindow>();
+    let (visible, focused) = app
+        .get_webview_window(LABEL)
+        .map(|w| {
+            (
+                w.is_visible().unwrap_or(false),
+                w.is_focused().unwrap_or(false),
+            )
+        })
+        .unwrap_or((false, false));
+    if toggle_chat_action(visible, focused, s.last_translations.load(Ordering::SeqCst))
+        == ToggleAction::Close
+    {
+        return app
             .emit_to(LABEL, "chat-window-close", ())
-            .map_err(|e| e.to_string()),
-        _ => open_chat_window(app.clone()),
+            .map_err(|e| e.to_string());
     }
+    open_chat_window(app.clone())
 }
 fn write(app: &AppHandle) {
     let state = app.state::<ChatWindow>();
     let mut slot = state.place.lock().unwrap();
-    if let Some((p, last)) = slot.as_mut() {
-        let _ = library::write_json(&file(app), p);
-        *last = Some(Instant::now());
+    if let Some(s) = slot.as_mut() {
+        if s.dirty {
+            let _ = library::write_json(&file(app), &s.place);
+            s.last_write = Some(Instant::now());
+            s.dirty = false;
+        }
     }
 }
-fn update(app: &AppHandle, change: impl FnOnce(&mut Place)) {
-    let mut p = place(app);
-    change(&mut p);
+fn update(app: &AppHandle, change: impl FnOnce(&mut Place), flush: bool) {
+    let mut next = place(app);
+    change(&mut next);
     let due = {
         let state = app.state::<ChatWindow>();
         let mut slot = state.place.lock().unwrap();
-        let last = slot.as_ref().and_then(|s| s.1);
-        *slot = Some((p, last));
-        last.is_none_or(|t| t.elapsed().as_secs() >= 1)
+        let entry = slot.get_or_insert_with(|| PlaceState {
+            place: next.clone(),
+            last_write: None,
+            dirty: false,
+        });
+        if next.approx_eq(&entry.place) {
+            return;
+        }
+        entry.place = next;
+        entry.dirty = true;
+        flush || entry.last_write.is_none_or(|t| t.elapsed().as_secs() >= 1)
     };
     if due {
         write(app);
@@ -345,10 +531,14 @@ pub fn remember(w: &WebviewWindow) {
     };
     let width = (f64::from(size.width) / scale).clamp(MIN_WIDTH, MAX_WIDTH);
     let height = f64::from(size.height) / scale;
-    update(w.app_handle(), |p| {
-        p.width = width;
-        p.height = Some(height);
-    });
+    update(
+        w.app_handle(),
+        |p| {
+            p.width = width;
+            p.height = Some(height);
+        },
+        false,
+    );
 }
 /// Called on every move. Once the window stops moving, remember where it is;
 /// it stays exactly there, with no snapping.
@@ -371,21 +561,29 @@ pub fn moved(w: &WebviewWindow) {
         else {
             return;
         };
-        update(&app, |p| {
-            p.pos = Some((pos.x, pos.y));
-            p.height = Some(f64::from(size.height) / scale);
-        });
-        write(&app);
+        update(
+            &app,
+            |p| {
+                p.pos = Some((pos.x, pos.y));
+                p.height = Some(f64::from(size.height) / scale);
+            },
+            true,
+        );
     });
 }
-/// The panel was hidden: release its WebView if it stays hidden and idle.
+/// The panel was hidden: flush dirty placement, trim memory, and release its
+/// WebView if it stays hidden and idle.
 pub fn hidden(app: &AppHandle) {
+    write(app);
+    if let Some(w) = app.get_webview_window(LABEL) {
+        crate::window_memory::hidden(&w);
+    }
     idle_release::schedule::<ChatWindow, _>(
         app,
         LABEL,
         "chat-release-check",
         |s| &s.release,
-        chat::busy,
+        |app| chat::busy(app) || app.state::<ChatWindow>().has_pending(),
     );
 }
 #[tauri::command]
@@ -393,13 +591,14 @@ pub fn chat_window_release(app: AppHandle) {
     let Some(w) = app.get_webview_window(LABEL) else {
         return;
     };
-    if !app
-        .state::<ChatWindow>()
+    let s = app.state::<ChatWindow>();
+    if !s
         .release
-        .confirm(w.is_visible().unwrap_or(true), chat::busy(&app))
+        .confirm(w.is_visible().unwrap_or(true), chat::busy(&app) || s.has_pending())
     {
         return;
     }
+    s.clear_transient_on_release();
     idle_release::destroy_later(w);
 }
 #[tauri::command]
@@ -421,11 +620,11 @@ pub fn hide_chat_window(app: AppHandle, return_to_bubble: Option<bool>) -> Resul
     if return_to_bubble == Some(true) && app.get_webview_window("bubble").is_some() {
         chat::show(&app, json!({"mode":"return-input","at":chat::now()}), true)?;
     }
-    write(&app);
     if let Some(w) = app.get_webview_window(LABEL) {
         w.hide().map_err(|e| e.to_string())?;
-        crate::window_memory::hidden(&w);
         hidden(&app);
+    } else {
+        write(&app);
     }
     Ok(())
 }
@@ -546,5 +745,139 @@ mod tests {
 
         let with_draft = PendingSnip::from_image(img, Some("这个报错什么意思".into())).unwrap();
         assert_eq!(with_draft.draft_text.as_deref(), Some("这个报错什么意思"));
+    }
+    #[test]
+    fn toggle_actions_isolate_chat_and_translations_views() {
+        // Chat shortcut closes ONLY when visible, focused, and currently on chat (!last_translations).
+        assert_eq!(toggle_chat_action(true, true, false), ToggleAction::Close);
+        // When on translations, pressing chat shortcut switches to chat instead of closing!
+        assert_eq!(toggle_chat_action(true, true, true), ToggleAction::Open);
+        assert_eq!(toggle_chat_action(true, false, false), ToggleAction::Open);
+        assert_eq!(toggle_chat_action(true, false, true), ToggleAction::Open);
+        assert_eq!(toggle_chat_action(false, false, false), ToggleAction::Open);
+        assert_eq!(toggle_chat_action(false, true, false), ToggleAction::Open);
+
+        // Translation shortcut closes ONLY when visible, focused, and currently on translations.
+        assert_eq!(
+            toggle_translations_action(true, true, true),
+            ToggleAction::Close
+        );
+        assert_eq!(
+            toggle_translations_action(true, true, false),
+            ToggleAction::Open
+        );
+        assert_eq!(
+            toggle_translations_action(true, false, true),
+            ToggleAction::Open
+        );
+        assert_eq!(
+            toggle_translations_action(false, false, true),
+            ToggleAction::Open
+        );
+    }
+    #[test]
+    fn staged_chat_files_reject_empty_and_unstaged_paths_and_deduplicate() {
+        let staged = vec![
+            "/tmp/staged/a.pdf".to_string(),
+            "/tmp/staged/b.png".to_string(),
+        ];
+        assert!(validate_staged_chat_files(vec![], &staged).is_err());
+        assert!(
+            validate_staged_chat_files(vec!["/etc/passwd".into()], &staged).is_err(),
+            "unstaged path must be rejected"
+        );
+        assert!(
+            validate_staged_chat_files(
+                vec!["/tmp/staged/a.pdf".into(), "/etc/passwd".into()],
+                &staged
+            )
+            .is_err(),
+            "mixed batch with an unstaged path must be rejected"
+        );
+        let ok = validate_staged_chat_files(
+            vec![
+                "/tmp/staged/b.png".into(),
+                "/tmp/staged/a.pdf".into(),
+                "/tmp/staged/b.png".into(),
+            ],
+            &staged,
+        )
+        .unwrap();
+        assert_eq!(
+            ok,
+            vec!["/tmp/staged/b.png".to_string(), "/tmp/staged/a.pdf".to_string()]
+        );
+    }
+    #[test]
+    fn transient_state_blocks_release_while_pending_and_clears_on_release() {
+        let s = ChatWindow::default();
+        assert!(!s.has_pending());
+        s.pending_files
+            .lock()
+            .unwrap()
+            .push("/tmp/staged/doc.md".into());
+        assert!(s.has_pending());
+        s.translations.store(true, Ordering::SeqCst);
+        s.last_translations.store(true, Ordering::SeqCst);
+        *s.focus_turn.lock().unwrap() = Some((3, 9));
+
+        s.clear_transient_on_release();
+        assert!(!s.has_pending());
+        assert!(!s.translations.load(Ordering::SeqCst));
+        assert!(!s.last_translations.load(Ordering::SeqCst));
+        assert!(s.focus_turn.lock().unwrap().is_none());
+        assert!(s.pending_snip.lock().unwrap().is_none());
+        assert!(s.pending_files.lock().unwrap().is_empty());
+        // Pin preference survives auto-release rebuild.
+        assert!(s.pinned.load(Ordering::SeqCst));
+    }
+    #[test]
+    fn place_approx_eq_ignores_subpixel_jitter_and_detects_real_changes() {
+        let a = Place {
+            width: 400.0,
+            height: Some(720.0),
+            pos: Some((100, 20)),
+        };
+        let jitter = Place {
+            width: 400.2,
+            height: Some(719.8),
+            pos: Some((100, 20)),
+        };
+        assert!(a.approx_eq(&jitter));
+        assert!(!a.approx_eq(&Place {
+            width: 401.0,
+            ..a.clone()
+        }));
+        assert!(!a.approx_eq(&Place {
+            pos: Some((101, 20)),
+            ..a.clone()
+        }));
+        assert!(!a.approx_eq(&Place {
+            height: None,
+            ..a.clone()
+        }));
+    }
+    #[test]
+    fn chat_image_source_enforces_extension_directory_and_size_limit() {
+        let dir = tempfile::tempdir().unwrap();
+        for name in ["a.png", "b.JPG", "c.jpeg", "d.WeBp", "e.gif", "f.bmp"] {
+            let p = dir.path().join(name);
+            std::fs::write(&p, b"img-bytes").unwrap();
+            let b64 = read_chat_image_source(&p).unwrap();
+            assert_eq!(STANDARD.decode(b64).unwrap(), b"img-bytes");
+        }
+        for bad in ["note.txt", "vec.svg", "archive.zip", "noext"] {
+            let p = dir.path().join(bad);
+            std::fs::write(&p, b"x").unwrap();
+            assert!(read_chat_image_source(&p).is_err(), "{bad}");
+        }
+        let fake_dir = dir.path().join("folder.png");
+        std::fs::create_dir(&fake_dir).unwrap();
+        assert!(read_chat_image_source(&fake_dir).is_err());
+
+        let too_big = dir.path().join("huge.jpg");
+        let f = std::fs::File::create(&too_big).unwrap();
+        f.set_len((MAX_IMAGE as u64) + 1).unwrap();
+        assert!(read_chat_image_source(&too_big).is_err());
     }
 }

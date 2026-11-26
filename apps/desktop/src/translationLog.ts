@@ -37,6 +37,7 @@ function when(at: number) {
 
 export interface TranslationLogOptions {
   onVisibilityChange?: (shown: boolean) => void;
+  onBack?: () => void;
   onTogglePin?: () => boolean;
   onCollapse?: () => void;
   initialPinned?: boolean;
@@ -67,12 +68,12 @@ export function translationLog(
         <textarea rows="3" placeholder="${t("translate.placeholder")}" aria-label="${t("translate.placeholder")}"></textarea>
         <div class="tr-pane-foot">
           <div class="tr-tone-slot" data-tr-tone-slot></div>
-          <output role="status"></output>
           <button type="button" class="tr-icon-btn tr-paste" data-tr-paste aria-label="${t("translate.pasteClipboard")}" title="${t("translate.pasteClipboard")}">${glyphs.paste}</button>
           <button type="button" class="tr-icon-btn tr-clear-input" data-tr-clear-input aria-label="${t("translations.clearInput")}" title="${t("translations.clearInput")}">${glyphs.close}</button>
           <button type="submit" class="tr-send" data-tr-send aria-label="${t("selection.translate")}" title="${t("selection.translate")}">${glyphs.arrow}</button>
           <button type="button" class="tr-stop" data-tr-stop aria-label="${t("chat.stop")}" title="${t("chat.stop")}" hidden>${glyphs.square}</button>
         </div>
+        <output role="status"></output>
       </form>
       <div class="tr-result-pane" data-tr-result-pane>
         <div class="tr-live-text" data-tr-live-text data-empty="true">${t("translations.emptyResult")}</div>
@@ -324,10 +325,14 @@ export function translationLog(
   let request = 0;
   function hide() {
     request++;
+    if (page.hidden) return;
     page.hidden = true;
     o.onVisibilityChange?.(false);
   }
-  q<HTMLButtonElement>("[data-tr-back]").onclick = hide;
+  q<HTMLButtonElement>("[data-tr-back]").onclick = () => {
+    hide();
+    o.onBack?.();
+  };
 
   /** Inline confirmation bar (single record or clear all). */
   function ask(text: string, yes: () => Promise<void>, no: () => void) {

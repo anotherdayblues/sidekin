@@ -1,4 +1,4 @@
-use super::{failed, payload, store::ClipPayload, Clipboard};
+use super::{failed, payload, store::ClipPayload, touch_entry, Clipboard};
 use crate::selection;
 use serde::Serialize;
 use std::{
@@ -335,6 +335,37 @@ pub async fn clip_copy_text(app: AppHandle, text: String) -> Result<(), String> 
     .map_err(|_| failed())?
 }
 
+fn write_payload_to_clipboard(item: &ClipPayload) -> Result<(), String> {
+    let ok = match item {
+        ClipPayload::Text(text) => {
+            let c = CString::new(text.as_str()).map_err(|_| failed())?;
+            unsafe { companion_history_copy(c.as_ptr()) == 1 }
+        }
+        ClipPayload::Image { png } => copy_image_native(png) == 1,
+    };
+    if !ok {
+        return Err(crate::locale::t("host.clipboardBusy").into());
+    }
+    Ok(())
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum PasteOutcome {
+    Done,
+    CopiedNeedsPermission,
+    Failed(&'static str),
+}
+
+fn paste_outcome(paste_rc: i32, fallback_copied: bool) -> PasteOutcome {
+    match paste_rc {
+        1 => PasteOutcome::Done,
+        -1 if fallback_copied => PasteOutcome::CopiedNeedsPermission,
+        -1 => PasteOutcome::Failed("clip.permission"),
+        _ if fallback_copied => PasteOutcome::Done,
+        _ => PasteOutcome::Failed("clip.pasteFailed"),
+    }
+}
+
 #[tauri::command]
 pub async fn clip_copy(
     app: AppHandle,
@@ -357,21 +388,11 @@ pub async fn clip_copy(
             return Err(failed());
         }
         let _guard = selection::CLIPBOARD.lock().unwrap();
-        let ok = match item {
-            ClipPayload::Text(text) => {
-                let c = CString::new(text).map_err(|_| failed())?;
-                let rc = unsafe { companion_history_copy(c.as_ptr()) };
-                rc == 1
-            }
-            ClipPayload::Image { png } => copy_image_native(&png) == 1,
-        };
-        if !ok {
-            return Err(crate::locale::t("host.clipboardBusy").into());
-        }
-        Ok(())
+        write_payload_to_clipboard(&item)
     })
     .await
     .map_err(|_| failed())??;
+    touch_entry(&app, id);
     if let Some(id) = session {
         finish(&app, id)?;
     }
@@ -398,15 +419,26 @@ pub async fn clip_paste(app: AppHandle, session: u64, id: i64) -> Result<(), Str
         if label == "bubble" {
             return match item {
                 ClipPayload::Text(text) => {
+                    touch_entry(&app, id);
                     // The search field and the original editor live in this same window.
                     app.emit_to(
                         "bubble",
                         "clip-insert",
-                        serde_json::json!({"session":session,"text":text}),
+                        serde_json::json!({"session":session,"id":id,"text":text}),
                     )
                     .map_err(|_| failed())
                 }
-                ClipPayload::Image { .. } => Err(crate::locale::t("clip.pasteFailed").into()),
+                ClipPayload::Image { .. } => {
+                    // Bubble text inputs cannot receive an image directly: copy it instead.
+                    tauri::async_runtime::spawn_blocking(move || {
+                        let _guard = selection::CLIPBOARD.lock().unwrap();
+                        write_payload_to_clipboard(&item)
+                    })
+                    .await
+                    .map_err(|_| failed())??;
+                    touch_entry(&app, id);
+                    finish(&app, session)
+                }
             };
         }
         app.get_webview_window(label)
@@ -416,35 +448,61 @@ pub async fn clip_paste(app: AppHandle, session: u64, id: i64) -> Result<(), Str
     }
     #[cfg(target_os = "macos")]
     if local.is_none() && !crate::permissions::is_enabled(&app, "accessibility") {
+        let copied = tauri::async_runtime::spawn_blocking(move || {
+            let _guard = selection::CLIPBOARD.lock().unwrap();
+            write_payload_to_clipboard(&item).is_ok()
+        })
+        .await
+        .unwrap_or(false);
+        if copied {
+            touch_entry(&app, id);
+        }
         return Err(crate::locale::t("clip.permissionOff").into());
     }
     #[cfg(feature = "acceptance")]
     {
         return Err(crate::locale::t("clip.pasteFailed").into());
     } // Never send synthetic input to another app during QA.
-    let result = tauri::async_runtime::spawn_blocking(move || {
+    if local.is_none() && target <= 0 {
+        tauri::async_runtime::spawn_blocking(move || {
+            let _guard = selection::CLIPBOARD.lock().unwrap();
+            write_payload_to_clipboard(&item)
+        })
+        .await
+        .map_err(|_| failed())??;
+        touch_entry(&app, id);
+        return finish(&app, session);
+    }
+    let outcome = tauri::async_runtime::spawn_blocking(move || {
         let _guard = selection::CLIPBOARD.lock().unwrap();
-        match item {
+        let rc = match &item {
             ClipPayload::Text(text) => {
-                let Ok(c) = CString::new(text) else {
-                    return 0;
+                let Ok(c) = CString::new(text.as_str()) else {
+                    return PasteOutcome::Failed("clip.pasteFailed");
                 };
                 unsafe { companion_history_paste(target, c.as_ptr()) }
             }
-            ClipPayload::Image { png } => paste_image_native(target, &png),
+            ClipPayload::Image { png } => paste_image_native(target, png),
+        };
+        if rc == 1 {
+            return PasteOutcome::Done;
         }
+        let copied = write_payload_to_clipboard(&item).is_ok();
+        paste_outcome(rc, copied)
     })
     .await
     .map_err(|_| failed())?;
-    if result != 1 {
-        return Err(crate::locale::t(if result == -1 {
-            "clip.permission"
-        } else {
-            "clip.pasteFailed"
-        })
-        .into());
+    match outcome {
+        PasteOutcome::Done => {
+            touch_entry(&app, id);
+            finish(&app, session)
+        }
+        PasteOutcome::CopiedNeedsPermission => {
+            touch_entry(&app, id);
+            Err(crate::locale::t("clip.permission").into())
+        }
+        PasteOutcome::Failed(key) => Err(crate::locale::t(key).into()),
     }
-    finish(&app, session)
 }
 
 #[cfg(test)]
@@ -491,5 +549,16 @@ mod tests {
         assert_eq!(resolve_paste_target(55, None, 5, 5, 55), (None, 55));
         // Opened from Chrome (pid 55), then clicked Notes (seq 5 -> 6, pid 77): switch to Notes.
         assert_eq!(resolve_paste_target(55, None, 5, 6, 77), (None, 77));
+    }
+
+    #[test]
+    fn paste_falls_back_to_copy_when_target_unavailable_or_permission_missing() {
+        assert_eq!(paste_outcome(1, false), PasteOutcome::Done);
+        // No valid target / target app gone: fallback copy succeeds -> finish cleanly.
+        assert_eq!(paste_outcome(0, true), PasteOutcome::Done);
+        assert_eq!(paste_outcome(0, false), PasteOutcome::Failed("clip.pasteFailed"));
+        // Missing OS Accessibility: still copied to clipboard, keep permission prompt visible.
+        assert_eq!(paste_outcome(-1, true), PasteOutcome::CopiedNeedsPermission);
+        assert_eq!(paste_outcome(-1, false), PasteOutcome::Failed("clip.permission"));
     }
 }

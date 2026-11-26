@@ -176,6 +176,7 @@
 .tr-compose {
   flex: 0 0 42%;
   min-height: 150px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   padding: 10px 18px 12px;
@@ -201,7 +202,12 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   padding-top: 10px;
+}
+.tr-tone-slot {
+  margin-right: auto;
+  min-width: 0;
 }
 .tr-tone-slot .tb-tone {
   margin-left: 0;
@@ -224,13 +230,16 @@
   color: var(--ink);
 }
 .tr-compose output {
-  flex: 1;
   min-width: 0;
+  padding-top: 6px;
   color: var(--ink-3);
   font-size: 11.5px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.tr-compose output:empty {
+  display: none;
 }
 .tr-icon-btn {
   flex: none;
@@ -341,10 +350,15 @@
 }
 .tr-live-into {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 11.5px;
   color: var(--ink-3);
 }
 .tr-copy-live {
+  flex: none;
   height: 28px;
   padding: 0 11px;
   border: 0;

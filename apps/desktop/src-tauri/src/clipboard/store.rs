@@ -204,6 +204,12 @@ pub fn update_ocr(db: &Connection, id: i64, ocr_text: &str) -> rusqlite::Result<
     )
 }
 
+/// Bump a reused history entry to the top of recent history without duplicating
+/// the row or overwriting its original source app / pin / OCR metadata.
+pub fn touch(db: &Connection, id: i64, now: i64) -> rusqlite::Result<usize> {
+    db.execute("UPDATE clips SET at=?1 WHERE id=?2", params![now, id])
+}
+
 pub fn delete_by_id(db: &Connection, id: i64) -> rusqlite::Result<Vec<(String, String)>> {
     let mut stmt = db.prepare("DELETE FROM clips WHERE id=?1 RETURNING media, thumb")?;
     collect_media(&mut stmt, [id])
@@ -616,5 +622,31 @@ mod tests {
         assert!(!media_root.join(&img1.thumb_name).exists());
         assert!(media_root.join(&img2.media_name).exists());
         assert!(media_root.join(&img2.thumb_name).exists());
+    }
+
+    #[test]
+    fn touch_bumps_older_entry_to_top_without_duplicating_or_changing_source() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("clipboard.sqlite3");
+        let media_root = media::media_dir(&path);
+        let mut db = open(&path).unwrap();
+
+        insert(&mut db, "older", "Safari", 100).unwrap();
+        insert(&mut db, "newer", "Notes", 200).unwrap();
+        insert(&mut db, "pinned", "Terminal", 50).unwrap();
+        let before = search(&db, &media_root, "", None, 201, 0).unwrap();
+        let pinned_id = before.iter().find(|r| r.preview == "pinned").unwrap().id;
+        let older_id = before.iter().find(|r| r.preview == "older").unwrap().id;
+        db.execute("UPDATE clips SET pinned=1 WHERE id=?1", [pinned_id])
+            .unwrap();
+
+        assert_eq!(touch(&db, older_id, 300).unwrap(), 1);
+        let after = search(&db, &media_root, "", None, 301, 0).unwrap();
+        assert_eq!(after.len(), 3, "touch must never duplicate rows");
+        assert_eq!(after[0].preview, "pinned");
+        assert_eq!(after[1].preview, "older");
+        assert_eq!(after[1].source, "Safari", "original source must be preserved");
+        assert_eq!(after[1].at, 300);
+        assert_eq!(after[2].preview, "newer");
     }
 }

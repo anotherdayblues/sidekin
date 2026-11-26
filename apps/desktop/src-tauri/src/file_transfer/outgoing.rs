@@ -22,13 +22,19 @@ fn claim(active: &AtomicBool, held: bool) -> Result<(), String> {
 }
 // The pet window captures the mouse for the whole outgoing gesture, so a
 // release anywhere inside it lands on our own webview. The OS reports that as
-// a drop; it means the files never left.
+// a drop; it means the files never left — unless a visible internal drop
+// target (`chat` or `studio`) contains the release point.
 fn landed_on_self(point: (f64, f64), window: Rect) -> bool {
     window.contains(point.0, point.1)
 }
-fn pet_frame(app: &AppHandle) -> Option<Rect> {
-    let win = app.get_webview_window("pet")?;
-    let frame = WindowSpace::read(&win)?;
+fn landed_on_pet_only(point: (f64, f64), pet: Option<Rect>, targets: &[Rect]) -> bool {
+    if targets.iter().any(|r| r.contains(point.0, point.1)) {
+        return false;
+    }
+    pet.is_some_and(|w| landed_on_self(point, w))
+}
+fn frame_of(win: &tauri::WebviewWindow) -> Option<Rect> {
+    let frame = WindowSpace::read(win)?;
     let size = win.outer_size().ok()?;
     let per_unit = win.scale_factor().ok()? / frame.units;
     Some(Rect {
@@ -38,14 +44,24 @@ fn pet_frame(app: &AppHandle) -> Option<Rect> {
         height: size.height as f64 / per_unit,
     })
 }
+fn pet_frame(app: &AppHandle) -> Option<Rect> {
+    frame_of(&app.get_webview_window("pet")?)
+}
+fn internal_drop_targets(app: &AppHandle) -> Vec<Rect> {
+    ["chat", "studio"]
+        .into_iter()
+        .filter_map(|label| {
+            let win = app.get_webview_window(label)?;
+            win.is_visible().unwrap_or(false).then(|| frame_of(&win))?
+        })
+        .collect()
+}
 fn outcome(app: &AppHandle, result: drag::DragResult) -> &'static str {
     let p = pointer::read();
+    let pet = pet_frame(app);
+    let targets = internal_drop_targets(app);
     match result {
-        drag::DragResult::Dropped
-            if !pet_frame(app).is_some_and(|w| landed_on_self((p.x, p.y), w)) =>
-        {
-            "Dropped"
-        }
+        drag::DragResult::Dropped if !landed_on_pet_only((p.x, p.y), pet, &targets) => "Dropped",
         _ => "Cancel",
     }
 }
@@ -160,5 +176,38 @@ mod tests {
         assert!(landed_on_self((400., 50.), window));
         assert!(!landed_on_self((401., 200.), window));
         assert!(!landed_on_self((250., 20.), window));
+    }
+    #[test]
+    fn dropping_onto_visible_chat_or_studio_overlapping_pet_is_a_delivery() {
+        let pet = Rect {
+            x: 800.,
+            y: 200.,
+            width: 280.,
+            height: 260.,
+        };
+        let chat = Rect {
+            x: 1000.,
+            y: 30.,
+            width: 400.,
+            height: 840.,
+        };
+        let studio = Rect {
+            x: 100.,
+            y: 100.,
+            width: 900.,
+            height: 600.,
+        };
+        // Overlap between pet [800..1080] and chat [1000..1400]: drop at x=1040 lands on chat!
+        assert!(!landed_on_pet_only((1040., 300.), Some(pet), &[chat]));
+        // Inside chat only: delivered.
+        assert!(!landed_on_pet_only((1200., 300.), Some(pet), &[chat]));
+        // Inside pet only (x=900, outside chat): still on pet -> Cancel.
+        assert!(landed_on_pet_only((900., 300.), Some(pet), &[chat]));
+        // When chat is hidden (not in targets), overlap point counts as pet -> Cancel.
+        assert!(landed_on_pet_only((1040., 300.), Some(pet), &[]));
+        // Overlapping visible studio window also counts as delivered.
+        assert!(!landed_on_pet_only((850., 300.), Some(pet), &[studio]));
+        // Outside both pet and targets (e.g. Finder/Desktop): delivered.
+        assert!(!landed_on_pet_only((50., 50.), Some(pet), &[chat]));
     }
 }

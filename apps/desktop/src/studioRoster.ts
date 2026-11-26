@@ -4,6 +4,7 @@ import { showSkillPrompt } from "./skillPromptPopup.ts";
 import { squish } from "./spring.ts";
 import { el } from "./studioDom.ts";
 import * as api from "./bridge.ts";
+import { dropEventPoint } from "./dropPoint.ts";
 import type { mountStudioPopovers } from "./studioPopovers.ts";
 import type { StudioContext } from "./studioContext.ts";
 
@@ -74,10 +75,8 @@ export function mountStudioRoster(
       if (e.payload.type !== "drop") return;
       dropCue.hidden = true;
       if (!petPageVisible) return;
-      const hit = document.elementFromPoint(
-        e.payload.position.x / devicePixelRatio,
-        e.payload.position.y / devicePixelRatio,
-      );
+      const pt = dropEventPoint(e.payload.position);
+      const hit = document.elementFromPoint(pt.x, pt.y);
       if (hit && !petBlock.contains(hit) && !railEl.contains(hit)) return;
       for (const path of e.payload.paths) {
         try {

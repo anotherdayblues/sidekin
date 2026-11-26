@@ -1,4 +1,5 @@
 import "./lab.css";
+import * as api from "../bridge.ts";
 import { call, native, on } from "./bridge.ts";
 import { watchWindowAppearance } from "../skin.ts";
 import { mountPiles } from "./piles.ts";
@@ -82,7 +83,28 @@ export async function mountPetScene(
   await on<boolean>("file-transfer-drag", (active) => {
     document.documentElement.dataset.fileDragging = String(active);
   });
+  let companionEnabled = false;
+  let petName = "";
+  const syncPetName = (s: api.Snapshot) => {
+    const active =
+      s.pets.find((p) => p.id === s.settings.activeId) ?? s.pets[0];
+    petName = active?.displayName?.trim() ?? "";
+  };
+  if (native) {
+    void api.state().then(syncPetName).catch(() => {});
+    void api.changes(syncPetName).catch(() => {});
+    void call<{ enabled?: boolean }>("companion_settings")
+      .then((s) => {
+        companionEnabled = Boolean(s?.enabled);
+      })
+      .catch(() => {});
+    void on<{ enabled?: boolean }>("companion-settings", (s) => {
+      companionEnabled = Boolean(s?.enabled);
+    });
+  }
   await mountPet(pet);
-  const piles = await mountPiles(files);
+  const piles = await mountPiles(files, {
+    petChat: () => ({ enabled: companionEnabled, petName }),
+  });
   await mountPhoneArrivals(files, pet, piles.receive);
 }

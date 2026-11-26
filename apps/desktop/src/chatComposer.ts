@@ -4,6 +4,7 @@ import { t, tn } from "./i18n.ts";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { native } from "./bridge.ts";
+import { dropEventPoint } from "./dropPoint.ts";
 import { mountGlobe } from "./globe.ts";
 import { glyphs } from "./icons.ts";
 import { errorText } from "./errorText.ts";
@@ -44,9 +45,31 @@ interface Handlers {
     replaceId?: number,
   ): Promise<void>;
   recall(): string | undefined;
+  onAttach?(): void;
 }
 const DOCS = /\.(txt|md|pdf|docx|html)$/i;
+const IMAGES = /\.(png|jpe?g|webp|gif|bmp)$/i;
+const IMAGE_MIME: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  webp: "image/webp",
+  gif: "image/gif",
+  bmp: "image/bmp",
+};
 const EDGE = 1568;
+
+function base64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+function formatError(err: unknown) {
+  const code = String(err).replace(/^Error:\s*/, "");
+  return errorText[code] ?? code;
+}
 
 async function toPng(file: Blob): Promise<Attached> {
   const bitmap = await createImageBitmap(file);
@@ -69,7 +92,8 @@ export function chatComposer(
   box.innerHTML = `<div class="chat-attached" hidden><img alt="${t("chat.imageToSend")}"><button type="button" data-unattach aria-label="${t("chat.removeImage")}">×</button></div>
 <div class="chat-files" hidden></div>
 <textarea rows="1" placeholder="${t("chat.placeholder")}" aria-label="${t("chat.message")}"></textarea>
-<div class="chat-tools"><button type="button" data-globe aria-label="${t("chat.globe")}" aria-pressed="false">${glyphs.globe}</button><button type="button" data-snip aria-label="${t("chat.snip")}" title="${t("chat.snip")}">${glyphs.snip}</button><button type="button" data-image aria-label="${t("chat.sendImage")}" title="${t("chat.sendImage")}">${glyphs.image}</button><button type="button" data-file aria-label="${t("chat.attach")}" title="${t("chat.attachHint")}">${glyphs.clip}</button><input type="file" data-pick-image accept="image/*" hidden><input type="file" data-pick-file accept=".txt,.md,.pdf,.docx,.html" multiple hidden><span class="chat-status" role="status"></span><button type="submit" data-send aria-label="${t("chat.send")}"><i>${glyphs.arrow}</i><span>${t("chat.send")}</span></button><button type="button" data-stop aria-label="${t("chat.stop")}" hidden><i>${glyphs.square}</i><span>${t("chat.stop")}</span></button></div>`;
+<div class="chat-tools"><button type="button" data-globe aria-label="${t("chat.globe")}" aria-pressed="false">${glyphs.globe}</button><button type="button" data-snip aria-label="${t("chat.snip")}" title="${t("chat.snip")}">${glyphs.snip}</button><button type="button" data-image aria-label="${t("chat.sendImage")}" title="${t("chat.sendImage")}">${glyphs.image}</button><button type="button" data-file aria-label="${t("chat.attach")}" title="${t("chat.attachHint")}">${glyphs.clip}</button><input type="file" data-pick-image accept="image/*" hidden><input type="file" data-pick-file accept=".txt,.md,.pdf,.docx,.html" multiple hidden><button type="submit" data-send aria-label="${t("chat.send")}"><i>${glyphs.arrow}</i><span>${t("chat.send")}</span></button><button type="button" data-stop aria-label="${t("chat.stop")}" hidden><i>${glyphs.square}</i><span>${t("chat.stop")}</span></button></div>
+<div class="chat-status" role="status"></div>`;
   root.append(box);
   const q = <T extends HTMLElement>(s: string) => box.querySelector<T>(s)!;
   const input = q<HTMLTextAreaElement>("textarea"),
@@ -103,7 +127,7 @@ export function chatComposer(
     input.style.height = Math.min(input.scrollHeight, 160) + "px";
   };
   const say = (text: string) => {
-    status.textContent = text;
+    status.textContent = text.trim() ? text : "";
   };
   const sayWithAction = (text: string, actionLabel: string, fn: () => void) => {
     status.replaceChildren(document.createTextNode(text + " "));
@@ -216,17 +240,22 @@ export function chatComposer(
       filesBox.append(chip);
     }
   }
-  async function attach(file: Blob) {
+  async function attach(file: Blob): Promise<boolean> {
     try {
       image = await toPng(file);
       attached.querySelector("img")!.src = image.preview;
       attached.hidden = false;
       say("");
+      return true;
     } catch {
       say(t("chat.badImage"));
+      return false;
     }
   }
-  async function addDocBytes(name: string, bytes: Uint8Array<ArrayBuffer>) {
+  async function addDocBytes(
+    name: string,
+    bytes: Uint8Array<ArrayBuffer>,
+  ): Promise<boolean> {
     say(t("chat.readingFile"));
     try {
       const parsed = await h.parseFile(name, bytes);
@@ -236,17 +265,74 @@ export function chatComposer(
       else files.push(item);
       renderFiles();
       say("");
+      return true;
     } catch (e) {
-      say(String(e).replace(/^Error:\s*/, ""));
+      say(formatError(e));
+      return false;
     }
   }
   async function take(list: Iterable<File>) {
-    for (const f of list) {
-      if (f.type.startsWith("image/")) await attach(f);
-      else if (DOCS.test(f.name)) {
-        await addDocBytes(f.name, new Uint8Array(await f.arrayBuffer()));
-      } else say(t("chat.unsupported"));
+    const items = [...list];
+    if (!items.length) return;
+    h.onAttach?.();
+    let attachedAny = false;
+    let lastError = "";
+    for (const f of items) {
+      if (f.type.startsWith("image/")) {
+        if (await attach(f)) attachedAny = true;
+        else lastError = status.textContent ?? t("chat.badImage");
+      } else if (DOCS.test(f.name)) {
+        if (await addDocBytes(f.name, new Uint8Array(await f.arrayBuffer())))
+          attachedAny = true;
+        else lastError = status.textContent ?? "";
+      } else {
+        lastError = t("chat.unsupported");
+      }
     }
+    if (attachedAny) input.focus();
+    if (lastError) say(lastError);
+  }
+  async function attachLocalPaths(paths: string[]) {
+    if (!paths.length) return;
+    h.onAttach?.();
+    let attachedAny = false;
+    let lastError = "";
+    for (const path of paths) {
+      const name = path.split(/[\\/]/).at(-1) ?? "";
+      if (IMAGES.test(name)) {
+        try {
+          const b64 = await invoke<string>("chat_image_source", { path });
+          const ext = name.split(".").at(-1)?.toLowerCase() ?? "png";
+          const bytes = base64ToBytes(b64);
+          if (
+            await attach(
+              new Blob([bytes], { type: IMAGE_MIME[ext] ?? "image/png" }),
+            )
+          ) {
+            attachedAny = true;
+          } else {
+            lastError = status.textContent ?? t("chat.badImage");
+          }
+        } catch (err) {
+          lastError = formatError(err);
+        }
+      } else if (DOCS.test(name)) {
+        try {
+          const b64 = await invoke<string>("library_source", { path });
+          if (await addDocBytes(name, base64ToBytes(b64))) {
+            attachedAny = true;
+          } else {
+            lastError = status.textContent ?? "";
+          }
+        } catch (err) {
+          lastError = formatError(err);
+        }
+      } else {
+        lastError = t("chat.dropTypes");
+      }
+    }
+    if (attachedAny) input.focus();
+    if (lastError) say(lastError);
   }
   box.onsubmit = (e) => {
     e.preventDefault();
@@ -365,32 +451,17 @@ export function chatComposer(
       }
       if (e.payload.type !== "drop") return;
       delete dropZone.dataset.dropping;
-      const hit = document.elementFromPoint(
-        e.payload.position.x / devicePixelRatio,
-        e.payload.position.y / devicePixelRatio,
-      );
-      if (!hit || !dropZone.contains(hit)) return;
-      for (const path of e.payload.paths) {
-        const name = path.split(/[\\/]/).at(-1) ?? "";
-        if (!DOCS.test(name)) {
-          say(t("chat.dropTypes"));
-          continue;
-        }
-        try {
-          const b64 = await invoke<string>("library_source", { path });
-          await addDocBytes(
-            name,
-            Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)),
-          );
-        } catch (err) {
-          say(String(err));
-        }
-      }
+      const pt = dropEventPoint(e.payload.position);
+      const hit = document.elementFromPoint(pt.x, pt.y);
+      const container = dropZone.closest(".chat-window") ?? dropZone;
+      if (!hit || !container.contains(hit)) return;
+      await attachLocalPaths(e.payload.paths);
     });
   return {
     focus: () => input.focus(),
     say,
     attachPrepared,
+    attachLocalPaths,
     setSnipPreview: snipWatch.setPreview,
     hasDraft: () => Boolean(input.value.trim() || image || files.length),
     setBusy(on: boolean) {

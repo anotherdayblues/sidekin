@@ -214,11 +214,23 @@ fn studio(w: &WebviewWindow) -> R<()> {
 #[tauri::command]
 pub async fn library_source(window: WebviewWindow, path: String) -> R<String> {
     studio(&window)?;
-    let p = Path::new(&path);
+    let p = std::path::PathBuf::from(path);
     ext(p
         .file_name()
         .and_then(|s| s.to_str())
         .ok_or(t("host.noFileName"))?)?;
+    tauri::async_runtime::spawn_blocking(move || read_library_source(&p))
+        .await
+        .map_err(|e| e.to_string())?
+}
+fn read_library_source(p: &Path) -> R<String> {
+    ext(p
+        .file_name()
+        .and_then(|s| s.to_str())
+        .ok_or(t("host.noFileName"))?)?;
+    if p.is_dir() {
+        return Err(t("host.docTypes").into());
+    }
     let bytes = crate::library::bounded(p, MAX as u64)?;
     Ok(STANDARD.encode(bytes))
 }
@@ -414,5 +426,22 @@ mod tests {
         remove(lib_dir.path(), id).unwrap();
         let again = replace(lib_dir.path(), id, "我的简历.pdf", "", b"v3", "第三版").unwrap();
         assert_eq!(search(lib_dir.path(), "第三版").unwrap()[0]["file"], again);
+    }
+    #[test]
+    fn library_source_reads_staged_shelf_files_and_rejects_directories() {
+        let root = tempfile::tempdir().unwrap();
+        let staged = root
+            .path()
+            .join("file-transfer-staged")
+            .join("18f1-123-0")
+            .join("会议纪要 2026.md");
+        fs::create_dir_all(staged.parent().unwrap()).unwrap();
+        fs::write(&staged, "需求评审结论").unwrap();
+        let b64 = read_library_source(&staged).unwrap();
+        assert_eq!(STANDARD.decode(b64).unwrap(), "需求评审结论".as_bytes());
+
+        let folder_pdf = root.path().join("folder.pdf");
+        fs::create_dir(&folder_pdf).unwrap();
+        assert!(read_library_source(&folder_pdf).is_err());
     }
 }

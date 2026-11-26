@@ -50,12 +50,17 @@ export async function mountChatWindow(app: HTMLElement) {
     if (native) void invoke("pin_chat_window", { on });
     return on;
   };
+  let view: Awaited<ReturnType<typeof mountChatView>> | undefined;
   const translations = translationLog(shell, {
     onVisibilityChange: (shown) => {
       if (native)
         void invoke("chat_window_remember_view", { translations: shown }).catch(
           () => {},
         );
+      if (!shown) void view?.ensureLoaded();
+    },
+    onBack: () => {
+      void view?.ensureLoaded().then(() => view?.focus());
     },
     onTogglePin: togglePin,
     onCollapse: () => void collapse(false),
@@ -66,12 +71,13 @@ export async function mountChatWindow(app: HTMLElement) {
     await translations.show();
   };
   const body = q(".chat-body");
-  const view = await mountChatView(body, {
+  view = await mountChatView(body, {
     showTranslations: () => {
       body.dataset.topics = "closed";
       void translations.show();
     },
     face: petFace,
+    eagerLoad: !native,
   });
   // Who this is with: the pet's face and name, as a chat app shows the
   // person (plan/29). The chat is with the pet on the desktop.
@@ -143,26 +149,42 @@ export async function mountChatWindow(app: HTMLElement) {
       } | null>("take_pending_snip_image").catch(() => null);
       if (!snip) return false;
       translations.hide();
+      await view.ensureLoaded();
       view.attachSnip(snip);
+      return true;
+    };
+    const consumePendingFiles = async () => {
+      const paths = await invoke<string[]>("take_pending_chat_files").catch(
+        () => [],
+      );
+      if (!paths?.length) return false;
+      translations.hide();
+      await view.ensureLoaded();
+      await view.attachPaths(paths);
       return true;
     };
     const requestedTr = await invoke<boolean>("take_translations_request");
     const openPanel = async (restoreTr = false) => {
       enter();
       const target = await invoke<[number, number] | null>("take_chat_turn");
+      const showingTr = !target && restoreTr;
       if (target) {
         translations.hide();
         await view.focusTurn(...target);
-      } else if (restoreTr) {
+      } else if (showingTr) {
         await translations.show();
       } else {
+        translations.hide();
         await view.reload();
       }
-      if (!(await consumePendingSnip())) view.focus();
+      const snipAttached = await consumePendingSnip();
+      const filesAttached = await consumePendingFiles();
+      if (!snipAttached && !filesAttached && !showingTr) view.focus();
     };
     await listen("chat-snip-attached", () => void consumePendingSnip());
+    await listen("chat-files-attached", () => void consumePendingFiles());
     await listen("chat-window-open", () => void openPanel(false));
-    await openPanel(requestedTr || saved.translations);
+    await openPanel(requestedTr);
   } else {
     Object.assign(window, {
       __studio: {
@@ -192,6 +214,6 @@ export async function mountChatWindow(app: HTMLElement) {
         },
       },
     });
+    view.focus();
   }
-  view.focus();
 }

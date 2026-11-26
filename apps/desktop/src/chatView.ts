@@ -16,6 +16,7 @@ export async function mountChatView(
   o: {
     showTranslations: () => void;
     face: (pet: string) => Promise<string>;
+    eagerLoad?: boolean;
   },
 ) {
   const backend = await chatBackend();
@@ -45,19 +46,34 @@ export async function mountChatView(
     findDuplicate,
     saveToLibrary,
     recall,
+    onAttach: () => {
+      root.dataset.topics = "closed";
+    },
   });
   let token = "";
   let quietUntil = 0;
+  let loaded = false;
+  let reloading: Promise<void> | null = null;
 
   async function reload() {
     if (token) return;
-    try {
-      const c = await backend.current();
-      log.set(fromTurns(c.turns));
-      topics.mark(c.id);
-    } catch (e) {
-      composer.say(String(e));
-    }
+    if (reloading) return reloading;
+    reloading = (async () => {
+      try {
+        const c = await backend.current();
+        log.set(fromTurns(c.turns));
+        topics.mark(c.id);
+        loaded = true;
+      } catch (e) {
+        composer.say(String(e));
+      } finally {
+        reloading = null;
+      }
+    })();
+    return reloading;
+  }
+  async function ensureLoaded() {
+    if (!loaded) await reload();
   }
   function fail(e: unknown) {
     const code = String(e).replace(/^Error: /, "");
@@ -185,12 +201,14 @@ export async function mountChatView(
   });
   // A message sent from the bubble shows up here too.
   await backend.onUpdated(() => {
+    if (!loaded) return;
     void topics.refresh();
     if (Date.now() > quietUntil) void reload();
   });
-  await reload();
+  if (o.eagerLoad !== false) await reload();
   return {
     reload,
+    ensureLoaded,
     async focusTurn(topic: number, turn: number) {
       await openTopic(topic);
       log.el
@@ -206,6 +224,7 @@ export async function mountChatView(
         snip.draftText,
       );
     },
+    attachPaths: (paths: string[]) => composer.attachLocalPaths(paths),
     setSnipPreview: composer.setSnipPreview,
     isDirty: () =>
       Boolean(
