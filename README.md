@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="apps/desktop/src-tauri/icons/icon.png" width="76" height="76" alt="Suiby icon" />
+  <img src="apps/website/public/app-icon.png" width="76" height="76" alt="Suiby icon" />
 </p>
 
 <h1 align="center">Suiby</h1>
@@ -102,7 +102,7 @@ Prebuilt installers are available on the [website](https://suiby.ajulyroom.com/e
 - **macOS (Apple Silicon):** `Suiby-Mac-arm64.dmg`
 - **Windows (x64):** `Suiby-Windows-x64.exe`
 
-The macOS installer has not been notarized by Apple, and the Windows installer is unsigned. Your OS may show a warning on first launch:
+Because preview builds are not yet signed with paid Apple notarization or Windows code-signing certificates, your OS may show a routine warning on first launch:
 
 - **macOS:** Drag `Suiby.app` into `Applications`, open it once, click **Done** on the warning, then go to **System Settings → Privacy &amp; Security** and click **Open Anyway**.
 - **Windows:** On the SmartScreen prompt, click **More info → Run anyway**.
@@ -131,8 +131,14 @@ npm run desktop
 # Build desktop frontend
 npm run build
 
-# Run TypeScript and Brain tests
+# Run TypeScript, Brain, and website tests
 npm test
+
+# Preview the website locally (http://127.0.0.1:4340/)
+npm run site
+
+# Build static website output (apps/website/dist/)
+npm run build:site
 
 # Run Rust host unit tests
 cd apps/desktop/src-tauri && cargo test
@@ -147,6 +153,7 @@ cd apps/desktop/src-tauri && cargo test
 | `apps/desktop/` | Desktop app UI (`src/`) and Rust / Tauri host (`src-tauri/`) |
 | `apps/brain/` | Optional AI sidecar (`Bun` + TypeScript) and system prompts |
 | `apps/shared/` | Shared types, model catalog, and `zh` / `en` locales |
+| `apps/website/` | Static website &amp; interactive demos (`suiby.ajulyroom.com`) |
 | `skills/` | Built-in `make-desktop-pet`, `teach-desktop-pet`, and `find-pet-tool` skills |
 | `examples/` | Sample pet packs (`lizi`, `mika`) and taught animation packs |
 | `docs/` | Inbox protocol and design documentation |

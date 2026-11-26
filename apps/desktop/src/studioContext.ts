@@ -25,10 +25,22 @@ export async function createStudioContext(app: HTMLElement) {
     img.src = url;
     return img.decode().then(() => img);
   };
-  function sprite(p: api.Pet) {
-    const key = `${p.id}:${p.fingerprint}`;
+  function wornOutfit(p = selected()): string {
+    return api.resolveManualOutfitId(
+      p?.wardrobe,
+      p ? state.snapshot.settings.petWardrobePreferences?.[p.id] : undefined,
+    );
+  }
+  function sprite(p: api.Pet, outfit = wornOutfit(p)) {
+    const key = `${p.id}:${p.fingerprint}:${p.revision}:${outfit}`;
     if (sheet?.key !== key)
-      sheet = { key, image: api.sprite(p.id).then(image) };
+      sheet = {
+        key,
+        image: api
+          .sprite(p.id, outfit)
+          .catch(() => api.sprite(p.id))
+          .then(image),
+      };
     return sheet.image;
   }
   /** The pet's first cell, the size it is drawn in the roster. */
@@ -138,6 +150,7 @@ export async function createStudioContext(app: HTMLElement) {
     darkQuery,
     state,
     image,
+    wornOutfit,
     sprite,
     thumb,
     drawCell,

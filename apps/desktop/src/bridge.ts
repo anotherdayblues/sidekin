@@ -6,8 +6,64 @@ import { open, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import type { Behavior } from "./animation.ts";
 import type { Layer, Step } from "./teaching.ts";
 import { applyPlan, type Plan } from "./actionPlan.ts";
+import type { CodexPetGazeAnchor } from "./openpets/vendor/codex-pets-core.ts";
+import {
+  automaticOutfitChoice,
+  defaultOutfitId,
+  type OutfitDateRange,
+  type OutfitScheduleRule,
+  type OutfitScheduleWhen,
+  type OutfitTimeRange,
+  type OutfitWeekday,
+  type PetOutfitIdentity,
+  type PetWardrobePreference,
+  type PetWardrobePreferences,
+  type WardrobeDefinition,
+} from "./openpets/vendor/wardrobe.ts";
+import {
+  resolvePetActivityAnimation,
+  type PetActivity,
+  type PetActivityAnimation,
+  type PetActivityIdentity,
+} from "./openpets/vendor/activities.ts";
+import { updateEnabledPetActivityIds } from "./openpets/vendor/pet-activity-policy.ts";
+import {
+  enabledActivityIds,
+  resolveManualOutfitId,
+} from "./openpets/runtime.ts";
 import exampleUrl from "../../../examples/lizi/spritesheet.webp?url";
 import liziSleep from "../../../examples/lizi-sleep/actions/sleep.png?url";
+
+export {
+  defaultOutfitId,
+  enabledActivityIds,
+  resolveManualOutfitId,
+  resolvePetActivityAnimation,
+  updateEnabledPetActivityIds,
+  type CodexPetGazeAnchor,
+  type OutfitDateRange,
+  type OutfitScheduleRule,
+  type OutfitScheduleWhen,
+  type OutfitTimeRange,
+  type OutfitWeekday,
+  type PetActivity,
+  type PetActivityAnimation,
+  type PetActivityIdentity,
+  type PetOutfitIdentity,
+  type PetWardrobePreference,
+  type PetWardrobePreferences,
+  type WardrobeDefinition,
+};
+
+export interface PetOutfit extends PetOutfitIdentity {
+  readonly spritesheetPath: string;
+  readonly sleepStrip?: string;
+}
+
+export interface PetWardrobe extends WardrobeDefinition {
+  readonly outfits: readonly PetOutfit[];
+}
+
 export interface Pet {
   id: string;
   displayName: string;
@@ -18,6 +74,9 @@ export interface Pet {
   fingerprint: string;
   revision: string;
   behavior?: Partial<Behavior> | null;
+  gazeAnchor?: CodexPetGazeAnchor;
+  wardrobe?: PetWardrobe;
+  activities?: readonly PetActivity[];
 }
 export interface Settings {
   activeId: string | null;
@@ -30,6 +89,9 @@ export interface Settings {
   skin?: "studio" | "native";
   /** The pet page's cards, top to bottom (homeWidgets.ts); unset until changed. */
   homeCards?: { id: string }[] | null;
+  petWardrobePreferences?: Record<string, PetWardrobePreference>;
+  petHorizontalFlip?: Record<string, boolean>;
+  petActivityPreferences?: Record<string, string[]>;
 }
 export interface Version {
   version: number;
@@ -114,8 +176,118 @@ export async function changes(fn: (s: Snapshot) => void) {
 }
 /** The bundled example pet, for showing something when there is no pet. */
 export const exampleSprite = exampleUrl;
-export async function sprite(id: string): Promise<string> {
-  return native ? invoke("read_sprite", { id }) : exampleUrl;
+export async function sprite(id: string, outfit?: string): Promise<string> {
+  if (!native) return exampleUrl;
+  return outfit && outfit !== defaultOutfitId
+    ? invoke("read_sprite", { id, outfit })
+    : invoke("read_sprite", { id });
+}
+export async function petAsset(petId: string, path: string): Promise<string> {
+  return native ? invoke("read_pet_asset", { petId, path }) : exampleUrl;
+}
+export async function outfitThumbnail(
+  petId: string,
+  outfitId: string,
+): Promise<string> {
+  return native
+    ? invoke("read_outfit_thumbnail", { petId, outfitId })
+    : exampleUrl;
+}
+export async function setPetWardrobePref(
+  petId: string,
+  preference: PetWardrobePreference | null,
+): Promise<void> {
+  if (native)
+    return void (await invoke("set_pet_wardrobe_pref", { petId, preference }));
+  const prefs = { ...(browserState.settings.petWardrobePreferences ?? {}) };
+  const cleanedOutfit =
+    preference?.outfit && preference.outfit !== automaticOutfitChoice
+      ? preference.outfit
+      : undefined;
+  const cleanedSchedule = preference?.schedule;
+  if (cleanedOutfit === undefined && cleanedSchedule === undefined) {
+    delete prefs[petId];
+  } else {
+    prefs[petId] = {
+      ...(cleanedOutfit !== undefined ? { outfit: cleanedOutfit } : {}),
+      ...(cleanedSchedule !== undefined ? { schedule: cleanedSchedule } : {}),
+    };
+  }
+  browserState.settings.petWardrobePreferences = Object.keys(prefs).length
+    ? prefs
+    : undefined;
+  notify();
+}
+export async function deletePetOutfit(
+  petId: string,
+  outfitId: string,
+): Promise<string> {
+  if (native) {
+    return invoke<string>("delete_pet_outfit", { petId, outfitId });
+  }
+  const pet = browserState.pets.find((p) => p.id === petId);
+  const removed = pet?.wardrobe?.outfits.find((o) => o.id === outfitId);
+  if (!pet?.wardrobe || !removed) {
+    throw new Error(`Unknown outfit: ${outfitId}`);
+  }
+  const remaining = pet.wardrobe.outfits.filter((o) => o.id !== outfitId);
+  const schedule = (pet.wardrobe.schedule ?? []).filter(
+    (r) => r.outfit !== outfitId,
+  );
+  pet.wardrobe = remaining.length
+    ? { outfits: remaining, schedule }
+    : undefined;
+  const pref = browserState.settings.petWardrobePreferences?.[petId];
+  if (pref?.outfit === outfitId && browserState.settings.petWardrobePreferences) {
+    delete browserState.settings.petWardrobePreferences[petId];
+    if (!Object.keys(browserState.settings.petWardrobePreferences).length) {
+      browserState.settings.petWardrobePreferences = undefined;
+    }
+  }
+  notify();
+  return removed.displayName;
+}
+export async function setPetFlip(
+  petId: string,
+  flipped: boolean,
+): Promise<void> {
+  if (native) return void (await invoke("set_pet_flip", { petId, flipped }));
+  const flips = { ...(browserState.settings.petHorizontalFlip ?? {}) };
+  if (flipped) flips[petId] = true;
+  else delete flips[petId];
+  browserState.settings.petHorizontalFlip = Object.keys(flips).length
+    ? flips
+    : undefined;
+  notify();
+}
+export async function setPetActivityPref(
+  petId: string,
+  enabled: string[] | null,
+): Promise<void> {
+  if (native)
+    return void (await invoke("set_pet_activity_pref", { petId, enabled }));
+  const prefs = { ...(browserState.settings.petActivityPreferences ?? {}) };
+  if (enabled === null) delete prefs[petId];
+  else prefs[petId] = [...enabled];
+  browserState.settings.petActivityPreferences = Object.keys(prefs).length
+    ? prefs
+    : undefined;
+  notify();
+}
+export async function previewActivity(
+  petId: string,
+  activityId: string,
+): Promise<void> {
+  if (native) await invoke("preview_activity", { petId, activityId });
+}
+export async function importPackagePath(
+  path: string,
+): Promise<{ pet: Pet; updated: boolean } | { draft: Draft }> {
+  if (!native) throw new Error(t("studio.importInApp"));
+  return invoke<{ pet: Pet; updated: boolean } | { draft: Draft }>(
+    "import_pet",
+    { path },
+  );
 }
 /** The pet's own sleep strip; 栗子 without one sleeps with the bundled one,
  * as on the desktop (pet.ts). */
@@ -125,10 +297,29 @@ export async function renamePet(id: string, name: string) {
   if (p) p.displayName = name.trim();
   notify();
 }
-export async function sleepSprite(p: Pet): Promise<string> {
-  return native && p.sleepStrip
-    ? invoke("read_sprite", { id: p.id, sleep: true })
-    : liziSleep;
+export async function sleepSprite(
+  petOrId: Pet | string,
+  outfit?: string,
+): Promise<string> {
+  const id = typeof petOrId === "string" ? petOrId : petOrId.id;
+  if (!native) return liziSleep;
+  if (typeof petOrId !== "string") {
+    const wornOutfit =
+      outfit && outfit !== defaultOutfitId
+        ? petOrId.wardrobe?.outfits.find((o) => o.id === outfit)
+        : undefined;
+    if (!wornOutfit?.sleepStrip && !petOrId.sleepStrip) return liziSleep;
+  }
+  const args =
+    outfit && outfit !== defaultOutfitId
+      ? { id, sleep: true, outfit }
+      : { id, sleep: true };
+  try {
+    return await invoke("read_sprite", args);
+  } catch (err) {
+    if (id === "lizi") return liziSleep;
+    throw err;
+  }
 }
 export async function importPackage(folder: boolean) {
   if (!native) throw new Error(t("studio.importInApp"));
@@ -316,6 +507,9 @@ export async function removePet(id: string) {
   browserState.drafts = browserState.drafts.filter((d) => d.petId !== id);
   delete browserState.custom[id];
   delete browserState.settings.behaviors[id];
+  delete browserState.settings.petWardrobePreferences?.[id];
+  delete browserState.settings.petHorizontalFlip?.[id];
+  delete browserState.settings.petActivityPreferences?.[id];
   if (browserState.settings.activeId === id)
     browserState.settings.activeId = browserState.pets[0]?.id ?? null;
   notify();

@@ -55,6 +55,63 @@ export function petMenus(
         ),
     }));
     const [sound, todoItems] = await Promise.all([voice(), todoMenu(focus, n)]);
+    const activePet = snapshot.pets.find(
+      (p) => p.id === snapshot.settings.activeId,
+    );
+    const wardrobe =
+      activePet?.wardrobe && activePet.wardrobe.outfits.length > 0
+        ? activePet.wardrobe
+        : null;
+    const outfitMenuItems =
+      activePet && wardrobe
+        ? (() => {
+            const pref = snapshot.settings.petWardrobePreferences?.[activePet.id];
+            const wornId = api.resolveManualOutfitId(wardrobe, pref);
+            const setOutfit = (outfit: string) => {
+              void api.setPetWardrobePref(
+                activePet.id,
+                outfit === api.defaultOutfitId ? null : { outfit },
+              );
+            };
+            return [
+              {
+                id: `pet-outfit-menu-${n}`,
+                text: t("menu.outfit"),
+                items: [
+                  {
+                    id: `pet-outfit-default-${n}`,
+                    text: t("menu.outfitDefault"),
+                    checked: wornId === api.defaultOutfitId,
+                    action: () => setOutfit(api.defaultOutfitId),
+                  },
+                  ...wardrobe.outfits.map((outfit) => ({
+                    id: `pet-outfit-${outfit.id}-${n}`,
+                    text: outfit.displayName,
+                    checked: wornId === outfit.id,
+                    action: () => setOutfit(outfit.id),
+                  })),
+                ],
+              },
+            ];
+          })()
+        : [];
+    const flipItems = activePet
+      ? [
+          {
+            id: `pet-flip-${n}`,
+            text: t("menu.flip"),
+            checked: Boolean(
+              snapshot.settings.petHorizontalFlip?.[activePet.id],
+            ),
+            action: () => {
+              const current = Boolean(
+                read().snapshot.settings.petHorizontalFlip?.[activePet.id],
+              );
+              void api.setPetFlip(activePet.id, !current);
+            },
+          },
+        ]
+      : [];
     // 待办 leads when the timer is idle; while it runs, its keys come first.
     const top =
       focus.phase === "idle"
@@ -138,10 +195,12 @@ export function petMenus(
             },
           ],
         },
+        ...outfitMenuItems,
         {
           id: `pet-controls-${n}`,
           text: t("menu.petControls"),
           items: [
+            ...flipItems,
             {
               id: `pet-voice-${n}`,
               text: sound.enabled ? t("menu.mute") : t("menu.unmute"),

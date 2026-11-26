@@ -46,7 +46,9 @@ export const TEMPLATE = `
         <p>${t("studio.noPetHow")}</p>
         <button id="meet" class="key primary">${t("studio.meet")}</button>
       </div>
+      <button type="button" id="wardrobe-key" class="wardrobe-trigger" aria-controls="wardrobe-pane" aria-expanded="false" hidden><svg class="wardrobe-glyph" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2a1.5 1.5 0 0 1 1.5 1.5c0 .7-.45 1.15-1.05 1.45L8 5.4l5.4 3.45a1 1 0 0 1-.54 1.85H3.14a1 1 0 0 1-.54-1.85L8 5.4"/></svg><span id="wardrobe-key-label"></span></button>
       <div class="window-foot label"><span id="playing">${t("studio.idle")}</span></div>
+      <div class="drop-import-cue" id="drop-import-cue" hidden><span>${t("studio.dropImportCue")}</span></div>
     </section>
     <div class="controls" id="controls">
       <div class="control"><span class="silk">${t("studio.desk")}</span><input class="slide-switch" type="checkbox" id="desk" role="switch" aria-label="${t("studio.desk")}"></div>
@@ -76,6 +78,7 @@ export const TEMPLATE = `
     <div class="widgets" id="widgets"></div>
     <footer class="versions" id="versions"></footer>
     </div>
+    <section class="wardrobe-pane" id="wardrobe-pane" aria-label="${t("wardrobe.title")}" hidden></section>
   </aside>
   </div>
   <section class="block" data-for="memory" hidden></section>

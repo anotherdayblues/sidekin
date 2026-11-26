@@ -1,4 +1,5 @@
 import contract from "../../../skills/make-desktop-pet/references/runtime-contract.json";
+import { mirrorCodexV2GazeIndex } from "./openpets/vendor/codex-pets-core.ts";
 export const ANIMATIONS = contract.animations;
 export type Action = keyof typeof ANIMATIONS;
 export const ACTIONS = Object.keys(ANIMATIONS) as Action[];
@@ -158,6 +159,24 @@ export class PetShape {
     if (x < 0 || y < 0 || x >= this.width || y >= this.height) return false;
     return (hovered ? this.hold : this.reach)[y * this.width + x] === 1;
   }
+  /** Horizontally mirrored copy of this silhouette, for flipped rendering. */
+  mirrored() {
+    const flip = (src: Uint8Array) => {
+      const out = new Uint8Array(src.length);
+      for (let y = 0; y < this.height; y++) {
+        const row = y * this.width;
+        for (let x = 0; x < this.width; x++)
+          out[row + (this.width - 1 - x)] = src[row + x];
+      }
+      return out;
+    };
+    return new PetShape(
+      flip(this.reach),
+      flip(this.hold),
+      this.width,
+      this.height,
+    );
+  }
 }
 /** Square dilation by `r` pixels, as two one-dimensional passes. */
 function grow(mask: Uint8Array, w: number, h: number, r: number) {
@@ -277,11 +296,12 @@ export function frameAt(action: Action, time: number) {
     t -= a.durations[frame++];
   return { row: a.row, frame, remaining: a.durations[frame] - t };
 }
-export function gazeFrame(x: number, y: number) {
-  const d =
+export function gazeFrame(x: number, y: number, flipped = false) {
+  const raw =
     Math.round(
       ((Math.atan2(x, -y) + Math.PI * 2) % (Math.PI * 2)) / (Math.PI / 8),
     ) % 16;
+  const d = flipped ? (mirrorCodexV2GazeIndex(raw) ?? raw) : raw;
   return { row: 9 + Math.floor(d / 8), frame: d % 8 };
 }
 /**

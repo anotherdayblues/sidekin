@@ -35,6 +35,19 @@ import { petFocus } from "./petFocus.ts";
 import { mountDoze } from "./petDoze.ts";
 import { petPhone } from "./petPhone.ts";
 import { IDLE_FOCUS, type FocusState } from "./focus.ts";
+import {
+  activityClipName,
+  defaultOutfitId,
+  dragActionForFlip,
+  enabledActivityIds,
+  matchingActivitiesForOutfit,
+  resolveManualOutfitId,
+} from "./openpets/runtime.ts";
+import {
+  nextActivityOpportunityMs,
+  selectIdlePetActivity,
+} from "./openpets/vendor/pet-activity-policy.ts";
+import { resolvePetActivityAnimation } from "./openpets/vendor/activities.ts";
 
 const RULE_TICK_MS = 15_000;
 
@@ -48,7 +61,11 @@ export async function mountPet(root: HTMLElement) {
     drag = new DragMotion();
   mountDoze(root);
   let snapshot = await api.state(),
+    currentPet: api.Pet | undefined,
     loaded = "",
+    effectiveOutfitId = defaultOutfitId,
+    flipped = false,
+    updateSeq = 0,
     visible = false,
     hovered = false,
     behavior = normalizeBehavior();
@@ -65,6 +82,10 @@ export async function mountPet(root: HTMLElement) {
     lastInput = Date.now();
   const activity = new ActivityTracker();
   let randomTimer: ReturnType<typeof setTimeout> | undefined;
+  let activityTimer: ReturnType<typeof setTimeout> | undefined;
+  let activityPetId = "";
+  const activityLastPlayed = new Map<string, number>();
+  let lastActivityId: string | null = null;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   let initial = await getSettings();
   let enabled = initial.enabled,
@@ -125,7 +146,8 @@ export async function mountPet(root: HTMLElement) {
   const isPaused = () => snapshot.settings.paused || reduced.matches;
   function dragAction() {
     const rule = rules.find("drag");
-    return drag.action && rule ? rule.do[0].play! : drag.action;
+    if (drag.action && rule) return rule.do[0].play!;
+    return dragActionForFlip(drag.action, flipped);
   }
   let pendingIdle: { steps: Step[]; touchedAt: number } | null = null;
   const clickOnly = () => sequence?.source === "pet-idle" && player.sustaining;
@@ -178,9 +200,20 @@ export async function mountPet(root: HTMLElement) {
       !!focusBase
     );
   }
+  function activityBusy() {
+    return (
+      busy() ||
+      document.hidden ||
+      player.sustaining ||
+      streaming ||
+      (bubbleAt !== null && Date.now() < gazeUntil)
+    );
+  }
   function runSequence(steps: Step[], source: string) {
     cancelSequence(source);
     clearTimeout(randomTimer);
+    clearTimeout(activityTimer);
+    activityTimer = undefined;
     sequence = { steps, index: 0, source };
     nextStep();
   }
@@ -215,6 +248,7 @@ export async function mountPet(root: HTMLElement) {
       sync();
       random.reset();
       schedule();
+      scheduleActivity();
       return;
     }
     if (step.wait) {
@@ -236,11 +270,17 @@ export async function mountPet(root: HTMLElement) {
     if (rule) runSequence(rule.do, event);
     return true;
   }
-  async function loadCustom(pet: api.Pet) {
+  async function loadCustom(pet: api.Pet, outfitId = effectiveOutfitId) {
     const custom = snapshot.custom[pet.id];
     layer = custom?.layer ?? EMPTY_LAYER;
     const hasCustomSleep = !!layer.actions.sleep?.loopFrames;
-    const builtInSleep = !!pet.sleepStrip || pet.id === "lizi";
+    const wornOutfit =
+      outfitId !== defaultOutfitId
+        ? pet.wardrobe?.outfits.find((o) => o.id === outfitId)
+        : undefined;
+    const builtInSleep = Boolean(
+      wornOutfit?.sleepStrip || pet.sleepStrip || pet.id === "lizi",
+    );
     const scheduled = [...layer.rules];
     const napMinutes = behavior.napMinutes ?? 10;
     const atNapTime = scheduled.filter(
@@ -265,7 +305,7 @@ export async function mountPet(root: HTMLElement) {
       rulesPet = pet.id;
       rules = new RuleClock(scheduled, loadMemory(pet.id));
     } else rules.rules = scheduled;
-    const key = `${pet.id}:${pet.fingerprint}:${pet.sleepStrip ?? ""}:${custom?.history.current ?? 0}`;
+    const key = `${pet.id}:${pet.fingerprint}:${pet.revision ?? ""}:${pet.sleepStrip ?? ""}:${outfitId}:${wornOutfit?.sleepStrip ?? ""}:${custom?.history.current ?? 0}`;
     if (key === customKey) return;
     customKey = key;
     const entries = await Promise.all(
@@ -287,17 +327,105 @@ export async function mountPet(root: HTMLElement) {
         image: "",
         durations: sleepExample.actions.sleep.durations,
         loopFrames: [5, 12],
-        url: pet.sleepStrip
-          ? await invoke<string>("read_sprite", { id: pet.id, sleep: true })
-          : liziSleep,
+        url:
+          wornOutfit?.sleepStrip || pet.sleepStrip
+            ? await api.sleepSprite(pet.id, outfitId)
+            : liziSleep,
       };
-    player.removeClipsExcept(Object.keys(clips));
+    const matchedActivities = matchingActivitiesForOutfit(
+      pet.activities,
+      outfitId,
+    );
+    player.removeClipsExcept([
+      ...Object.keys(clips),
+      ...matchedActivities.map((m) => m.clipName),
+    ]);
     await player.addClips(clips);
+    if (matchedActivities.length > 0) {
+      await Promise.allSettled(
+        matchedActivities.map(async (matched) => {
+          try {
+            const url = await api.petAsset(
+              pet.id,
+              matched.animation.spritesheetPath,
+            );
+            if (currentPet?.id !== pet.id || effectiveOutfitId !== outfitId)
+              return;
+            await player.addClips({
+              [matched.clipName]: {
+                durations: matched.durations,
+                url,
+              },
+            });
+          } catch (err) {
+            console.warn(
+              `activity "${matched.activity.id}" failed to load`,
+              err,
+            );
+          }
+        }),
+      );
+    }
   }
   function reloadCustom() {
     const pet = snapshot.pets.find((p) => p.id === snapshot.settings.activeId);
     customKey = "";
-    if (pet) loadCustom(pet).catch(console.error);
+    if (pet) loadCustom(pet, effectiveOutfitId).catch(console.error);
+  }
+  function scheduleActivity() {
+    clearTimeout(activityTimer);
+    activityTimer = undefined;
+    const pet = currentPet;
+    if (!pet?.activities?.length || activityBusy()) return;
+    const enabledIds = enabledActivityIds(
+      pet,
+      snapshot.settings.petActivityPreferences,
+    );
+    if (enabledIds.length === 0) return;
+    const hasPlayable = matchingActivitiesForOutfit(
+      pet.activities,
+      effectiveOutfitId,
+    ).some(
+      (m) => enabledIds.includes(m.activity.id) && player.has(m.clipName),
+    );
+    if (!hasPlayable) return;
+    activityTimer = setTimeout(() => {
+      activityTimer = undefined;
+      runIdleActivity();
+    }, nextActivityOpportunityMs(Math.random));
+  }
+  function runIdleActivity() {
+    const pet = currentPet;
+    if (!pet?.activities?.length || activityBusy()) return;
+    const enabledIds = enabledActivityIds(
+      pet,
+      snapshot.settings.petActivityPreferences,
+    );
+    const eligible = matchingActivitiesForOutfit(
+      pet.activities,
+      effectiveOutfitId,
+    )
+      .filter((m) => player.has(m.clipName))
+      .map((m) => m.activity);
+    const picked = selectIdlePetActivity(
+      eligible,
+      enabledIds,
+      activityLastPlayed,
+      lastActivityId,
+      Date.now(),
+      Math.random,
+    );
+    if (!picked) {
+      scheduleActivity();
+      return;
+    }
+    const clipName = activityClipName(picked.id);
+    activityLastPlayed.set(picked.id, Date.now());
+    lastActivityId = picked.id;
+    clearTimeout(randomTimer);
+    extensionAction = clipName;
+    player.play(clipName);
+    sync();
   }
   async function tick() {
     const seconds = await api.idleSeconds().catch(() => null),
@@ -354,6 +482,8 @@ export async function mountPet(root: HTMLElement) {
       return;
     }
     if (next) {
+      clearTimeout(activityTimer);
+      activityTimer = undefined;
       extensionAction = next;
       player.play(next);
       sync();
@@ -375,6 +505,7 @@ export async function mountPet(root: HTMLElement) {
     if (hadExtension || focusBase) sync();
     random.reset();
     schedule();
+    scheduleActivity();
   };
   function hover(value: boolean) {
     if (value === hovered) return;
@@ -393,45 +524,99 @@ export async function mountPet(root: HTMLElement) {
     random.reset();
     sync();
     schedule();
+    scheduleActivity();
   }
   async function update(s: api.Snapshot) {
+    const seq = ++updateSeq;
     snapshot = s;
     const pet = s.pets.find((p) => p.id === s.settings.activeId);
+    currentPet = pet;
+    if ((pet?.id ?? "") !== activityPetId) {
+      activityPetId = pet?.id ?? "";
+      activityLastPlayed.clear();
+      lastActivityId = null;
+    }
     behavior = normalizeBehavior(
       s.settings.behaviors[pet?.id ?? ""] ?? pet?.behavior,
     );
+    const nextFlipped = Boolean(
+      pet && s.settings.petHorizontalFlip?.[pet.id],
+    );
+    flipped = nextFlipped;
+    player.setFlipped(flipped);
     const appeared = !!pet && s.settings.visible && !visible;
     visible = !!pet && s.settings.visible;
     clearTimeout(randomTimer);
+    clearTimeout(activityTimer);
+    activityTimer = undefined;
     pointer.stop();
-    const key = pet ? `${pet.id}:${pet.fingerprint}` : "";
-    if (appeared || key !== loaded) lastPetTouch = Date.now();
-    if (pet && key !== loaded) {
+    const wardrobePref = pet
+      ? s.settings.petWardrobePreferences?.[pet.id]
+      : undefined;
+    const targetOutfitId = pet
+      ? resolveManualOutfitId(pet.wardrobe, wardrobePref)
+      : defaultOutfitId;
+    const petKey = pet ? `${pet.id}:${pet.fingerprint}` : "";
+    const prevPetKey = loaded.split(":").slice(0, 2).join(":");
+    const key = pet ? `${petKey}:${pet.revision ?? ""}:${targetOutfitId}` : "";
+    if (appeared || petKey !== prevPetKey) lastPetTouch = Date.now();
+    if (!pet) {
+      loaded = "";
+      effectiveOutfitId = defaultOutfitId;
+    } else if (key !== loaded) {
       loaded = key;
       cancelSequence();
       extensionAction = null;
       customKey = "";
-      await player.load(await api.sprite(pet.id));
+      let resolvedOutfit = targetOutfitId;
+      let loadedOutfit = false;
+      if (targetOutfitId !== defaultOutfitId) {
+        try {
+          const outfitUrl = await api.sprite(pet.id, targetOutfitId);
+          if (seq !== updateSeq) return;
+          await player.load(outfitUrl);
+          if (seq !== updateSeq) return;
+          loadedOutfit = true;
+        } catch (err) {
+          console.warn(
+            `outfit "${targetOutfitId}" failed to load, falling back to base`,
+            err,
+          );
+          resolvedOutfit = defaultOutfitId;
+        }
+      }
+      if (!loadedOutfit) {
+        const baseUrl = await api.sprite(pet.id);
+        if (seq !== updateSeq) return;
+        await player.load(baseUrl);
+        if (seq !== updateSeq) return;
+      }
+      effectiveOutfitId = resolvedOutfit;
     }
-    if (pet) await loadCustom(pet);
+    if (pet) {
+      await loadCustom(pet, effectiveOutfitId);
+      if (seq !== updateSeq) return;
+    }
     player.setReducedMotion(isPaused());
-    player.setActive(visible);
+    player.setActive(visible && !document.hidden);
     sync();
     random.reset();
     schedule();
+    scheduleActivity();
     if (appeared && !sequence) interaction("appear");
-    if (visible) pointer.poll();
+    if (visible && !document.hidden) pointer.poll();
   }
   const pointer = petPointer({
     canvas,
     player,
     drag,
-    visible: () => visible,
+    visible: () => visible && !document.hidden,
     paused: isPaused,
     clickOnly,
     hovered: () => hovered,
     sync,
     gaze: () => ({ bubbleAt, gazeUntil }),
+    gazeAnchor: () => currentPet?.gazeAnchor,
     touch: () => {
       lastPetTouch = Date.now();
     },
@@ -443,12 +628,15 @@ export async function mountPet(root: HTMLElement) {
       cancelSequence();
       extensionAction = null;
       clearTimeout(randomTimer);
+      clearTimeout(activityTimer);
+      activityTimer = undefined;
       sync();
     },
     release: (clicked, moved, wake) => {
       sync();
       random.reset();
       schedule();
+      scheduleActivity();
       if (clicked && moved) interaction("drop");
       if (
         clicked &&
@@ -497,6 +685,22 @@ export async function mountPet(root: HTMLElement) {
     player.setReducedMotion(isPaused());
     random.reset();
     schedule();
+    scheduleActivity();
+  });
+  document.addEventListener("visibilitychange", () => {
+    const canRun = visible && !document.hidden;
+    player.setActive(canRun);
+    if (!canRun) {
+      clearTimeout(activityTimer);
+      activityTimer = undefined;
+      clearTimeout(randomTimer);
+      pointer.stop();
+      return;
+    }
+    random.reset();
+    schedule();
+    scheduleActivity();
+    pointer.poll();
   });
   await petPreviews(
     player,
@@ -504,9 +708,49 @@ export async function mountPet(root: HTMLElement) {
     clickOnly,
     runSequence,
   );
+  await listen<{ petId: string; activityId: string }>(
+    "preview-activity",
+    async ({ payload }) => {
+      if (clickOnly() || !currentPet || currentPet.id !== payload.petId) return;
+      const act = currentPet.activities?.find(
+        (a) => a.id === payload.activityId,
+      );
+      if (!act) return;
+      const anim = resolvePetActivityAnimation(act, effectiveOutfitId);
+      if (!anim) return;
+      const clipName = activityClipName(act.id);
+      if (!player.has(clipName)) {
+        try {
+          const url = await api.petAsset(currentPet.id, anim.spritesheetPath);
+          if (
+            currentPet?.id !== payload.petId ||
+            !resolvePetActivityAnimation(act, effectiveOutfitId)
+          )
+            return;
+          const matched = matchingActivitiesForOutfit([act], effectiveOutfitId)[0];
+          if (!matched) return;
+          await player.addClips({
+            [clipName]: { durations: matched.durations, url },
+          });
+        } catch (err) {
+          console.warn(`activity preview "${act.id}" failed`, err);
+          return;
+        }
+      }
+      cancelSequence();
+      clearTimeout(randomTimer);
+      clearTimeout(activityTimer);
+      activityTimer = undefined;
+      extensionAction = clipName;
+      player.play(clipName);
+      sync();
+    },
+  );
   await listen<string>("play-action", (e) => {
     if (clickOnly()) return;
     cancelSequence();
+    clearTimeout(activityTimer);
+    activityTimer = undefined;
     extensionAction = e.payload;
     player.play(e.payload);
     sync();
@@ -515,6 +759,12 @@ export async function mountPet(root: HTMLElement) {
     if (!enabled || (kind === "streaming" && streaming)) return;
     streaming = kind === "streaming";
     brainAction = kind === "idle" ? null : statusAction({ kind });
+    if (brainAction || streaming) {
+      clearTimeout(activityTimer);
+      activityTimer = undefined;
+    } else {
+      scheduleActivity();
+    }
     sync();
     // Cursor polling owns the gaze direction, including while an answer streams.
   }
@@ -528,6 +778,8 @@ export async function mountPet(root: HTMLElement) {
     // its own so the "untouched for a while" rules leave it alone.
     if (sleep) return runSequence([{ play: clip }], "asked");
     cancelSequence();
+    clearTimeout(activityTimer);
+    activityTimer = undefined;
     extensionAction = clip;
     player.play(clip);
     sync();
@@ -546,6 +798,8 @@ export async function mountPet(root: HTMLElement) {
   function react(event: PetEvent | null, action: string | null) {
     if (clickOnly() || (event && interaction(event)) || !action) return;
     cancelSequence();
+    clearTimeout(activityTimer);
+    activityTimer = undefined;
     extensionAction = action;
     player.play(action);
     sync();
@@ -566,7 +820,13 @@ export async function mountPet(root: HTMLElement) {
         cancelSequence();
         extensionAction = null;
       }
-      if (!action) schedule();
+      if (!action) {
+        schedule();
+        scheduleActivity();
+      } else {
+        clearTimeout(activityTimer);
+        activityTimer = undefined;
+      }
       sync();
     },
     react,

@@ -16,6 +16,9 @@ The following third-party files are included directly in this repository under t
   Sample pet sprite in `examples/mika/` (upstream reference in `third-party/mika-upstream.webp`), used solely as an attributed sample pack for import and animation verification. License and notice preserved in `Craybreeding-LICENSE` and `Craybreeding-NOTICE`.
 - **File Transfer Utilities & Icons** (MIT / Apache-2.0)  
   Vendored helper modules and file-type SVG icons in `apps/desktop/src/fileTransfer/vendor/` (`drag-rs`, `droper`, `material-icons`), each accompanied by its original `LICENSE` file in the same directory.
+- **OpenPetsHQ / openpets** (MIT)  
+  Source: https://github.com/OpenPetsHQ/openpets (`2f02bb04d872dec6923a47572343305235c63482`)  
+  Vendored zero-dependency pet format & runtime helper modules (`wardrobe.ts`, `activities.ts`, `pet-activity-policy.ts`, `codex-pets-core.ts`) in `apps/desktop/src/openpets/vendor/`. License text preserved in `apps/desktop/src/openpets/vendor/LICENSE`.
 
 ---
 

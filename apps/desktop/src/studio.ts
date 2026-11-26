@@ -12,6 +12,7 @@ import { mountStudioPopovers } from "./studioPopovers.ts";
 import { mountStudioRoster } from "./studioRoster.ts";
 import { mountStudioStage } from "./studioStage.ts";
 import { mountStudioTape } from "./studioTape.ts";
+import { mountStudioWardrobe } from "./studioWardrobe.ts";
 import { mountStudioDial } from "./studioDial.ts";
 import { mountStudioVersions } from "./studioVersions.ts";
 import { mountPetMenu } from "./studioPetMenu.ts";
@@ -41,6 +42,7 @@ export async function mountStudio(app: HTMLElement) {
   const roster = mountStudioRoster(c, menus, (p, at) => petMenu.open(p, at));
   const stageView = mountStudioStage(c, (name) => tape.markTape(name));
   const tape = mountStudioTape(c, stageView, menus);
+  const wardrobe = mountStudioWardrobe(c, menus);
   const draftReader = mountDraftReader(app, {
     selected: c.selected,
     draftsFor: (p) => c.state.snapshot.drafts.filter((d) => d.petId === p.id),
@@ -70,6 +72,7 @@ export async function mountStudio(app: HTMLElement) {
     roster,
     stageView,
     tape,
+    wardrobe,
     draftReader,
     dial,
     versions,

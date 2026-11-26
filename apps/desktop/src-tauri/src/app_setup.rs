@@ -94,6 +94,31 @@ pub fn run(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                     let _ = open_studio(handle.clone());
                     studio_window::emit(&handle, "draft-arrived", summary);
                 }
+                Ok(inbox::Arrival::Outfit {
+                    pet_id,
+                    outfit_id,
+                    display_name,
+                    updated,
+                }) => {
+                    let state = handle.state::<State>();
+                    if let Err(e) = state.update_settings(|s| s.active_id = Some(pet_id.clone())) {
+                        settings_failed(&handle, e);
+                        continue;
+                    }
+                    let _ = refresh(&handle);
+                    let _ = open_studio(handle.clone());
+                    studio_window::emit(
+                        &handle,
+                        "pet-arrived",
+                        serde_json::json!({
+                            "name": display_name,
+                            "updated": updated,
+                            "petId": pet_id,
+                            "outfitId": outfit_id,
+                            "kind": "outfit"
+                        }),
+                    );
+                }
                 Ok(inbox::Arrival::Tool { .. }) => {
                     let _ = open_studio(handle.clone());
                     studio_window::emit(&handle, "settings-section", "tools");

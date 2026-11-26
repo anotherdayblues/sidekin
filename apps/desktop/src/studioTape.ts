@@ -7,6 +7,7 @@ import { glyphs } from "./icons.ts";
 import { squish } from "./spring.ts";
 import { el } from "./studioDom.ts";
 import { CELL_W, CELL_H } from "./studioContext.ts";
+import { activityClipName } from "./openpets/runtime.ts";
 import * as api from "./bridge.ts";
 import type { mountStudioStage } from "./studioStage.ts";
 import type { mountStudioPopovers } from "./studioPopovers.ts";
@@ -127,15 +128,17 @@ export function mountStudioTape(
     let best = 0,
       most = -1;
     for (let f = 1; f < frames; f++) {
-      let diff = 0;
+      let diff = 0,
+        ink = 0;
       for (let y = 0; y < h; y++)
         for (let x = 0; x < w; x++) {
           const a = (y * w * frames + x) * 4,
             b = a + f * w * 4;
+          if (data[b + 3] > 24) ink++;
           diff +=
             Math.abs(data[a + 3] - data[b + 3]) + Math.abs(data[a] - data[b]);
         }
-      if (diff > most) [most, best] = [diff, f];
+      if (ink > 0 && diff > most) [most, best] = [diff, f];
     }
     cache.set(row, best);
     return best;
@@ -181,12 +184,88 @@ export function mountStudioTape(
   strip.addEventListener("scroll", syncPager, { passive: true });
   new ResizeObserver(syncPager).observe(strip);
   // Two kinds of actions, apart from birth (plan/29): the pet's own, and
-  // the ones it learned. A key on a tile opens its settings, when it has
-  // any: sleep's nap time, and when a learned action plays.
+  // the ones it learned (including OpenPets pack activities).
   let group: "base" | "learned" = "base";
   const tabs = [
     ...app.querySelectorAll<HTMLButtonElement>(".tape-tabs [role=tab]"),
   ];
+  const activityFallbackImages = new Map<string, Promise<HTMLImageElement>>();
+  function fallbackActivityImage(p: api.Pet, act: api.PetActivity) {
+    const key = `${p.id}:${p.fingerprint}:${act.spritesheetPath}`;
+    let cached = activityFallbackImages.get(key);
+    if (!cached) {
+      cached = api.petAsset(p.id, act.spritesheetPath).then(c.image);
+      cached.catch(() => activityFallbackImages.delete(key));
+      activityFallbackImages.set(key, cached);
+    }
+    return cached;
+  }
+  function openActivitySettings(
+    p: api.Pet,
+    act: api.PetActivity,
+    anchor: HTMLElement,
+  ) {
+    const activities = p.activities ?? [];
+    const wornId = c.wornOutfit(p);
+    const matched = api.resolvePetActivityAnimation(act, wornId);
+    const enabledList = api.enabledActivityIds(
+      p,
+      c.state.snapshot.settings.petActivityPreferences,
+    );
+    const enabled = enabledList.includes(act.id);
+
+    const nodes: HTMLElement[] = [el("strong", "pop-title", act.displayName)];
+    if (!matched) {
+      nodes.push(el("p", "act-lead", t("activities.unavailableForOutfit")));
+    }
+
+    const row = el("label", "act-row");
+    const nameEl = el("span", "act-name", t("activities.autoPlay"));
+    const input = el("input", "slide-switch");
+    input.type = "checkbox";
+    input.setAttribute("role", "switch");
+    input.checked = enabled;
+    input.setAttribute(
+      "aria-label",
+      t("activities.toggleAria", { name: act.displayName }),
+    );
+    input.onchange = () => {
+      const currentEnabled = api.enabledActivityIds(
+        p,
+        c.state.snapshot.settings.petActivityPreferences,
+      );
+      const nextIds = api.updateEnabledPetActivityIds(
+        activities,
+        currentEnabled,
+        act.id,
+        input.checked,
+      );
+      const payload =
+        nextIds.length === activities.length ? null : [...nextIds];
+      void c.attempt(() => api.setPetActivityPref(p.id, payload));
+    };
+    row.append(
+      nameEl,
+      input,
+      el("span", "act-hint", t("activities.autoPlayHint")),
+    );
+    nodes.push(row);
+
+    const foot = el("div", "act-foot");
+    const playBtn = el("button", "activity-play", t("activities.play"));
+    playBtn.type = "button";
+    playBtn.disabled = !matched;
+    playBtn.title = matched
+      ? t("activities.playAria", { name: act.displayName })
+      : t("activities.unavailableForOutfit");
+    playBtn.onclick = () => {
+      stageView.playActivity(act);
+    };
+    foot.append(playBtn);
+    nodes.push(foot);
+
+    menus.openPop(anchor, nodes, { kind: "action" });
+  }
   for (const tab of tabs)
     tab.onclick = () => {
       group = tab.dataset.group as typeof group;
@@ -194,8 +273,14 @@ export function mountStudioTape(
       const p = selected();
       if (p) void renderTape(p);
     };
-  const hasSleep = (p: api.Pet, layer: Layer) =>
-    !!layer.actions.sleep || !!p.sleepStrip || p.id === "lizi";
+  const hasSleep = (p: api.Pet, layer: Layer) => {
+    const outfit = c.wornOutfit(p);
+    const wornSleep =
+      outfit !== api.defaultOutfitId
+        ? p.wardrobe?.outfits.find((o) => o.id === outfit)?.sleepStrip
+        : undefined;
+    return !!layer.actions.sleep || !!wornSleep || !!p.sleepStrip || p.id === "lizi";
+  };
   function label(name: string, layer: Layer) {
     return name === "sleep" && !layer.actions.sleep
       ? t("pet.sleep")
@@ -211,9 +296,10 @@ export function mountStudioTape(
         ...BASE.slice(1),
       ],
       learned = learnedNames(layer),
+      activities = p.activities ?? [],
       names = group === "base" ? base : learned;
     $("#base-count").textContent = String(base.length);
-    $("#learned-count").textContent = String(learned.length);
+    $("#learned-count").textContent = String(learned.length + activities.length);
     for (const tab of tabs)
       tab.setAttribute("aria-selected", String(tab.dataset.group === group));
     tape.dataset.group = group;
@@ -237,7 +323,8 @@ export function mountStudioTape(
     const sheet = await sprite(p);
     if (token !== tapeToken) return;
     tape.replaceChildren();
-    if (!names.length)
+    const showActivities = group === "learned" && activities.length > 0;
+    if (!names.length && !showActivities)
       tape.append(el("p", "tape-empty", t("act.learnedEmpty")));
     syncPager();
     for (const name of names) {
@@ -302,6 +389,86 @@ export function mountStudioTape(
           caption(`${text} · ${settings.note(name, custom(p).layer)}`);
       };
       squish(tile, 0.04);
+    }
+    if (showActivities) {
+      const wornId = c.wornOutfit(p);
+      const enabledSet = new Set(
+        api.enabledActivityIds(
+          p,
+          c.state.snapshot.settings.petActivityPreferences,
+        ),
+      );
+      for (const act of activities) {
+        const clipName = activityClipName(act.id);
+        const matched = api.resolvePetActivityAnimation(act, wornId);
+        const isEnabled = enabledSet.has(act.id);
+        const item = el("div", "tape-item");
+        item.dataset.action = clipName;
+        if (!matched) item.classList.add("is-unavailable");
+        if (!isEnabled) item.classList.add("is-muted");
+
+        const tile = el("button", "tape-tile");
+        tile.type = "button";
+        tile.dataset.action = clipName;
+        const thumb = el("canvas");
+        thumb.width = 96;
+        thumb.height = 104;
+        tile.append(thumb, el("span", "tape-label", act.displayName));
+        tile.setAttribute("aria-label", act.displayName);
+        tile.title = matched
+          ? t("activities.playAria", { name: act.displayName })
+          : t("activities.unavailableForOutfit");
+        item.append(tile);
+
+        const key = el("button", "tape-set pop-anchor");
+        key.type = "button";
+        key.innerHTML = glyphs.tune;
+        key.title = t("act.settings", { label: act.displayName });
+        key.setAttribute("aria-label", key.title);
+        key.setAttribute("aria-haspopup", "dialog");
+        const openSettings = () => openActivitySettings(p, act, key);
+        key.onclick = openSettings;
+        tile.oncontextmenu = (e) => {
+          e.preventDefault();
+          openSettings();
+        };
+        item.append(key);
+
+        tile.onclick = () => {
+          if (matched) stageView.playActivity(act);
+          else c.lcd(t("activities.unavailableForOutfit"), 4000);
+        };
+        squish(tile, 0.04);
+        tape.append(item);
+        syncPager();
+
+        const frames = matched
+          ? clipFrames.get(clipName)
+          : Array.from({ length: act.frameCount }, () =>
+              Math.max(1, Math.round(1000 / act.fps)),
+            );
+        const imgPromise = matched
+          ? clipImages.get(clipName)
+          : fallbackActivityImage(p, act);
+        const img = await imgPromise?.catch(() => null);
+        if (token !== tapeToken) return;
+        if (!img || !frames) continue;
+        const pose = keyPose(img, 0, frames.length);
+        const box = rowBox(img, 0, frames.length);
+        drawFitted(thumb, img, 0, pose, box);
+        if (matched) {
+          let timer: ReturnType<typeof setTimeout> | undefined;
+          const run = (f: number) => {
+            drawFitted(thumb, img, 0, f, box);
+            timer = setTimeout(() => run((f + 1) % frames.length), frames[f]);
+          };
+          item.onpointerenter = () => !reducedQuery.matches && run(0);
+          item.onpointerleave = () => {
+            clearTimeout(timer);
+            drawFitted(thumb, img, 0, pose, box);
+          };
+        }
+      }
     }
   }
 

@@ -3,6 +3,11 @@ import { ANIMATIONS, GAZE_ACTIONS } from "./animation.ts";
 import { actionLabel, EMPTY_LAYER, type Step } from "./teaching.ts";
 import { Motion } from "./spring.ts";
 import { CELL_W, CELL_H } from "./studioContext.ts";
+import {
+  activityClipName,
+  matchingActivitiesForOutfit,
+  resolveGazeAnchor,
+} from "./openpets/runtime.ts";
 import * as api from "./bridge.ts";
 import sleepExample from "../../../examples/lizi-sleep/teaching.json";
 import type { StudioContext } from "./studioContext.ts";
@@ -69,7 +74,8 @@ export function mountStudioStage(
     if (!h || stage.hidden)
       return void windowEl.style.removeProperty("--floor");
     const ped = $("#pedestal");
-    ped.style.left = `${left + floor.x * w}px`;
+    const floorX = player.flipped ? 1 - floor.x : floor.x;
+    ped.style.left = `${left + floorX * w}px`;
     ped.style.top = `${top + floor.y * h}px`;
     ped.style.width = `${floor.w * w}px`;
     windowEl.style.setProperty(
@@ -101,7 +107,7 @@ export function mountStudioStage(
     );
     const p = selected();
     // The sprite may still be loading; render() lands it once it is ready.
-    if (p && loaded === `${p.id}:${p.fingerprint}`) land();
+    if (p && loaded === `${p.id}:${p.fingerprint}:${p.revision}:${c.wornOutfit(p)}`) land();
     else landing = true;
   }
   // Night: the cursor acts as a second lamp, so the cast shadow falls away
@@ -126,8 +132,12 @@ export function mountStudioStage(
     windowEl.style.setProperty("--pointer-x", `${e.clientX - w.left}px`);
     windowEl.style.setProperty("--pointer-y", `${e.clientY - w.top}px`);
     const r = stage.getBoundingClientRect();
-    const dx = e.clientX - (r.left + r.width / 2),
-      dy = e.clientY - (r.top + r.height * 0.45);
+    const p = selected();
+    const anchor = p?.gazeAnchor
+      ? resolveGazeAnchor(r, p.gazeAnchor, player.flipped)
+      : { x: r.width / 2, y: r.height * 0.45 };
+    const dx = e.clientX - (r.left + anchor.x),
+      dy = e.clientY - (r.top + anchor.y);
     if (document.documentElement.dataset.theme === "night")
       shadow.to(Math.max(-18, Math.min(18, -dx * 0.04)));
     if (GAZE_ACTIONS.includes(player.requestedAction)) {
@@ -169,6 +179,17 @@ export function mountStudioStage(
     markTape(name);
     if (player.sustaining) nowPlaying(t("studio.clickToEnd"));
     if (desktop && !name.startsWith("draft:")) attempt(() => api.play(name));
+  }
+  function playActivity(activity: api.PetActivity) {
+    const p = selected();
+    if (!p) return;
+    const clip = activityClipName(activity.id);
+    if (player.has(clip)) {
+      player.play(clip, true);
+      nowPlaying(activity.displayName);
+      markTape(clip);
+    }
+    void attempt(() => api.previewActivity(p.id, activity.id));
   }
   player.onComplete = () => {
     nowPlaying("");
@@ -215,17 +236,30 @@ export function mountStudioStage(
     );
   }
   let clipsReady: Promise<void> = Promise.resolve();
-  function loadClips(p: api.Pet) {
+  function wornSleepStrip(p: api.Pet, outfit: string) {
+    return outfit !== api.defaultOutfitId
+      ? p.wardrobe?.outfits.find((o) => o.id === outfit)?.sleepStrip
+      : undefined;
+  }
+  function loadClips(p: api.Pet, outfit: string) {
     const c = custom(p),
       drafts = state.snapshot.drafts.filter((d) => d.petId === p.id),
-      key = `${p.id}:${c.history.current}:${drafts.map((d) => d.id).join(",")}`;
+      wornSleep = wornSleepStrip(p, outfit) ?? "",
+      key = `${p.id}:${p.fingerprint}:${p.revision}:${outfit}:${wornSleep}:${c.history.current}:${drafts.map((d) => d.id).join(",")}`;
     if (key !== clipsKey) {
       clipsKey = key;
-      clipsReady = fetchClips(p, c, drafts);
+      clipsReady = fetchClips(p, c, drafts, outfit);
     }
     return clipsReady;
   }
-  async function fetchClips(p: api.Pet, c: api.Custom, drafts: api.Draft[]) {
+  async function fetchClips(
+    p: api.Pet,
+    c: api.Custom,
+    drafts: api.Draft[],
+    outfit: string,
+  ) {
+    const activityClips = matchingActivitiesForOutfit(p.activities, outfit);
+    const wornSleep = wornSleepStrip(p, outfit);
     const jobs = [
       ...Object.entries(c.layer.actions).map(async ([name, a]) => [
         name,
@@ -240,10 +274,17 @@ export function mountStudioStage(
           },
         ]),
       ),
+      ...activityClips.map(async ({ clipName, animation, durations }) => [
+        clipName,
+        {
+          durations,
+          url: await api.petAsset(p.id, animation.spritesheetPath),
+        },
+      ]),
       // Every pet sleeps (plan/29); the built-in strip unless it was taught one.
-      ...(!c.layer.actions.sleep && (p.sleepStrip || p.id === "lizi")
+      ...(!c.layer.actions.sleep && (wornSleep || p.sleepStrip || p.id === "lizi")
         ? [
-            api.sleepSprite(p).then((url) => [
+            api.sleepSprite(p, outfit).then((url) => [
               "sleep",
               {
                 label: t("pet.sleep"),
@@ -272,16 +313,24 @@ export function mountStudioStage(
   }
 
   async function renderPet(p: api.Pet) {
-    const key = `${p.id}:${p.fingerprint}`;
+    const outfit = c.wornOutfit(p);
+    const nextFlipped = Boolean(state.snapshot.settings.petHorizontalFlip?.[p.id]);
+    const flipChanged = player.flipped !== nextFlipped;
+    player.setFlipped(nextFlipped);
+    if (flipChanged) layoutStage();
+    const key = `${p.id}:${p.fingerprint}:${p.revision}:${outfit}`;
     if (key !== loaded) {
       loaded = key;
       clipsKey = "";
-      await player.load(await api.sprite(p.id));
+      const url = await api
+        .sprite(p.id, outfit)
+        .catch(() => api.sprite(p.id));
+      await player.load(url);
       if (player.image) measureFloor(player.image);
       if (landing) land();
       nowPlaying("");
     }
-    await loadClips(p);
+    await loadClips(p, outfit);
   }
 
   return {
@@ -289,6 +338,7 @@ export function mountStudioStage(
     layoutStage,
     petArrived,
     play,
+    playActivity,
     playSteps,
     renderPet,
     clipImages: clipImages as ReadonlyMap<string, Promise<HTMLImageElement>>,

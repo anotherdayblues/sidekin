@@ -2,9 +2,19 @@
   "id": "lizi",
   "displayName": "栗子",
   "description": "一只温暖的原创橘白小猫，安静陪伴，也会好奇地四处走走。",
-  "revision": "0.1.3",
+  "revision": "0.1.5",
   "spriteVersionNumber": 2,
   "spritesheetPath": "spritesheet.webp",
+  "wardrobe": {
+    "outfits": [
+      {
+        "id": "moon-pajamas",
+        "displayName": "月牙睡衣",
+        "spritesheetPath": "outfits/moon-pajamas.webp",
+        "sleepStrip": "outfits/moon-pajamas-sleep.png"
+      }
+    ]
+  },
   "behavior": {
     "enabled": true,
     "minSeconds": 45,

@@ -6,6 +6,8 @@ import { tipsUsed } from "./tips.ts";
 import type { Menu } from "@tauri-apps/api/menu";
 import { petDragPosition } from "./petDragPosition.ts";
 import { GAZE, GAZE_ACTIONS, GazeAttention } from "./animation.ts";
+import { resolveGazeAnchor } from "./openpets/runtime.ts";
+import type { CodexPetGazeAnchor } from "./openpets/vendor/codex-pets-core.ts";
 import type { SpritePlayer } from "./player.ts";
 import type { DragMotion } from "./movement.ts";
 interface PointerContext {
@@ -19,6 +21,7 @@ interface PointerContext {
     bubbleAt: { x: number; y: number } | null;
     gazeUntil: number;
   };
+  gazeAnchor?: () => CodexPetGazeAnchor | undefined;
   hovered: () => boolean;
   sync: () => void;
   touch: () => void;
@@ -162,8 +165,13 @@ export function petPointer(c: PointerContext) {
         c.hover(
           inside && document.documentElement.dataset.fileDragging !== "true",
         );
-      const gx = x - rect.width / 2,
-        gy = y - rect.height / 2,
+      const anchor = resolveGazeAnchor(
+        rect,
+        c.gazeAnchor?.(),
+        player.flipped,
+      );
+      const gx = x - anchor.x,
+        gy = y - anchor.y,
         look = attention.update(Date.now(), gx, gy);
       cursorFar = Math.hypot(gx, gy) > GAZE.far && !attention.awake;
       const inWindow =
@@ -179,8 +187,8 @@ export function petPointer(c: PointerContext) {
       const { bubbleAt, gazeUntil } = c.gaze();
       const toBubble = bubbleAt
         ? {
-            x: bubbleAt.x - origin.x / scale - rect.left - rect.width / 2,
-            y: bubbleAt.y - origin.y / scale - rect.top - rect.height / 2,
+            x: bubbleAt.x - origin.x / scale - rect.left - anchor.x,
+            y: bubbleAt.y - origin.y / scale - rect.top - anchor.y,
           }
         : null;
       const watch = bubbleAt && Date.now() < gazeUntil;

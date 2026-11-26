@@ -1,5 +1,6 @@
 import { t } from "./i18n.ts";
 import * as api from "./bridge.ts";
+import { msUntilNextMinute } from "./openpets/runtime.ts";
 import { normalizeSkin } from "./skin.ts";
 import type { StudioContext } from "./studioContext.ts";
 import type { mountStudioLighting } from "./studioLighting.ts";
@@ -7,6 +8,7 @@ import type { mountStudioControls } from "./studioControls.ts";
 import type { mountStudioRoster } from "./studioRoster.ts";
 import type { mountStudioStage } from "./studioStage.ts";
 import type { mountStudioTape } from "./studioTape.ts";
+import type { mountStudioWardrobe } from "./studioWardrobe.ts";
 import type { mountDraftReader } from "./studioDrafts.ts";
 import type { mountStudioDial } from "./studioDial.ts";
 import type { mountStudioVersions } from "./studioVersions.ts";
@@ -20,6 +22,7 @@ export function mountStudioView(
     roster: ReturnType<typeof mountStudioRoster>;
     stageView: ReturnType<typeof mountStudioStage>;
     tape: ReturnType<typeof mountStudioTape>;
+    wardrobe: ReturnType<typeof mountStudioWardrobe>;
     draftReader: ReturnType<typeof mountDraftReader>;
     dial: ReturnType<typeof mountStudioDial>;
     versions: ReturnType<typeof mountStudioVersions>;
@@ -28,7 +31,7 @@ export function mountStudioView(
   },
 ) {
   const { $, app, state, stage, player, selected, lcd, reducedQuery } = c;
-  const { stageView, draftReader, navigation, skinPicker } = parts;
+  const { stageView, wardrobe, draftReader, navigation, skinPicker } = parts;
   const { syncTheme, themeMode } = parts.lighting;
   const { desk, motionSwitch, knob, knobMotion } = parts.controls;
   const { layoutStage, petArrived } = stageView;
@@ -38,6 +41,7 @@ export function mountStudioView(
   const { renderVersions } = parts.versions;
   let receiptRevision = 0;
   let lastPetId: string | undefined;
+  let minuteTimer: ReturnType<typeof setTimeout> | undefined;
   function renderReceiptPet(p: api.Pet | undefined) {
     const revision = ++receiptRevision;
     const canvases = [
@@ -107,10 +111,14 @@ export function mountStudioView(
     knob.setAttribute("aria-valuenow", String(s.settings.size));
     lcd();
     renderRoster();
+    wardrobe.render(p);
     if (p) {
       await stageView.renderPet(p);
+      if (state.snapshot !== s) return;
       renderTape(p);
-    } else $("#actions").replaceChildren();
+    } else {
+      $("#actions").replaceChildren();
+    }
     draftReader.render(p);
     renderDial(p);
     renderVersions(p);
@@ -118,11 +126,18 @@ export function mountStudioView(
     player.setActive(!document.hidden);
   }
   c.restore = () => render(state.snapshot);
+  function armMinuteTick() {
+    clearTimeout(minuteTimer);
+    minuteTimer = setTimeout(() => {
+      renderDial(selected());
+      armMinuteTick();
+    }, msUntilNextMinute(new Date()));
+  }
   async function start() {
     await api.settingsErrors((message) => {
       void render(state.snapshot).then(() => lcd(message, 9000));
     });
-    setInterval(() => renderDial(selected()), 60_000);
+    armMinuteTick();
     document.addEventListener("visibilitychange", () =>
       player.setActive(!document.hidden),
     );

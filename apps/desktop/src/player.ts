@@ -63,6 +63,7 @@ export class SpritePlayer {
   action = "idle";
   requestedAction = "idle";
   active = true;
+  flipped = false;
   private reduced = false;
   private loop = false;
   private index = 0;
@@ -73,6 +74,7 @@ export class SpritePlayer {
   private alpha: Uint8Array | null = null;
   private url: string | undefined;
   private clips = new Map<string, Clip & Sheet & { url: string }>();
+  private baseShape: PetShape | null = null;
   /** The idle pose's outline, for telling the pet from empty window. */
   shape: PetShape | null = null;
   private lastPose = "";
@@ -98,7 +100,10 @@ export class SpritePlayer {
     this.url = url;
     this.image = sheet.image;
     this.alpha = sheet.alpha;
-    this.shape = PetShape.from(sheet.alpha, sheet.image.width);
+    this.baseShape = PetShape.from(sheet.alpha, sheet.image.width);
+    this.shape = this.flipped
+      ? (this.baseShape?.mirrored() ?? null)
+      : this.baseShape;
     this.canvas.dispatchEvent(
       new CustomEvent("pet-shape", { detail: this.shape, bubbles: true }),
     );
@@ -116,6 +121,7 @@ export class SpritePlayer {
     this.url = undefined;
     this.image = null;
     this.alpha = null;
+    this.baseShape = null;
     this.shape = null;
     this.lastPose = "";
   }
@@ -247,6 +253,32 @@ export class SpritePlayer {
     this.active = active;
     this.draw();
   }
+  setFlipped(flipped: boolean) {
+    if (this.flipped === flipped) return;
+    this.flipped = flipped;
+    this.shape = this.flipped
+      ? (this.baseShape?.mirrored() ?? null)
+      : this.baseShape;
+    if (this.image) {
+      this.canvas.dispatchEvent(
+        new CustomEvent("pet-shape", { detail: this.shape, bubbles: true }),
+      );
+      if (this.holding) {
+        this.canvas.dispatchEvent(
+          new CustomEvent("pet-hold", {
+            detail: {
+              action: this.requestedAction,
+              on: true,
+              top: this.top(this.pose()),
+            },
+            bubbles: true,
+          }),
+        );
+      }
+    }
+    this.lastPose = "";
+    if (this.active && this.image) this.draw();
+  }
   setReducedMotion(reduced: boolean) {
     if (this.reduced === reduced) return;
     this.reduced = reduced;
@@ -254,7 +286,7 @@ export class SpritePlayer {
   }
   setGaze(value: { x: number; y: number } | null) {
     const key = (v: typeof value) =>
-      v ? JSON.stringify(gazeFrame(v.x, v.y)) : "";
+      v ? JSON.stringify(gazeFrame(v.x, v.y, this.flipped)) : "";
     if (key(value) === key(this.gaze)) return;
     const wasLooking = this.looking();
     this.gaze = value;
@@ -273,7 +305,7 @@ export class SpritePlayer {
   }
   pose(): { row: number; frame: number; sheet?: string } {
     return this.looking()
-      ? gazeFrame(this.gaze!.x, this.gaze!.y)
+      ? gazeFrame(this.gaze!.x, this.gaze!.y, this.flipped)
       : this.plan.frames[this.index];
   }
   private sheet(p: { sheet?: string }) {
@@ -286,9 +318,10 @@ export class SpritePlayer {
   hit(x: number, y: number) {
     const p = this.pose(),
       s = this.sheet(p),
-      px = Math.floor(x * 192),
+      rawPx = Math.floor(x * 192),
       py = Math.floor(y * 208);
-    if (!s || px < 0 || px >= 192 || py < 0 || py >= 208) return false;
+    if (!s || rawPx < 0 || rawPx >= 192 || py < 0 || py >= 208) return false;
+    const px = this.flipped ? 191 - rawPx : rawPx;
     return (
       s.alpha[(p.row * 208 + py) * s.image.width + p.frame * 192 + px] > 35
     );
@@ -317,7 +350,8 @@ export class SpritePlayer {
           left = Math.min(left, x);
           right = Math.max(right, x);
         }
-    return { y: y / 208, x: (left + right) / 2 / 192 };
+    const cx = (left + right) / 2 / 192;
+    return { y: y / 208, x: this.flipped ? 1 - cx : cx };
   }
   private draw() {
     if (this.timer) clearTimeout(this.timer);
@@ -325,7 +359,7 @@ export class SpritePlayer {
     if (!this.active || !this.image) return;
     const pose = this.pose(),
       sheet = this.sheet(pose) ?? { image: this.image },
-      key = `${pose.sheet ?? ""}:${pose.row}:${pose.frame}`;
+      key = `${this.flipped ? "F" : ""}:${pose.sheet ?? ""}:${pose.row}:${pose.frame}`;
     this.action = this.plan.frames[this.index].action;
     // The held loop runs from frame hold[0] to hold[1] (one-based); the
     // window hears when the pet enters or leaves it (petDoze.ts).
@@ -348,6 +382,11 @@ export class SpritePlayer {
       const ctx = this.canvas.getContext("2d")!;
       ctx.clearRect(0, 0, 384, 416);
       ctx.imageSmoothingEnabled = true;
+      if (this.flipped) {
+        ctx.save();
+        ctx.translate(384, 0);
+        ctx.scale(-1, 1);
+      }
       ctx.drawImage(
         sheet.image,
         pose.frame * 192,
@@ -359,6 +398,7 @@ export class SpritePlayer {
         384,
         416,
       );
+      if (this.flipped) ctx.restore();
       if (this.light) {
         // Light falls only on the pet's own pixels.
         ctx.save();

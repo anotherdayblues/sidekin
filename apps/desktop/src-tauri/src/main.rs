@@ -61,6 +61,7 @@ mod translations;
 mod tray_menu;
 mod usage;
 mod voice;
+mod wardrobe;
 mod window_material;
 mod window_memory;
 use serde::{Deserialize, Serialize};
@@ -85,6 +86,15 @@ struct Settings {
     /// The pet page's cards, top to bottom, each small or big; None until
     /// first changed (plan/33).
     home_cards: Option<Vec<HomeCard>>,
+    /// Per-pet OpenPets wardrobe preferences (always-wear outfit and/or custom schedule).
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pet_wardrobe_preferences: HashMap<String, wardrobe::PetWardrobePreference>,
+    /// Per-pet horizontal flip toggle (absent or false means unflipped).
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pet_horizontal_flip: HashMap<String, bool>,
+    /// Per-pet enabled idle activity IDs (absent means all declared activities enabled).
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pet_activity_preferences: HashMap<String, Vec<String>>,
 }
 fn read_pet_size<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<u32, D::Error> {
     u32::deserialize(deserializer).map(|size| size.min(280))
@@ -102,6 +112,9 @@ impl Default for Settings {
             theme: "system".into(),
             skin: "native".into(),
             home_cards: None,
+            pet_wardrobe_preferences: HashMap::new(),
+            pet_horizontal_flip: HashMap::new(),
+            pet_activity_preferences: HashMap::new(),
         }
     }
 }
@@ -190,10 +203,18 @@ fn get_settings(state: tauri::State<'_, State>) -> Result<Settings, String> {
     Ok(state.settings.lock().map_err(|e| e.to_string())?.clone())
 }
 fn store_example(root: &std::path::Path) -> Result<library::ImportResult, String> {
-    library::store(
+    library::store_with_outfits(
         root,
         include_bytes!("../../../../examples/lizi/pet.json"),
         include_bytes!("../../../../examples/lizi/spritesheet.webp"),
+        vec![(
+            "outfits/moon-pajamas.webp".into(),
+            include_bytes!("../../../../examples/lizi/outfits/moon-pajamas.webp").to_vec(),
+        )],
+        vec![(
+            "outfits/moon-pajamas-sleep.png".into(),
+            include_bytes!("../../../../examples/lizi/outfits/moon-pajamas-sleep.png").to_vec(),
+        )],
     )
 }
 
@@ -290,6 +311,9 @@ fn save_settings(app: tauri::AppHandle, mut settings: Settings) -> Result<(), St
         size_changed = s.size != settings.size;
         settings.position = s.position;
         settings.position_scale = s.position_scale;
+        settings.pet_wardrobe_preferences = s.pet_wardrobe_preferences.clone();
+        settings.pet_horizontal_flip = s.pet_horizontal_flip.clone();
+        settings.pet_activity_preferences = s.pet_activity_preferences.clone();
         *s = settings;
     })?;
     refresh(&app)?;
@@ -323,15 +347,167 @@ async fn read_pet_thumbnail(app: tauri::AppHandle, id: String) -> Result<String,
         .map_err(|e| e.to_string())?
 }
 #[tauri::command]
-fn read_sprite(app: tauri::AppHandle, id: String, sleep: Option<bool>) -> Result<String, String> {
+async fn read_sprite(
+    app: tauri::AppHandle,
+    id: String,
+    sleep: Option<bool>,
+    outfit: Option<String>,
+) -> Result<String, String> {
+    let root = app.state::<State>().root.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        if sleep == Some(true) {
+            return data_url(&library::outfit_sleep_path(
+                &root,
+                &id,
+                outfit.as_deref(),
+            )?);
+        }
+        let pet = library::pet(&root, &id)?;
+        if let Some(outfit_id) = outfit
+            .as_deref()
+            .filter(|s| !s.is_empty() && *s != wardrobe::DEFAULT_OUTFIT_ID)
+        {
+            return data_url(&library::outfit_sheet_path(&root, &id, outfit_id)?);
+        }
+        data_url(&root.join("pets").join(id).join(&pet.spritesheet_path))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn read_pet_asset(
+    app: tauri::AppHandle,
+    pet_id: String,
+    path: String,
+) -> Result<String, String> {
+    let root = app.state::<State>().root.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        data_url(&library::pet_asset_path(&root, &pet_id, &path)?)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn read_outfit_thumbnail(
+    app: tauri::AppHandle,
+    pet_id: String,
+    outfit_id: String,
+) -> Result<String, String> {
+    let root = app.state::<State>().root.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        data_url(&library::outfit_thumbnail(&root, &pet_id, &outfit_id)?)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+fn set_pet_wardrobe_pref(
+    app: tauri::AppHandle,
+    pet_id: String,
+    preference: Option<wardrobe::PetWardrobePreference>,
+) -> Result<(), String> {
     let state = app.state::<State>();
-    let pet = library::pet(&state.root, &id)?;
-    let file = if sleep == Some(true) {
-        pet.sleep_strip.as_deref().ok_or(t("host.noSleep"))?
-    } else {
-        &pet.spritesheet_path
+    let pet = library::pet(&state.root, &pet_id)?;
+    let validated = wardrobe::validate_wardrobe_preference(&pet, preference)?;
+    state.update_settings(|s| {
+        if let Some(pref) = validated {
+            s.pet_wardrobe_preferences.insert(pet_id, pref);
+        } else {
+            s.pet_wardrobe_preferences.remove(&pet_id);
+        }
+    })?;
+    refresh(&app)
+}
+#[tauri::command]
+fn delete_pet_outfit(
+    app: tauri::AppHandle,
+    pet_id: String,
+    outfit_id: String,
+) -> Result<String, String> {
+    let state = app.state::<State>();
+    let removed_name = library::delete_outfit(&state.root, &pet_id, &outfit_id)?;
+    state.update_settings(|s| {
+        if let Some(pref) = s.pet_wardrobe_preferences.get_mut(&pet_id) {
+            if pref.outfit.as_deref() == Some(outfit_id.as_str()) {
+                pref.outfit = None;
+            }
+            if let Some(schedule) = pref.schedule.as_mut() {
+                schedule.retain(|rule| rule.outfit != outfit_id);
+                if schedule.is_empty() {
+                    pref.schedule = None;
+                }
+            }
+            if pref.outfit.is_none() && pref.schedule.is_none() {
+                s.pet_wardrobe_preferences.remove(&pet_id);
+            }
+        }
+    })?;
+    refresh(&app)?;
+    Ok(removed_name)
+}
+#[tauri::command]
+fn set_pet_flip(app: tauri::AppHandle, pet_id: String, flipped: bool) -> Result<(), String> {
+    let state = app.state::<State>();
+    library::pet(&state.root, &pet_id)?;
+    state.update_settings(|s| {
+        if flipped {
+            s.pet_horizontal_flip.insert(pet_id, true);
+        } else {
+            s.pet_horizontal_flip.remove(&pet_id);
+        }
+    })?;
+    refresh(&app)
+}
+#[tauri::command]
+fn set_pet_activity_pref(
+    app: tauri::AppHandle,
+    pet_id: String,
+    enabled: Option<Vec<String>>,
+) -> Result<(), String> {
+    let state = app.state::<State>();
+    let pet = library::pet(&state.root, &pet_id)?;
+    let validated = wardrobe::validate_activity_preference(&pet, enabled)?;
+    state.update_settings(|s| {
+        if let Some(ids) = validated {
+            s.pet_activity_preferences.insert(pet_id, ids);
+        } else {
+            s.pet_activity_preferences.remove(&pet_id);
+        }
+    })?;
+    refresh(&app)
+}
+#[tauri::command]
+fn preview_activity(
+    app: tauri::AppHandle,
+    pet_id: String,
+    activity_id: String,
+) -> Result<(), String> {
+    let state = app.state::<State>();
+    let pet = library::pet(&state.root, &pet_id)?;
+    let exists = pet
+        .activities
+        .as_ref()
+        .is_some_and(|list| list.iter().any(|a| a.id == activity_id));
+    if !exists {
+        return Err(format!("Unknown pet activity: {activity_id}"));
+    }
+    let needs_update = {
+        let s = state.settings.lock().map_err(|e| e.to_string())?;
+        !s.visible || s.active_id.as_deref() != Some(pet_id.as_str())
     };
-    data_url(&state.root.join("pets").join(id).join(file))
+    if needs_update {
+        state.update_settings(|s| {
+            s.active_id = Some(pet_id.clone());
+            s.visible = true;
+        })?;
+    }
+    refresh(&app)?;
+    app.emit_to(
+        "pet",
+        "preview-activity",
+        serde_json::json!({ "petId": pet_id, "activityId": activity_id }),
+    )
+    .map_err(|e| e.to_string())
 }
 #[tauri::command]
 fn read_action_image(
@@ -498,6 +674,9 @@ fn remove_pet(app: tauri::AppHandle, id: String) -> Result<(), String> {
     let next_id = library::list(&state.root)?.first().map(|p| p.id.clone());
     state.update_settings(|s| {
         s.behaviors.remove(&id);
+        s.pet_wardrobe_preferences.remove(&id);
+        s.pet_horizontal_flip.remove(&id);
+        s.pet_activity_preferences.remove(&id);
         if s.active_id.as_deref() == Some(id.as_str()) {
             s.active_id = next_id;
             if s.active_id.is_none() {

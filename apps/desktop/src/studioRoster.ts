@@ -1,3 +1,4 @@
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { t } from "./i18n.ts";
 import { showSkillPrompt } from "./skillPromptPopup.ts";
 import { squish } from "./spring.ts";
@@ -34,14 +35,57 @@ export function mountStudioRoster(
     };
     openPop($("#add"), [make, pkg, folder, demo]);
   };
+  function showImportResult(
+    r: { pet: api.Pet; updated: boolean } | { draft: api.Draft } | null,
+  ) {
+    if (!r) return;
+    if ("draft" in r) lcd(t("studio.gotTrick", { summary: r.draft.summary }));
+    else lcd(r.updated ? t("studio.petUpdated") : t("studio.petArrived"));
+  }
+  function showImportError(e: unknown) {
+    const error = String(e).replace(/^Error:\s*/, "");
+    lcd(t("studio.importFailed", { error }), 12000);
+  }
   function importFrom(folder: boolean) {
     closePop();
-    attempt(async () => {
-      const r = await api.importPackage(folder);
-      if (r && "draft" in r)
-        lcd(t("studio.gotTrick", { summary: r.draft.summary }));
-      else if (r)
-        lcd(r.updated ? t("studio.petUpdated") : t("studio.petArrived"));
+    void attempt(async () => {
+      try {
+        showImportResult(await api.importPackage(folder));
+      } catch (e) {
+        showImportError(e);
+      }
+    });
+  }
+  // Drag-and-drop a .zip package, pet.json, or pet folder onto the Pet page.
+  const dropCue = $("#drop-import-cue");
+  const petBlock = c.app.querySelector<HTMLElement>(".block-pet")!;
+  const railEl = c.app.querySelector<HTMLElement>(".rail")!;
+  if (api.native) {
+    void getCurrentWebview().onDragDropEvent(async (e) => {
+      const petPageVisible = !petBlock.hidden;
+      if (e.payload.type === "enter" || e.payload.type === "over") {
+        dropCue.hidden = !petPageVisible;
+        return;
+      }
+      if (e.payload.type === "leave") {
+        dropCue.hidden = true;
+        return;
+      }
+      if (e.payload.type !== "drop") return;
+      dropCue.hidden = true;
+      if (!petPageVisible) return;
+      const hit = document.elementFromPoint(
+        e.payload.position.x / devicePixelRatio,
+        e.payload.position.y / devicePixelRatio,
+      );
+      if (hit && !petBlock.contains(hit) && !railEl.contains(hit)) return;
+      for (const path of e.payload.paths) {
+        try {
+          showImportResult(await api.importPackagePath(path));
+        } catch (err) {
+          showImportError(err);
+        }
+      }
     });
   }
   function askAgent(

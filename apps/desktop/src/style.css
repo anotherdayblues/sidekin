@@ -17,3 +17,440 @@
 @import "./styles/17-selects.css";
 @import "./styles/18-onboarding.css";
 @import "./styles/switch.css";
+
+/* ---------- drag-drop pet package import cue ---------- */
+.drop-import-cue {
+  position: absolute;
+  inset: 8px;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 2px dashed var(--accent);
+  background: color-mix(in srgb, var(--panel) 84%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+.drop-import-cue[hidden] {
+  display: none;
+}
+.drop-import-cue span {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--key);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(var(--shadow), 0.14);
+}
+
+/* ---------- wardrobe trigger & right-pane inspector ---------- */
+.wardrobe-trigger {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(56%, 220px);
+  height: 28px;
+  padding: 0 11px 0 9px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--key) 88%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 2px 6px rgba(var(--shadow), 0.1);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
+}
+.wardrobe-trigger[hidden] {
+  display: none;
+}
+.wardrobe-trigger[data-empty="true"]:not([aria-expanded="true"]) {
+  color: var(--ink-2);
+}
+.wardrobe-trigger:hover {
+  background: var(--key);
+  color: var(--ink);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 3px 10px rgba(var(--shadow), 0.14);
+}
+.wardrobe-trigger[aria-expanded="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow:
+    0 2px 10px color-mix(in srgb, var(--accent) 34%, transparent);
+}
+.wardrobe-trigger span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wardrobe-glyph {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.86;
+}
+
+/* Morph right .side column cleanly into Wardrobe without touching #window */
+.side[data-mode="wardrobe"] > :not(.wardrobe-pane) {
+  display: none !important;
+}
+.wardrobe-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.wardrobe-pane-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.wardrobe-pane-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wardrobe-back {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px 4px 4px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.wardrobe-back:hover {
+  background: var(--well);
+  color: var(--ink);
+}
+.wardrobe-back svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.wardrobe-done {
+  flex: none;
+  padding: 4px 11px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--key);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 1px 0 var(--panel-edge);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.wardrobe-done:hover {
+  filter: brightness(0.97);
+}
+.wardrobe-pane-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: thin;
+}
+
+/* Outfit 2-column grid */
+.wardrobe-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.outfit-card {
+  position: relative;
+  min-width: 0;
+  padding: 12px 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--key);
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 2px 0 rgba(var(--shadow), 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  outline: none;
+  transition:
+    box-shadow 140ms ease,
+    background 140ms ease;
+}
+.outfit-card:hover {
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 2px 0 rgba(var(--shadow), 0.1);
+}
+.outfit-card:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.outfit-card.is-worn {
+  background: color-mix(in srgb, var(--accent) 10%, var(--key));
+  box-shadow:
+    0 0 0 1.8px var(--accent),
+    0 2px 0 rgba(var(--shadow), 0.08);
+}
+.outfit-card canvas {
+  width: 68px;
+  height: 73px;
+}
+.outfit-name {
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 0 4px;
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 17px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.outfit-card.is-worn .outfit-name {
+  color: var(--ink);
+  font-weight: 600;
+}
+.outfit-badge {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  line-height: 14px;
+  font-weight: 600;
+  background: var(--accent);
+  color: var(--accent-ink);
+  pointer-events: none;
+}
+.outfit-del {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--well);
+  color: var(--ink-2);
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  cursor: pointer;
+  transition:
+    opacity 130ms ease,
+    background 130ms ease,
+    color 130ms ease;
+}
+.outfit-card:hover .outfit-del,
+.outfit-card:focus-within .outfit-del,
+.outfit-card.is-armed .outfit-del {
+  opacity: 1;
+}
+.outfit-del:hover,
+.outfit-card.is-armed .outfit-del {
+  background: color-mix(in srgb, #d93829 16%, transparent);
+  color: #d93829;
+}
+.outfit-del svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Soft inline delete confirmation bar */
+.wardrobe-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: color-mix(in srgb, #d93829 12%, var(--panel));
+  color: #c63527;
+  font-size: 12px;
+}
+:root[data-theme="night"] .wardrobe-confirm {
+  color: #ff6961;
+}
+.wardrobe-confirm-text {
+  min-width: 0;
+  line-height: 1.4;
+}
+.wardrobe-confirm-actions {
+  flex: none;
+  display: flex;
+  gap: 6px;
+}
+.wardrobe-confirm-cancel,
+.wardrobe-confirm-delete {
+  border: 0;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.wardrobe-confirm-cancel {
+  background: var(--card);
+  color: var(--ink-2);
+}
+.wardrobe-confirm-delete {
+  background: #d93829;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Calm empty state for pets without outfits */
+.wardrobe-empty {
+  padding: 24px 16px;
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 0 0 1px var(--line);
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.wardrobe-empty canvas {
+  width: 72px;
+  height: 78px;
+}
+.wardrobe-empty-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.wardrobe-empty-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* Pinned bottom primary CTA */
+.wardrobe-make-btn {
+  margin-top: auto;
+  flex: none;
+  width: 100%;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--primary);
+  color: var(--primary-ink);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+.wardrobe-make-btn:hover {
+  filter: brightness(1.04);
+}
+.wardrobe-make-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* Idle activities in action tape */
+.tape-item.is-unavailable .tape-tile {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+.tape-item.is-muted:not(.is-unavailable) .tape-tile canvas {
+  opacity: 0.68;
+}
+.activity-play {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--key);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 1px 0 rgba(var(--shadow), 0.08);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.activity-play::before {
+  content: "";
+  border-style: solid;
+  border-width: 4px 0 4px 6.5px;
+  border-color: transparent transparent transparent currentColor;
+}
+.activity-play:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: none;
+}
+.activity-play:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}

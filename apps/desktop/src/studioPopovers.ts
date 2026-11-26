@@ -9,7 +9,14 @@ export function mountStudioPopovers(c: StudioContext) {
   const { $, custom, attempt, lcd } = c;
   // ---------- popovers ----------
   function closePop() {
-    $("#pop").hidden = true;
+    const pop = $("#pop");
+    pop.hidden = true;
+    delete pop.dataset.kind;
+    for (const a of c.app.querySelectorAll<HTMLElement>(
+      '.pop-anchor[aria-expanded="true"]',
+    )) {
+      a.setAttribute("aria-expanded", "false");
+    }
   }
   /** One question before anything that changes what the pet has learned. */
   function confirmPop(
@@ -115,11 +122,16 @@ export function mountStudioPopovers(c: StudioContext) {
       );
     }
   }
-  function openPop(anchor: HTMLElement, content: HTMLElement[]) {
+  function openPop(
+    anchor: HTMLElement,
+    content: HTMLElement[],
+    opts?: { kind?: string },
+  ) {
     const pop = $("#pop");
     // A menu item can open the next panel in this same popover.
     const r = anchor.getBoundingClientRect();
-    delete pop.dataset.kind;
+    if (opts?.kind) pop.dataset.kind = opts.kind;
+    else delete pop.dataset.kind;
     pop.replaceChildren(...content);
     pop.hidden = false;
     const w = pop.offsetWidth;

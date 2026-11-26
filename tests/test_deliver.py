@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 COPIES = [
     ROOT / "skills/make-desktop-pet/scripts/deliver.py",
     ROOT / "skills/teach-desktop-pet/scripts/deliver.py",
+    ROOT / "skills/dress-desktop-pet/scripts/deliver.py",
 ]
 
 
@@ -73,7 +74,9 @@ class DeliverTests(unittest.TestCase):
             t.join()
 
     def test_both_skills_carry_the_same_client(self):
-        self.assertEqual(COPIES[0].read_bytes(), COPIES[1].read_bytes())
+        expected = COPIES[0].read_bytes()
+        for copy in COPIES[1:]:
+            self.assertEqual(expected, copy.read_bytes(), str(copy))
 
     def test_receipt_is_returned_and_cleared(self):
         r = self.run_with_app("ok")
